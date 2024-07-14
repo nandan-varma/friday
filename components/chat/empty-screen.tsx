@@ -10,7 +10,6 @@ export function EmptyScreen() {
         <p className="leading-normal text-muted-foreground">
           This is an Chat Bot that uses a large language model (LLM)
           to schedule and add events to your calendar.
-          .
         </p>
       </div>
     </div>

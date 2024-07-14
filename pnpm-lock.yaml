@@ -104,6 +104,9 @@ importers:
       react-markdown:
         specifier: ^8.0.7
         version: 8.0.7(@types/react@18.3.3)(react@18.3.1)
+      react-speakup:
+        specifier: ^1.0.0
+        version: 1.0.0(react@18.3.1)
       react-syntax-highlighter:
         specifier: ^15.5.0
         version: 15.5.0(react@18.3.1)
@@ -2676,6 +2679,11 @@ packages:
     peerDependenciesMeta:
       '@types/react':
         optional: true
+
+  react-speakup@1.0.0:
+    resolution: {integrity: sha512-uZlLfBrWcdlw9fC6N5NY14GA8olnXh7DNaWNQya1osBPIE2nd/URv3nc6+yXeIlu55bwdGYSPoyAXEo5znN1hg==}
+    peerDependencies:
+      react: '>=16'
 
   react-style-singleton@2.2.1:
     resolution: {integrity: sha512-ZWj0fHEMyWkHzKYUr2Bs/4zU6XLmq9HsgBURm7g5pAVfyn49DgUiNgY2d4lXRlYSiCif9YBGpQleewkcqddc7g==}
@@ -6070,6 +6078,10 @@ snapshots:
       use-sidecar: 1.1.2(@types/react@18.3.3)(react@18.3.1)
     optionalDependencies:
       '@types/react': 18.3.3
+
+  react-speakup@1.0.0(react@18.3.1):
+    dependencies:
+      react: 18.3.1
 
   react-style-singleton@2.2.1(@types/react@18.3.3)(react@18.3.1):
     dependencies:

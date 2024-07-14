@@ -19,14 +19,14 @@ export function MonthView({ events: propEvents }: MonthViewProps) {
     }
 
     return (
-        <div className="flex">
+        <div className="grid md:flex">
             <Calendar
                 mode="single"
                 selected={date}
                 onSelect={setDate}
                 className="rounded-md border"
             />
-            <div className="flex-1 m-1 h-96 overflow-y-scroll">
+            <div className="m-1 h-96 overflow-y-scroll md:flex-1">
                 {events.map((event, index) => (
                     <Card key={index} className="m-2">
                         <CardHeader>

@@ -17,6 +17,7 @@ import {
 import { useEnterSubmit } from '@/lib/hooks/use-enter-submit'
 import { nanoid } from 'nanoid'
 import { useRouter } from 'next/navigation'
+import { VoiceRecorder } from './voice-recorder'
 
 export function PromptForm({
   input,
@@ -36,6 +37,10 @@ export function PromptForm({
       inputRef.current.focus()
     }
   }, [])
+
+  const AddToInput = (value: string) => {
+    setInput(input + value);
+  }
 
   return (
     <form
@@ -83,12 +88,14 @@ export function PromptForm({
           </TooltipTrigger>
           <TooltipContent>New Chat</TooltipContent>
         </Tooltip>
+        <VoiceRecorder onRecorded={AddToInput} />
+
         <Textarea
           ref={inputRef}
           tabIndex={0}
           onKeyDown={onKeyDown}
           placeholder="Send a message."
-          className="min-h-[60px] w-full resize-none bg-transparent px-4 py-[1.3rem] focus-within:outline-none sm:text-sm"
+          className="min-h-[60px] w-full resize-none bg-transparent px-16 py-[1.3rem] focus-within:outline-none sm:text-sm"
           autoFocus
           spellCheck={false}
           autoComplete="off"
