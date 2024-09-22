@@ -38,7 +38,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <script defer data-domain="friday.nandanvarma.cpm" src="https://plausible.nandanvarma.com/js/script.js"></script>
+      <script defer data-domain="friday.nandanvarma.com" src="https://plausible.nandanvarma.com/js/script.js"></script>
       <body
         className={cn(
           'font-sans antialiased',
