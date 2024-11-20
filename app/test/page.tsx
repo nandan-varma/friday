@@ -20,7 +20,7 @@ const TextToVoiceComponent = () => {
         ))}
       </select>
       <div ref={ref}>
-        <h1>It's not important which HTML tag your text is within.</h1>
+        <h1>Its not important which HTML tag your text is within.</h1>
         <div>
           Or <p>how many levels it is nested.</p>
         </div>
