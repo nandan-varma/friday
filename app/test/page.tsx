@@ -1,19 +1,32 @@
 "use client"
-import { Button } from "@/components/ui/button";
 import React from "react";
-import { useVoiceToText } from "react-speakup";
+import { useTextToVoice } from "react-speakup";
 
-const VoiceToTextComponent = () => {
-  const { startListening, stopListening, transcript } = useVoiceToText();
+const TextToVoiceComponent = () => {
+  const { speak, pause, resume, ref, setVoice, voices } = useTextToVoice<HTMLDivElement>();
 
   return (
     <div>
-      <Button onClick={startListening}>Start Listening</Button>
-      <Button onClick={stopListening}>Stop Listening</Button>
-      <br/>
-      <span className="m-4 p-4">{transcript}</span>
+      <button onClick={speak}>Speak</button>
+      <button onClick={pause}>Pause</button>
+      <button onClick={resume}>Resume</button>
+      <select
+        onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
+          setVoice(event.target.value)
+        }
+      >
+        {voices.map((voice) => (
+          <option key={voice}>{voice}</option>
+        ))}
+      </select>
+      <div ref={ref}>
+        <h1>It's not important which HTML tag your text is within.</h1>
+        <div>
+          Or <p>how many levels it is nested.</p>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default VoiceToTextComponent; 
+export default TextToVoiceComponent;

@@ -256,7 +256,7 @@ async function submitUserMessage(content: string) {
                     type: 'tool-result',
                     toolName: 'AddEvent',
                     toolCallId,
-                    result: { name, date } as Event
+                    result: { name, date }
                   }
                 ]
               }

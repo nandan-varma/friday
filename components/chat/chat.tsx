@@ -11,6 +11,7 @@ import { Message, Session } from '@/lib/types'
 import { usePathname, useRouter } from 'next/navigation'
 import { useScrollAnchor } from '@/lib/hooks/use-scroll-anchor'
 import { toast } from 'sonner'
+import { useTTS } from '@/lib/hooks/use-tts'
 
 export interface ChatProps extends React.ComponentProps<'div'> {
   initialMessages?: Message[]
@@ -25,6 +26,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
   const [input, setInput] = useState('')
   const [messages] = useUIState()
   const [aiState] = useAIState()
+  const { setTTSContent } = useTTS()
 
   const [_, setNewChatId] = useLocalStorage('newChatId', id)
 
@@ -41,6 +43,7 @@ export function Chat({ id, className, session, missingKeys }: ChatProps) {
     if (messagesLength === 2) {
       router.refresh()
     }
+    setTTSContent(messages[messagesLength - 1]?.content)
   }, [aiState.messages, router])
 
   useEffect(() => {

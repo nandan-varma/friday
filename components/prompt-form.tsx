@@ -2,9 +2,7 @@
 
 import * as React from 'react'
 import Textarea from 'react-textarea-autosize'
-
 import { useActions, useUIState } from 'ai/rsc'
-
 import { UserMessage } from './events/message'
 import { type AI } from '@/lib/chat/actions'
 import { Button } from '@/components/ui/button'
@@ -38,8 +36,8 @@ export function PromptForm({
     }
   }, [])
 
-  const AddToInput = (value: string) => {
-    setInput(input + value);
+  const OnRecorded = (value: string) => {
+    setInput(value);
   }
 
   return (
@@ -88,7 +86,7 @@ export function PromptForm({
           </TooltipTrigger>
           <TooltipContent>New Chat</TooltipContent>
         </Tooltip>
-        <VoiceRecorder onRecorded={AddToInput} />
+        <VoiceRecorder onRecorded={OnRecorded} />
 
         <Textarea
           ref={inputRef}
