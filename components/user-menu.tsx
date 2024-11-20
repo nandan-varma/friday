@@ -9,6 +9,8 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { signOut } from '@/auth'
+import Link from 'next/link'
+import { Calendar1Icon, HomeIcon } from 'lucide-react'
 
 export interface UserMenuProps {
   user: Session['user']
@@ -31,6 +33,16 @@ export function UserMenu({ user }: UserMenuProps) {
             <span className="ml-2 hidden md:block">{user.email}</span>
           </Button>
         </DropdownMenuTrigger>
+        <Link href="/">
+          <Button variant="ghost" className="p-2">
+            <HomeIcon size={24} />
+          </Button>
+        </Link>
+        <Link href="/test">
+          <Button variant="ghost" className="p-2">
+            <Calendar1Icon size={24} />
+          </Button>
+        </Link>
         <DropdownMenuContent sideOffset={8} align="start" className="w-fit">
           <DropdownMenuItem className="flex-col items-start">
             <div className="text-xs text-zinc-500">{user.email}</div>

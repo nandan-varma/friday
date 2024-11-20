@@ -39,3 +39,29 @@ export interface User extends Record<string, any> {
   password: string
   salt: string
 }
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  description?: string;
+  color?: string;
+}
+
+export interface DragState {
+  startDate: Date | null;
+  endDate: Date | null;
+  isDragging: boolean;
+  draggedEventId?: string;
+}
+
+export type TimeSlot = {
+  hour: number;
+  minute: number;
+};
+
+export const TIME_SLOTS: TimeSlot[] = Array.from({ length: 24 * 2 }, (_, i) => ({
+  hour: Math.floor(i / 2),
+  minute: (i % 2) * 30,
+}));

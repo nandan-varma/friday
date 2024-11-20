@@ -38,7 +38,6 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <script defer data-domain="friday.nandanvarma.com" src="https://plausible.nandanvarma.com/js/script.js"></script>
       <body
         className={cn(
           'font-sans antialiased',
@@ -46,6 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           GeistMono.variable
         )}
       >
+        <script defer data-domain="friday.nandanvarma.com" src="https://plausible.nandanvarma.com/js/script.js"></script>
         <Toaster position="top-center" />
         <Providers
           attribute="class"
