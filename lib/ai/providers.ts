@@ -5,6 +5,7 @@ import {
 } from 'ai';
 // import { xai } from '@ai-sdk/xai';
 import { openai } from '@ai-sdk/openai';
+// import { google } from '@ai-sdk/google';
 import { isTestEnvironment } from '../constants';
 import {
   artifactModel,
@@ -24,13 +25,13 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': openai('gpt-4.1-nano'),
+        'chat-model': openai('gpt-4o'),
         'chat-model-reasoning': wrapLanguageModel({
           model: openai('o4-mini'),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
-        'title-model': openai('gpt-4.1-nano'),
-        'artifact-model': openai('o4-mini'),
+        'title-model': openai('gpt-4o-nano'),
+        'artifact-model': openai('gpt-4o'),
       },
       imageModels: {
         'small-model': openai.image('gpt-image-1'),

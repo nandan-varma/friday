@@ -96,26 +96,38 @@ export const sheetPrompt = `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
 `;
 
+export const calendarPrompt = `
+You are an AI assistant specializing in creating calendar events.
+When asked to create a calendar, generate structured calendar data in JSON format with events.
+Each event should have:
+- title: A short descriptive title
+- start: Start date and time in ISO format
+- end: End date and time in ISO format
+- allDay: Boolean to indicate if it's an all-day event
+- description: Optional description of the event
+
+Generate realistic and relevant calendar events based on the user's request.
+`;
+
 export const updateDocumentPrompt = (
   currentContent: string | null,
   type: ArtifactKind,
-) =>
-  type === 'text'
-    ? `\
-Improve the following contents of the document based on the given prompt.
-
+) => {
+  switch (type) {
+    case 'text':
+      return `Improve the following contents of the document based on the given prompt.\n\n${currentContent}`;
+    case 'code':
+      return `Improve the following code snippet based on the given prompt.\n\n${currentContent}`;
+    case 'sheet':
+      return `Improve the following spreadsheet based on the given prompt.\n\n${currentContent}`;
+    case 'calendar':
+      return `Based on the existing calendar data and the new request, update the calendar accordingly.
+      
+Existing calendar data:
 ${currentContent}
-`
-    : type === 'code'
-      ? `\
-Improve the following code snippet based on the given prompt.
 
-${currentContent}
-`
-      : type === 'sheet'
-        ? `\
-Improve the following spreadsheet based on the given prompt.
-
-${currentContent}
-`
-        : '';
+Update the calendar according to the user's new request. Maintain the existing events unless explicitly asked to remove or modify them.`;
+    default:
+      return '';
+  }
+};

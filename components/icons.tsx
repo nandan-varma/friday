@@ -1172,3 +1172,22 @@ export const WarningIcon = ({ size = 16 }: { size?: number }) => {
     </svg>
   );
 };
+
+export const CalendarIcon = ({ size = 16 }: { size?: number }) => {
+  return (
+    <svg
+      height={size}
+      strokeLinejoin="round"
+      viewBox="0 0 16 16"
+      width={size}
+      style={{ color: 'currentcolor' }}
+    >
+      <path
+        fillRule="evenodd"
+        clipRule="evenodd"
+        d="M2.5 1H13.5C14.0523 1 14.5 1.44772 14.5 2V14C14.5 14.5523 14.0523 15 13.5 15H2.5C1.94772 15 1.5 14.5523 1.5 14V2C1.5 1.44772 1.94772 1 2.5 1ZM2.5 2V4H13.5V2H12V3H4V2H2.5ZM12 6H4V7H12V6ZM12 9H4V10H12V9ZM12 12H4V13H12V12Z"
+        fill="currentColor"
+      ></path>
+    </svg>
+  );
+}
