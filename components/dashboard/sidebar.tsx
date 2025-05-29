@@ -105,7 +105,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
           <div className="flex h-16 items-center border-b px-4">
             <SidebarTrigger />
             <div className="ml-4 text-lg font-medium">
-              {routes.find((route) => route.href === pathname)?.label || "AI Calendar"}
+              {routes.find((route) => route.href === pathname)?.label || "Friday - AI Calendar"}
             </div>
           </div>
           <main className="container mx-auto max-w-7xl p-4 w-full">{children}</main>

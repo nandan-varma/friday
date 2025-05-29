@@ -14,7 +14,7 @@ export default async function DashboardPage() {
   }
 
   // Get upcoming events
-  const upcomingEvents = await EventService.getUpcomingEvents(user.id, 5)
+  const upcomingEvents = await EventService.getAllUpcomingEvents(user.id, 5)
 
   // Format events for the calendar component
   const formattedEvents = upcomingEvents.map((event) => ({

@@ -70,7 +70,7 @@ export default function LoginPage() {
           <div className="flex items-center justify-center mb-4">
             <Calendar className="h-10 w-10 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">AI Calendar</CardTitle>
+          <CardTitle className="text-2xl text-center">Friday - AI Calendar</CardTitle>
           <CardDescription className="text-center">Enter your email and password to sign in</CardDescription>
         </CardHeader>
         <CardContent>

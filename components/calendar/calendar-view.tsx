@@ -164,7 +164,7 @@ export function CalendarView({ events, view }: CalendarViewProps) {
                         className={cn(
                           "text-xs p-1 rounded truncate cursor-pointer transition-colors",
                           event.source === 'google' 
-                            ? "bg-blue-100 text-blue-700 hover:bg-blue-200" 
+                            ? "text-blue-700 hover:bg-blue-200" 
                             : "bg-primary/10 text-primary hover:bg-primary/20"
                         )}
                         title={event.title}
@@ -209,7 +209,7 @@ export function CalendarView({ events, view }: CalendarViewProps) {
                     className={cn(
                       "p-3 rounded-lg border",
                       event.source === 'google'
-                        ? "bg-blue-50 border-blue-200"
+                        ? "border-blue-200"
                         : "bg-primary/10 border-primary/20"
                     )}
                   >
@@ -247,7 +247,7 @@ export function CalendarView({ events, view }: CalendarViewProps) {
                           className={cn(
                             "p-3 rounded-lg border",
                             event.source === 'google'
-                              ? "bg-blue-50 border-blue-200"
+                              ? "border-blue-200"
                               : "bg-primary/10 border-primary/20"
                           )}
                         >
@@ -345,7 +345,7 @@ export function CalendarView({ events, view }: CalendarViewProps) {
                             className={cn(
                               "text-xs p-2 rounded cursor-pointer transition-colors",
                               event.source === 'google'
-                                ? "bg-blue-100 text-blue-700 hover:bg-blue-200"
+                                ? "text-blue-700 hover:bg-blue-200"
                                 : "bg-primary/10 text-primary hover:bg-primary/20"
                             )}
                           >
