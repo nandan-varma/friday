@@ -5,19 +5,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default async function HomePage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted animate-in fade-in duration-1000">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/50 to-background">
       {/* Header */}
-      <header className="container mx-auto px-4 py-6 animate-in slide-in-from-top duration-700">
+      <header className="container mx-auto px-4 py-6">
         <nav className="flex items-center justify-between">
-          <div className="flex items-center gap-2 hover:scale-105 transition-transform duration-300">
+          <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
             <Calendar className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">Friday</span>
+            <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">Friday</span>
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild className="hover:scale-105 transition-transform duration-300">
+            <Button variant="ghost" asChild className="transition-all duration-200 hover:scale-105">
               <Link href="/login">Sign In</Link>
             </Button>
-            <Button asChild className="hover:scale-105 transition-all duration-300 hover:shadow-lg">
+            <Button asChild className="transition-all duration-200 hover:scale-105 hover:shadow-lg">
               <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
@@ -25,92 +25,108 @@ export default async function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center animate-in fade-in slide-in-from-bottom duration-1000 delay-300">
-        <h1 className="text-5xl font-bold mb-6 hover:scale-105 transition-transform duration-500">Your AI-Powered Calendar Assistant</h1>
-        <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto animate-in fade-in duration-1000 delay-500">
-          Schedule smarter, not harder. Let AI handle your calendar management with natural language input and
-          intelligent suggestions.
-        </p>
-        <div className="flex gap-4 justify-center animate-in fade-in slide-in-from-bottom duration-1000 delay-700">
-          <Button size="lg" asChild className="hover:scale-110 hover:shadow-xl">
-            <Link href="/dashboard">Get Started</Link>
-          </Button>
+      <section className="container mx-auto px-4 py-20 text-center">
+        <div className="opacity-0 animate-fade-in-up">
+          <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground via-primary to-foreground bg-clip-text text-transparent leading-tight">
+            Your AI-Powered
+            <br />
+            Calendar Assistant
+          </h1>
+        </div>
+        <div className="opacity-0 animate-fade-in-up animation-delay-300">
+          <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
+            Transform your scheduling experience with intelligent automation. Create events naturally, 
+            resolve conflicts instantly, and let AI optimize your time.
+          </p>
+        </div>
+        <div className="opacity-0 animate-fade-in-up animation-delay-600">
+          <div className="flex justify-center">
+            <Button size="lg" variant="outline" asChild className="transition-all duration-200 hover:scale-105">
+              <Link href="/dashboard">Get Started</Link>
+            </Button>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" className="container mx-auto px-4 py-20 animate-in fade-in duration-1000 delay-1000">
-        <h2 className="text-3xl font-bold text-center mb-12 hover:scale-105 transition-transform duration-500">Features that save you time</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group">
+      <section id="features" className="container mx-auto px-4 py-20">
+        <div className="opacity-0 animate-fade-in-up animation-delay-900">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
+            Features that <span className="bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">save you time</span>
+          </h2>
+          <p className="text-lg text-muted-foreground text-center mb-16 max-w-2xl mx-auto">
+            Discover how AI can revolutionize your scheduling workflow
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-1200 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Bot className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Natural Language Input</CardTitle>
+              <Bot className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Natural Language Input</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                Create events by typing naturally. "Lunch with Sarah next Tuesday at 1pm" - and we'll handle the rest.
+              <CardDescription className="text-base leading-relaxed">
+                Simply type "Coffee with Alex tomorrow at 3pm" and watch as your calendar updates automatically. No forms, no dropdowns—just natural conversation.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group delay-100">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-1400 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Zap className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Smart Scheduling</CardTitle>
+              <Zap className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Smart Scheduling</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                AI suggests optimal meeting times based on your availability and preferences. No more back-and-forth
-                emails.
+              <CardDescription className="text-base leading-relaxed">
+                AI analyzes your schedule patterns and preferences to suggest optimal meeting times. End the email tennis and find time that works for everyone.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group delay-200">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-1600 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Clock className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Intelligent Reminders</CardTitle>
+              <Clock className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Intelligent Reminders</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                Get reminders when you need them. AI learns your habits and sends notifications at the perfect time.
+              <CardDescription className="text-base leading-relaxed">
+                Context-aware notifications that adapt to your habits. Get reminded to leave early for traffic, or prep time for important meetings.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group delay-300">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-1800 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Users className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Conflict Resolution</CardTitle>
+              <Users className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Conflict Resolution</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                Double-booked? AI automatically detects conflicts and suggests alternative times that work for everyone.
+              <CardDescription className="text-base leading-relaxed">
+                Double-booked meetings become a thing of the past. AI detects conflicts instantly and suggests alternative times that work for all participants.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group delay-400">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-2000 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Calendar className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Multi-Calendar Sync</CardTitle>
+              <Calendar className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Universal Sync</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                Connect Google Calendar, Outlook, and more. Keep all your calendars in sync automatically.
+              <CardDescription className="text-base leading-relaxed">
+                Connect Google Calendar, Outlook, Apple Calendar, and more. One unified view of all your commitments across every platform you use.
               </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="hover:scale-105 hover:shadow-xl transition-all duration-300 hover:-translate-y-2 group delay-500">
+          <Card className="opacity-0 animate-fade-in-up animation-delay-2200 border-0 shadow-lg hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group bg-gradient-to-br from-card to-card/50">
             <CardHeader>
-              <Shield className="h-10 w-10 text-primary mb-2 group-hover:scale-110 transition-transform duration-300" />
-              <CardTitle>Privacy First</CardTitle>
+              <Shield className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-300" />
+              <CardTitle className="text-xl">Privacy First</CardTitle>
             </CardHeader>
             <CardContent>
-              <CardDescription>
-                Your data is encrypted and secure. We never share your calendar information with third parties.
+              <CardDescription className="text-base leading-relaxed">
+                End-to-end encryption keeps your data secure. We process everything locally when possible and never share your information with third parties.
               </CardDescription>
             </CardContent>
           </Card>
@@ -118,36 +134,47 @@ export default async function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-20 text-center animate-in fade-in slide-in-from-bottom duration-1000 delay-1200">
-        <Card className="max-w-2xl mx-auto hover:scale-105 hover:shadow-2xl transition-all duration-500 group">
-          <CardHeader>
-            <CardTitle className="text-3xl group-hover:scale-105 transition-transform duration-300">Ready to get started?</CardTitle>
-            <CardDescription className="text-lg">
-              Join thousands of professionals who've simplified their scheduling with AI Calendar.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button size="lg" asChild className="hover:scale-110 hover:shadow-xl">
-              <Link href="/dashboard">Get Started</Link>
-            </Button>
-          </CardContent>
-        </Card>
+      <section className="container mx-auto px-4 py-20 text-center">
+        <div className="opacity-0 animate-fade-in-up animation-delay-2400">
+          <Card className="max-w-3xl mx-auto border-0 shadow-xl transition-all duration-300 hover:shadow-2xl group bg-gradient-to-br from-card via-card to-primary/5">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-3xl md:text-4xl group-hover:scale-105 transition-transform duration-300 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+                Ready to get started?
+              </CardTitle>
+              <CardDescription className="text-lg md:text-xl mt-4 leading-relaxed">
+                Experience the future of calendar management with AI-powered scheduling.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0 pb-8">
+              <div className="flex justify-center">
+                <Button size="lg" variant="outline" asChild className="transition-all duration-200 hover:scale-105">
+                  <Link href="/dashboard">Get Started</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 border-t animate-in fade-in duration-1000 delay-1500">
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">© 2024 Friday - AI Calendar. All rights reserved.</p>
-          <div className="flex gap-4">
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 hover:scale-105 transform">
-              Privacy
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 hover:scale-105 transform">
-              Terms
-            </Link>
-            <Link href="#" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-300 hover:scale-105 transform">
-              Contact
-            </Link>
+      <footer className="container mx-auto px-4 py-8 border-t border-border/50">
+        <div className="opacity-0 animate-fade-in animation-delay-2600">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              <p className="text-sm text-muted-foreground">© 2025 Friday - AI Calendar. All rights reserved.</p>
+            </div>
+            <div className="flex gap-6">
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:scale-105 transform">
+                Privacy Policy
+              </Link>
+              <Link href="/service" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:scale-105 transform">
+                Terms of Service
+              </Link>
+              <Link href="mailto:contact@nandan.fyi" className="text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 hover:scale-105 transform">
+                Contact Us
+              </Link>
+            </div>
           </div>
         </div>
       </footer>

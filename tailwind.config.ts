@@ -83,11 +83,44 @@ const config: Config = {
   				to: {
   					height: '0'
   				}
+  			},
+  			'fade-in-up': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(20px)'
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translateY(0)'
+  				}
+  			},
+  			'fade-in': {
+  				from: {
+  					opacity: '0'
+  				},
+  				to: {
+  					opacity: '1'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
+  			'fade-in': 'fade-in 0.4s ease-out forwards'
+  		},
+  		animationDelay: {
+  			'300': '300ms',
+  			'600': '600ms',
+  			'900': '900ms',
+  			'1200': '1200ms',
+  			'1400': '1400ms',
+  			'1600': '1600ms',
+  			'1800': '1800ms',
+  			'2000': '2000ms',
+  			'2200': '2200ms',
+  			'2400': '2400ms',
+  			'2600': '2600ms'
   		}
   	}
   },
