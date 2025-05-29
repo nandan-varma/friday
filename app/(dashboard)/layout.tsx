@@ -14,5 +14,9 @@ export default async function DashboardLayout({
     redirect("/login")
   }
 
-  return <DashboardSidebar>{children}</DashboardSidebar>
+  return (
+    <div className="flex h-screen w-full">
+      <DashboardSidebar>{children}</DashboardSidebar>
+    </div>
+  )
 }

@@ -55,26 +55,30 @@ export function CalendarView({ events, view }: CalendarViewProps) {
     setCurrentDate(new Date())
   }
 
+  const renderHeader = (title: string) => (
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-h-[60px]">
+      <h2 className="text-xl sm:text-2xl font-bold break-words flex-1 min-w-0">{title}</h2>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Button variant="outline" size="sm" onClick={handlePrevious}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleToday}>
+          Today
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleNext}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  )
+
   if (view === "day") {
     return (
-      <div className="w-full space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-xl sm:text-2xl font-bold break-words">{format(currentDate, "EEEE, MMMM d, yyyy")}</h2>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handlePrevious}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleToday}>
-              Today
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="w-full max-w-full space-y-4">
+        {renderHeader(format(currentDate, "EEEE, MMMM d, yyyy"))}
 
         <div className="w-full overflow-x-auto">
-          <div className="min-w-[500px] grid grid-cols-1 gap-2">
+          <div className="min-w-[700px] grid grid-cols-1 gap-2">
             {Array.from({ length: 24 }).map((_, hour) => {
               const hourEvents = events.filter((event) => {
                 const startHour = new Date(parseISO(event.startTime)).getHours()
@@ -111,23 +115,8 @@ export function CalendarView({ events, view }: CalendarViewProps) {
     const days = eachDayOfInterval({ start: weekStart, end: weekEnd })
 
     return (
-      <div className="w-full space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h2 className="text-xl sm:text-2xl font-bold break-words">
-            {format(weekStart, "MMMM d")} - {format(weekEnd, "MMMM d, yyyy")}
-          </h2>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={handlePrevious}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleToday}>
-              Today
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleNext}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+      <div className="w-full max-w-full space-y-4">
+        {renderHeader(`${format(weekStart, "MMMM d")} - ${format(weekEnd, "MMMM d, yyyy")}`)}
 
         <div className="w-full overflow-x-auto">
           <div className="min-w-[700px] grid grid-cols-7 gap-2 sm:gap-4">
@@ -167,15 +156,15 @@ export function CalendarView({ events, view }: CalendarViewProps) {
 
   // Default to agenda view
   return (
-    <div className="w-full space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <h2 className="text-xl sm:text-2xl font-bold">Upcoming Events</h2>
-        <Button variant="outline" size="sm" onClick={handleToday} className="w-full sm:w-auto">
+    <div className="w-full max-w-full space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 min-h-[60px]">
+        <h2 className="text-xl sm:text-2xl font-bold flex-1 min-w-0">Upcoming Events</h2>
+        <Button variant="outline" size="sm" onClick={handleToday} className="w-full sm:w-auto flex-shrink-0">
           Today
         </Button>
       </div>
 
-      <div className="w-full space-y-4">
+      <div className="w-full space-y-4 min-h-[400px]">
         {events.length > 0 ? (
           events
             .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
