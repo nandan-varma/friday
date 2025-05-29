@@ -57,3 +57,6 @@ tooltip.tsx
 use-mobile.tsx
 use-toast.ts
 This will help maintain consistency across the application.
+
+Always create skeleton component in the same file of components
+use suspense loaders for components that fetch data or take time to render. This improves user experience by providing visual feedback during loading states.

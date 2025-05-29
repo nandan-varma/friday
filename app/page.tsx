@@ -3,7 +3,7 @@ import { Calendar, Bot, Clock, Users, Zap, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted animate-in fade-in duration-1000">
       {/* Header */}

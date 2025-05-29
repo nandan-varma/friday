@@ -1,35 +1,17 @@
-import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
 import { openai } from "@ai-sdk/openai"
 import { generateObject } from "ai"
-import { eq, and, gte, lte } from "drizzle-orm"
 import { z } from "zod"
 import { GoogleIntegrationService, GoogleCalendarEvent } from "./googleIntegrationService"
+import { 
+    LocalIntegrationService, 
+    LocalEvent, 
+    CreateEventData, 
+    UpdateEventData, 
+    EventFilters 
+} from "./localIntegrationService"
 
-export interface CreateEventData {
-    title: string
-    description?: string | null
-    location?: string | null
-    startTime: Date
-    endTime: Date
-    isAllDay?: boolean
-    recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly"
-}
-
-export interface UpdateEventData {
-    title?: string
-    description?: string | null
-    location?: string | null
-    startTime?: Date
-    endTime?: Date
-    isAllDay?: boolean
-    recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly"
-}
-
-export interface EventFilters {
-    startDate?: string | Date
-    endDate?: string | Date
-}
+// Re-export types from local integration service for backward compatibility
+export type { CreateEventData, UpdateEventData, EventFilters } from "./localIntegrationService"
 
 export type EventOrigin = "local" | "google"
 
@@ -61,195 +43,71 @@ export interface CombinedEventFilters extends EventFilters {
 }
 
 export class EventService {
+    // ============================================
+    // LOCAL EVENT OPERATIONS (Delegated to LocalIntegrationService)
+    // ============================================
+
     /**
-     * Get all events for a user with optional date filtering
+     * Get all local events for a user with optional date filtering
      */
     static async getEvents(userId: number, filters?: EventFilters) {
-        try {
-            const conditions = [eq(events.userId, userId)]
-
-            if (filters?.startDate) {
-                conditions.push(gte(events.startTime, new Date(filters.startDate)))
-            }
-
-            if (filters?.endDate) {
-                conditions.push(lte(events.endTime, new Date(filters.endDate)))
-            }
-
-            const userEvents = await db
-                .select()
-                .from(events)
-                .where(and(...conditions))
-                .orderBy(events.startTime)
-
-            return userEvents
-        } catch (error) {
-            console.error("Error fetching events:", error)
-            throw new Error("Failed to fetch events")
-        }
+        return LocalIntegrationService.getEvents(userId, filters)
     }
 
     /**
-     * Get a single event by ID for a specific user
+     * Get a single local event by ID for a specific user
      */
     static async getEventById(eventId: number, userId: number) {
-        try {
-            const event = await db.query.events.findFirst({
-                where: and(eq(events.id, eventId), eq(events.userId, userId)),
-            })
-
-            if (!event) {
-                throw new Error("Event not found")
-            }
-
-            return event
-        } catch (error) {
-            console.error("Error fetching event:", error)
-            throw error
-        }
+        return LocalIntegrationService.getEventById(eventId, userId)
     }
 
     /**
-     * Create a new event for a user
+     * Create a new local event for a user
      */
     static async createEvent(userId: number, eventData: CreateEventData) {
-        try {
-            const [newEvent] = await db
-                .insert(events)
-                .values({
-                    userId,
-                    title: eventData.title,
-                    description: eventData.description || null,
-                    location: eventData.location || null,
-                    startTime: new Date(eventData.startTime),
-                    endTime: new Date(eventData.endTime),
-                    isAllDay: eventData.isAllDay || false,
-                    recurrence: eventData.recurrence || "none",
-                })
-                .returning()
-
-            return newEvent
-        } catch (error) {
-            console.error("Error creating event:", error)
-            throw new Error("Failed to create event")
-        }
+        return LocalIntegrationService.createEvent(userId, eventData)
     }
 
     /**
-     * Update an existing event
+     * Update an existing local event
      */
     static async updateEvent(eventId: number, userId: number, eventData: UpdateEventData) {
-        try {
-            const updateData: any = {
-                ...eventData,
-                updatedAt: new Date(),
-            }
-
-            // Convert dates if provided
-            if (eventData.startTime) {
-                updateData.startTime = new Date(eventData.startTime)
-            }
-            if (eventData.endTime) {
-                updateData.endTime = new Date(eventData.endTime)
-            }
-
-            const [updatedEvent] = await db
-                .update(events)
-                .set(updateData)
-                .where(and(eq(events.id, eventId), eq(events.userId, userId)))
-                .returning()
-
-            if (!updatedEvent) {
-                throw new Error("Event not found")
-            }
-
-            return updatedEvent
-        } catch (error) {
-            console.error("Error updating event:", error)
-            throw error
-        }
+        return LocalIntegrationService.updateEvent(eventId, userId, eventData)
     }
 
     /**
-     * Delete an event
+     * Delete a local event
      */
     static async deleteEvent(eventId: number, userId: number) {
-        try {
-            const [deletedEvent] = await db
-                .delete(events)
-                .where(and(eq(events.id, eventId), eq(events.userId, userId)))
-                .returning()
-
-            if (!deletedEvent) {
-                throw new Error("Event not found")
-            }
-
-            return deletedEvent
-        } catch (error) {
-            console.error("Error deleting event:", error)
-            throw error
-        }
+        return LocalIntegrationService.deleteEvent(eventId, userId)
     }
 
     /**
-     * Get events within a specific date range
+     * Get local events within a specific date range
      */
     static async getEventsInRange(userId: number, startDate: Date, endDate: Date) {
-        try {
-            return await this.getEvents(userId, { startDate, endDate })
-        } catch (error) {
-            console.error("Error fetching events in range:", error)
-            throw new Error("Failed to fetch events in date range")
-        }
+        return LocalIntegrationService.getEventsInRange(userId, startDate, endDate)
     }
 
     /**
-     * Get today's events for a user
+     * Get today's local events for a user
      */
     static async getTodayEvents(userId: number) {
-        try {
-            const today = new Date()
-            const startOfDay = new Date(today.setHours(0, 0, 0, 0))
-            const endOfDay = new Date(today.setHours(23, 59, 59, 999))
-
-            return await this.getEventsInRange(userId, startOfDay, endOfDay)
-        } catch (error) {
-            console.error("Error fetching today's events:", error)
-            throw new Error("Failed to fetch today's events")
-        }
+        return LocalIntegrationService.getTodayEvents(userId)
     }
 
     /**
-     * Get upcoming events for a user (next 7 days)
+     * Get upcoming local events for a user (next 7 days)
      */
     static async getUpcomingEvents(userId: number, days: number = 7, limit?: number) {
-        try {
-            const now = new Date()
-            const futureDate = new Date()
-            futureDate.setDate(now.getDate() + days)
-
-            const conditions = [
-                eq(events.userId, userId),
-                gte(events.startTime, now),
-                lte(events.startTime, futureDate)
-            ]
-
-            const query = db
-                .select()
-                .from(events)
-                .where(and(...conditions))
-                .orderBy(events.startTime)
-
-            if (limit) {
-                return await query.limit(limit)
-            }
-
-            return await query
-        } catch (error) {
-            console.error("Error fetching upcoming events:", error)
-            throw new Error("Failed to fetch upcoming events")
-        }
+        return LocalIntegrationService.getUpcomingEvents(userId, days, limit)
     }
+
+    // ============================================
+    // AI-POWERED EVENT CREATION
+    // ============================================    // ============================================
+    // AI-POWERED EVENT CREATION
+    // ============================================
 
     /**
      * Create event from natural language input
@@ -284,6 +142,10 @@ export class EventService {
             throw new Error("Failed to create event from natural language")
         }
     }
+
+    // ============================================
+    // UNIFIED EVENT FORMATTING
+    // ============================================
 
     /**
      * Format local database event to unified event format
@@ -338,6 +200,10 @@ export class EventService {
         }
     }
 
+    // ============================================
+    // COMPREHENSIVE EVENT OPERATIONS (Local + Google)
+    // ============================================
+
     /**
      * Get all events from both local and Google Calendar with unified format
      */
@@ -352,7 +218,7 @@ export class EventService {
 
             // Fetch local events if enabled
             if (includeLocal) {
-                const localEvents = await this.getEvents(userId, filters)
+                const localEvents = await LocalIntegrationService.getEvents(userId, filters)
                 const formattedLocalEvents = localEvents.map(event => this.formatLocalEvent(event))
                 allEvents.push(...formattedLocalEvents)
             }
@@ -469,7 +335,7 @@ export class EventService {
     ): Promise<UnifiedEvent[]> {
         try {
             if (origin === "local") {
-                const localEvents = await this.getEvents(userId, filters)
+                const localEvents = await LocalIntegrationService.getEvents(userId, filters)
                 return localEvents.map(event => this.formatLocalEvent(event))
             } else if (origin === "google") {
                 const hasIntegration = await GoogleIntegrationService.hasValidIntegration(userId)
@@ -548,6 +414,137 @@ export class EventService {
         } catch (error) {
             console.error("Error getting event statistics:", error)
             throw new Error("Failed to get event statistics")
+        }
+    }
+
+    // ============================================
+    // GOOGLE CALENDAR INTEGRATION METHODS
+    // ============================================
+
+    /**
+     * Create a new event in Google Calendar
+     */
+    static async createGoogleEvent(
+        userId: number,
+        eventData: CreateEventData,
+        calendarId?: string
+    ): Promise<GoogleCalendarEvent> {
+        try {
+            const googleEvent: Partial<GoogleCalendarEvent> = {
+                summary: eventData.title,
+                description: eventData.description || undefined,
+                location: eventData.location || undefined,
+                start: eventData.isAllDay 
+                    ? { date: eventData.startTime.toISOString().split('T')[0] }
+                    : { dateTime: eventData.startTime.toISOString() },
+                end: eventData.isAllDay 
+                    ? { date: eventData.endTime.toISOString().split('T')[0] }
+                    : { dateTime: eventData.endTime.toISOString() },
+            }
+
+            return await GoogleIntegrationService.createCalendarEvent(userId, googleEvent, calendarId)
+        } catch (error) {
+            console.error("Error creating Google Calendar event:", error)
+            throw new Error("Failed to create Google Calendar event")
+        }
+    }
+
+    /**
+     * Update an existing event in Google Calendar
+     */
+    static async updateGoogleEvent(
+        userId: number,
+        eventId: string,
+        eventData: UpdateEventData,
+        calendarId?: string
+    ): Promise<GoogleCalendarEvent> {
+        try {
+            const googleEvent: Partial<GoogleCalendarEvent> = {}
+
+            if (eventData.title !== undefined) googleEvent.summary = eventData.title
+            if (eventData.description !== undefined) googleEvent.description = eventData.description || undefined
+            if (eventData.location !== undefined) googleEvent.location = eventData.location || undefined
+            
+            if (eventData.startTime) {
+                googleEvent.start = eventData.isAllDay 
+                    ? { date: eventData.startTime.toISOString().split('T')[0] }
+                    : { dateTime: eventData.startTime.toISOString() }
+            }
+            
+            if (eventData.endTime) {
+                googleEvent.end = eventData.isAllDay 
+                    ? { date: eventData.endTime.toISOString().split('T')[0] }
+                    : { dateTime: eventData.endTime.toISOString() }
+            }
+
+            return await GoogleIntegrationService.updateCalendarEvent(userId, eventId, googleEvent, calendarId)
+        } catch (error) {
+            console.error("Error updating Google Calendar event:", error)
+            throw new Error("Failed to update Google Calendar event")
+        }
+    }
+
+    /**
+     * Delete an event from Google Calendar
+     */
+    static async deleteGoogleEvent(
+        userId: number,
+        eventId: string,
+        calendarId?: string
+    ): Promise<void> {
+        try {
+            await GoogleIntegrationService.deleteCalendarEvent(userId, eventId, calendarId)
+        } catch (error) {
+            console.error("Error deleting Google Calendar event:", error)
+            throw new Error("Failed to delete Google Calendar event")
+        }
+    }
+
+    /**
+     * Get list of user's Google calendars
+     */
+    static async getGoogleCalendars(userId: number) {
+        try {
+            return await GoogleIntegrationService.getCalendarList(userId)
+        } catch (error) {
+            console.error("Error fetching Google Calendar list:", error)
+            throw new Error("Failed to fetch Google Calendar list")
+        }
+    }
+
+    // ============================================
+    // INTEGRATION STATUS METHODS
+    // ============================================
+
+    /**
+     * Check if user has valid Google Calendar integration
+     */
+    static async hasGoogleIntegration(userId: number): Promise<boolean> {
+        return GoogleIntegrationService.hasValidIntegration(userId)
+    }
+
+    /**
+     * Get comprehensive integration status
+     */
+    static async getIntegrationStatus(userId: number): Promise<{
+        hasLocalEvents: boolean
+        hasGoogleIntegration: boolean
+        totalIntegrations: number
+    }> {
+        try {
+            const [hasLocalEvents, hasGoogleIntegration] = await Promise.all([
+                LocalIntegrationService.hasEvents(userId),
+                GoogleIntegrationService.hasValidIntegration(userId)
+            ])
+
+            return {
+                hasLocalEvents,
+                hasGoogleIntegration,
+                totalIntegrations: (hasLocalEvents ? 1 : 0) + (hasGoogleIntegration ? 1 : 0)
+            }
+        } catch (error) {
+            console.error("Error getting integration status:", error)
+            throw new Error("Failed to get integration status")
         }
     }
 }

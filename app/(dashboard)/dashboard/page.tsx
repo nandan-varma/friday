@@ -1,10 +1,10 @@
 import { getUserFromCookie } from "@/lib/auth"
-import { EventService } from "@/services/eventService"
-import { CalendarView } from "@/components/calendar/calendar-view"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Plus, CalendarIcon, MessageSquare } from "lucide-react"
 import Link from "next/link"
+import { Suspense } from "react"
+import { UpcomingEvents, UpcomingEventsSkeleton } from "@/components/dashboard/upcoming-events"
 
 export default async function DashboardPage() {
   const user = await getUserFromCookie()
@@ -12,18 +12,6 @@ export default async function DashboardPage() {
   if (!user) {
     return null
   }
-
-  // Get upcoming events
-  const upcomingEvents = await EventService.getAllUpcomingEvents(user.id, 5)
-
-  // Format events for the calendar component
-  const formattedEvents = upcomingEvents.map((event) => ({
-    id: event.id.toString(),
-    title: event.title,
-    startTime: event.startTime.toISOString(),
-    endTime: event.endTime.toISOString(),
-    isAllDay: event.isAllDay ?? false,
-  }))
 
   return (
     <div className="space-y-6">
@@ -43,7 +31,9 @@ export default async function DashboardPage() {
             <CardDescription>Your schedule for the next few days</CardDescription>
           </CardHeader>
           <CardContent>
-            <CalendarView events={formattedEvents} view="agenda" />
+            <Suspense fallback={<UpcomingEventsSkeleton />}>
+              <UpcomingEvents />
+            </Suspense>
           </CardContent>
         </Card>
 

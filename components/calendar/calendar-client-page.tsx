@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { CalendarView } from "./calendar-view"
+import { type CalendarEvent } from "./views"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
@@ -9,22 +11,12 @@ import { Plus, Calendar, List, Grid3X3, LayoutGrid } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
-type Event = {
-  id: string
-  title: string
-  startTime: string
-  endTime: string
-  isAllDay: boolean
-  description: string | null
-  location: string | null
-  source?: 'local' | 'google' // Add source field
-}
-
 type CalendarClientPageProps = {
-  events: Event[]
+  events: CalendarEvent[]
 }
 
 export function CalendarClientPage({ events }: CalendarClientPageProps) {
+  const router = useRouter()
   const [currentView, setCurrentView] = useState<"day" | "week" | "month" | "agenda">("week")
   
   const viewOptions = [
@@ -33,6 +25,22 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
     { value: "month", label: "Month", icon: Grid3X3 },
     { value: "agenda", label: "Agenda", icon: List },
   ] as const
+
+  const handleEventClick = (event: CalendarEvent) => {
+    // Navigate to event details or open edit modal
+    console.log("Event clicked:", event)
+    // For now, just log the event. Later we can implement event editing
+  }
+
+  const handleCreateEvent = (date: Date, hour?: number) => {
+    // Navigate to create event page with pre-filled date/time
+    const searchParams = new URLSearchParams()
+    searchParams.set('date', date.toISOString())
+    if (hour !== undefined) {
+      searchParams.set('hour', hour.toString())
+    }
+    router.push(`/events/new?${searchParams.toString()}`)
+  }
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 p-4 md:p-6">
@@ -102,11 +110,14 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
             </div>
           </div>
         </div>
-      </Card>
-
-      {/* Calendar View */}
+      </Card>      {/* Calendar View */}
       <div className="bg-background">
-        <CalendarView events={events} view={currentView} />
+        <CalendarView 
+          events={events} 
+          view={currentView}
+          onEventClick={handleEventClick}
+          onCreateEvent={handleCreateEvent}
+        />
       </div>
     </div>
   )
