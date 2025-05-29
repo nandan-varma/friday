@@ -95,7 +95,7 @@ export default function SearchPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold mb-6">Search</h1>
+        <h1 className="text-3xl font-bold mb-6">Search ( not complete - for illustrative purposes )</h1>
 
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative flex-1">

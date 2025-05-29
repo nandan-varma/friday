@@ -70,7 +70,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
           <SidebarHeader className="flex flex-col items-center justify-center p-4">
             <Link href="/dashboard" className="flex items-center gap-2">
               <Calendar className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">AI Calendar</span>
+              <span className="text-xl font-bold">Friday</span>
             </Link>
           </SidebarHeader>
           <SidebarContent>

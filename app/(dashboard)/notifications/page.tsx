@@ -94,7 +94,7 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Notifications</h1>
+        <h1 className="text-3xl font-bold">Notifications ( not complete - for illustrative purposes )</h1>
         <Button variant="outline" onClick={markAllAsRead}>
           Mark all as read
         </Button>

@@ -1,16 +1,25 @@
+/**
+ * Google Calendar Integration
+ * 
+ * This module handles Google Calendar API integration using OAuth2.
+ * 
+ * Environment Variables Required:
+ * - GOOGLE_CREDENTIALS: JSON string containing Google OAuth2 client credentials
+ * - GOOGLE_REFRESH_TOKEN: Refresh token for authenticated user (obtained after OAuth flow)
+ * - GOOGLE_REDIRECT_URI: OAuth2 redirect URI (optional, defaults to localhost:3000)
+ * 
+ * Note: This implementation does NOT write to any files. All credentials are managed 
+ * through environment variables only.
+ */
+
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
-import fs from 'fs/promises';
-import path from 'path';
 
-// If modifying these scopes, delete token.json.
+// OAuth2 scopes for Google Calendar API
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly',
   'https://www.googleapis.com/auth/calendar.events'
 ];
-
-// The file token.json stores the user's access and refresh tokens
-const TOKEN_PATH = path.join(process.cwd(), 'token.json');
 
 export interface GoogleCalendarEvent {
   id?: string;
@@ -33,59 +42,9 @@ export interface GoogleCalendarEvent {
 }
 
 /**
- * Reads previously authorized credentials from the save file.
+ * Create OAuth2 client with credentials from environment
  */
-async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
-  try {
-    const content = await fs.readFile(TOKEN_PATH, 'utf8');
-    const credentials = JSON.parse(content);
-    return google.auth.fromJSON(credentials) as OAuth2Client;
-  } catch (err) {
-    return null;
-  }
-}
-
-/**
- * Serializes credentials to a file compatible with GoogleAuth.fromJSON.
- */
-async function saveCredentials(client: OAuth2Client): Promise<void> {
-  try {
-    // Get credentials from environment variable instead of file
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
-    const key = credentials.installed || credentials.web;
-    
-    if (!key || !key.client_id || !key.client_secret) {
-      throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS');
-    }
-    
-    const payload = JSON.stringify({
-      type: 'authorized_user',
-      client_id: key.client_id,
-      client_secret: key.client_secret,
-      refresh_token: client.credentials.refresh_token,
-    });
-    await fs.writeFile(TOKEN_PATH, payload);
-  } catch (err) {
-    console.error('Error saving credentials:', err);
-    throw err;
-  }
-}
-
-/**
- * Load or request authorization to call APIs.
- */
-export async function authorize(): Promise<OAuth2Client | null> {
-  let client = await loadSavedCredentialsIfExist();
-  if (client) {
-    return client;
-  }
-  return null; // Return null if no saved credentials, OAuth flow should be handled by frontend
-}
-
-/**
- * Create OAuth2 client with credentials
- */
-export function createOAuth2Client(): OAuth2Client {
+function getCredentialsFromEnv() {
   try {
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
     const key = credentials.installed || credentials.web;
@@ -94,12 +53,49 @@ export function createOAuth2Client(): OAuth2Client {
       throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS. Make sure it contains valid Google OAuth2 credentials.');
     }
     
-    const { client_secret, client_id } = key;
+    return key;
+  } catch (error) {
+    console.error('Error parsing Google credentials from environment:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create OAuth2 client with refresh token from environment
+ */
+export function createAuthenticatedOAuth2Client(): OAuth2Client | null {
+  try {
+    const key = getCredentialsFromEnv();
+    const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
     
-    // Use the callback URL from environment or default to localhost
+    if (!refreshToken) {
+      console.warn('No GOOGLE_REFRESH_TOKEN found in environment');
+      return null;
+    }
+    
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
+    const oAuth2Client = new google.auth.OAuth2(key.client_id, key.client_secret, redirectUri);
+    
+    oAuth2Client.setCredentials({
+      refresh_token: refreshToken,
+    });
+    
+    return oAuth2Client;
+  } catch (error) {
+    console.error('Error creating authenticated OAuth2 client:', error);
+    return null;
+  }
+}
+
+/**
+ * Create OAuth2 client for initial authorization flow
+ */
+export function createOAuth2Client(): OAuth2Client {
+  try {
+    const key = getCredentialsFromEnv();
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
     
-    return new google.auth.OAuth2(client_id, client_secret, redirectUri);
+    return new google.auth.OAuth2(key.client_id, key.client_secret, redirectUri);
   } catch (error) {
     console.error('Error creating OAuth2 client:', error);
     throw error;
@@ -120,23 +116,35 @@ export function getAuthUrl(): string {
 
 /**
  * Exchange authorization code for tokens
+ * Note: This will return the tokens but won't save them to file.
+ * You should store the refresh_token in your environment variables.
  */
-export async function getTokens(code: string): Promise<OAuth2Client> {
+export async function getTokens(code: string): Promise<{ client: OAuth2Client, tokens: any }> {
   const oAuth2Client = createOAuth2Client();
   const { tokens } = await oAuth2Client.getToken(code);
   oAuth2Client.setCredentials(tokens);
   
-  // Save credentials for future use
-  await saveCredentials(oAuth2Client);
-  
-  return oAuth2Client;
+  // Return both the client and tokens so the caller can handle the refresh_token
+  return { client: oAuth2Client, tokens };
+}
+
+/**
+ * Get an authenticated OAuth2 client or return null if not available
+ */
+export function getAuthenticatedClient(): OAuth2Client | null {
+  return createAuthenticatedOAuth2Client();
 }
 
 /**
  * Lists upcoming events from the user's primary calendar.
  */
-export async function listEvents(auth: OAuth2Client, maxResults: number = 10): Promise<GoogleCalendarEvent[]> {
-  const calendar = google.calendar({ version: 'v3', auth });
+export async function listEvents(auth?: OAuth2Client, maxResults: number = 10): Promise<GoogleCalendarEvent[]> {
+  const client = auth || createAuthenticatedOAuth2Client();
+  if (!client) {
+    throw new Error('No authenticated Google Calendar client available. Please ensure GOOGLE_REFRESH_TOKEN is set.');
+  }
+  
+  const calendar = google.calendar({ version: 'v3', auth: client });
   
   const res = await calendar.events.list({
     calendarId: 'primary',
@@ -153,10 +161,15 @@ export async function listEvents(auth: OAuth2Client, maxResults: number = 10): P
  * Create a new event in the user's primary calendar.
  */
 export async function createEvent(
-  auth: OAuth2Client,
-  event: Partial<GoogleCalendarEvent>
+  event: Partial<GoogleCalendarEvent>,
+  auth?: OAuth2Client
 ): Promise<GoogleCalendarEvent> {
-  const calendar = google.calendar({ version: 'v3', auth });
+  const client = auth || createAuthenticatedOAuth2Client();
+  if (!client) {
+    throw new Error('No authenticated Google Calendar client available. Please ensure GOOGLE_REFRESH_TOKEN is set.');
+  }
+  
+  const calendar = google.calendar({ version: 'v3', auth: client });
   
   const res = await calendar.events.insert({
     calendarId: 'primary',
@@ -170,11 +183,16 @@ export async function createEvent(
  * Update an existing event in the user's primary calendar.
  */
 export async function updateEvent(
-  auth: OAuth2Client,
   eventId: string,
-  event: Partial<GoogleCalendarEvent>
+  event: Partial<GoogleCalendarEvent>,
+  auth?: OAuth2Client
 ): Promise<GoogleCalendarEvent> {
-  const calendar = google.calendar({ version: 'v3', auth });
+  const client = auth || createAuthenticatedOAuth2Client();
+  if (!client) {
+    throw new Error('No authenticated Google Calendar client available. Please ensure GOOGLE_REFRESH_TOKEN is set.');
+  }
+  
+  const calendar = google.calendar({ version: 'v3', auth: client });
   
   const res = await calendar.events.update({
     calendarId: 'primary',
@@ -188,8 +206,13 @@ export async function updateEvent(
 /**
  * Delete an event from the user's primary calendar.
  */
-export async function deleteEvent(auth: OAuth2Client, eventId: string): Promise<void> {
-  const calendar = google.calendar({ version: 'v3', auth });
+export async function deleteEvent(eventId: string, auth?: OAuth2Client): Promise<void> {
+  const client = auth || createAuthenticatedOAuth2Client();
+  if (!client) {
+    throw new Error('No authenticated Google Calendar client available. Please ensure GOOGLE_REFRESH_TOKEN is set.');
+  }
+  
+  const calendar = google.calendar({ version: 'v3', auth: client });
   
   await calendar.events.delete({
     calendarId: 'primary',
@@ -202,7 +225,7 @@ export async function deleteEvent(auth: OAuth2Client, eventId: string): Promise<
  */
 export async function hasValidCredentials(): Promise<boolean> {
   try {
-    const client = await loadSavedCredentialsIfExist();
+    const client = createAuthenticatedOAuth2Client();
     if (!client) return false;
     
     // Try to make a simple API call to verify credentials

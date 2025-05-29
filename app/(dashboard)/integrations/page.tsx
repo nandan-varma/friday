@@ -42,14 +42,14 @@ const availableIntegrations: Integration[] = [
   {
     id: "outlook",
     name: "Outlook Calendar",
-    description: "Connect with Microsoft Outlook",
+    description: "Connect with Microsoft Outlook (Coming Soon)",
     icon: <Calendar className="h-5 w-5" />,
     connected: false,
   },
   {
     id: "apple-calendar",
     name: "Apple Calendar",
-    description: "Sync with iCloud Calendar",
+    description: "Sync with iCloud Calendar (Coming Soon)",
     icon: <Calendar className="h-5 w-5" />,
     connected: false,
   },
@@ -134,7 +134,7 @@ export default function IntegrationsPage() {
 
       <div className="grid gap-6">
         {integrations.map((integration) => (
-          <Card key={integration.id}>
+          <Card key={integration.id} className={integration.id !== 'google-calendar' ? 'blur-sm opacity-60 pointer-events-none' : ''}>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -201,7 +201,7 @@ export default function IntegrationsPage() {
                           </DialogDescription>
                         </DialogHeader>
                         <div className="py-4">
-                          <p className="text-sm text-muted-foreground">This integration will allow AI Calendar to:</p>
+                          <p className="text-sm text-muted-foreground">This integration will allow Friday - AI Calendar to:</p>
                           <ul className="mt-2 space-y-1 text-sm">
                             <li>• Read your calendar events</li>
                             <li>• Create new events</li>
@@ -240,15 +240,15 @@ export default function IntegrationsPage() {
         ))}
       </div>
 
-      <Card>
+      <Card className="blur-sm opacity-60 pointer-events-none">
         <CardHeader>
           <CardTitle>Request Integration</CardTitle>
-          <CardDescription>Don't see the integration you need? Let us know!</CardDescription>
+          <CardDescription>Don't see the integration you need? Let us know! (Coming Soon)</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Input placeholder="Enter integration name..." />
-            <Button>Request</Button>
+            <Input placeholder="Enter integration name..." disabled />
+            <Button disabled>Request</Button>
           </div>
         </CardContent>
       </Card>
