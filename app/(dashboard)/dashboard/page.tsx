@@ -1,7 +1,5 @@
 import { getUserFromCookie } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { EventService } from "@/services/eventService"
 import { CalendarView } from "@/components/calendar/calendar-view"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -16,11 +14,7 @@ export default async function DashboardPage() {
   }
 
   // Get upcoming events
-  const upcomingEvents = await db.query.events.findMany({
-    where: eq(events.userId, user.id),
-    orderBy: (events, { asc }) => [asc(events.startTime)],
-    limit: 5,
-  })
+  const upcomingEvents = await EventService.getUpcomingEvents(user.id, 5)
 
   // Format events for the calendar component
   const formattedEvents = upcomingEvents.map((event) => ({

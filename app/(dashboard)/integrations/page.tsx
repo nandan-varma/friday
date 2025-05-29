@@ -59,7 +59,7 @@ export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState(availableIntegrations)
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
-  const { isConnected: googleConnected, connectCalendar } = useGoogleCalendar()
+  const { isConnected: googleConnected, connectCalendar, disconnectCalendar } = useGoogleCalendar()
 
   // Update Google Calendar connection status when hook state changes
   useEffect(() => {
@@ -103,14 +103,13 @@ export default function IntegrationsPage() {
 
   const handleDisconnect = async (integrationId: string) => {
     if (integrationId === 'google-calendar') {
-      // In a real implementation, you might want to revoke tokens
-      // For now, just remove the local connection status
-      setIntegrations((prev) =>
-        prev.map((integration) =>
-          integration.id === integrationId ? { ...integration, connected: false, lastSync: undefined } : integration,
-        ),
-      )
-      toast.success('Google Calendar disconnected')
+      try {
+        await disconnectCalendar()
+        toast.success('Google Calendar disconnected')
+      } catch (error) {
+        console.error('Error disconnecting Google Calendar:', error)
+        toast.error('Failed to disconnect Google Calendar')
+      }
     } else {
       setIntegrations((prev) =>
         prev.map((integration) =>

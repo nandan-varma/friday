@@ -11,7 +11,6 @@ const SCOPES = [
 
 // The file token.json stores the user's access and refresh tokens
 const TOKEN_PATH = path.join(process.cwd(), 'token.json');
-const CREDENTIALS_PATH = path.join(process.cwd(), 'credentials.json');
 
 export interface GoogleCalendarEvent {
   id?: string;
@@ -51,9 +50,14 @@ async function loadSavedCredentialsIfExist(): Promise<OAuth2Client | null> {
  */
 async function saveCredentials(client: OAuth2Client): Promise<void> {
   try {
-    const content = await fs.readFile(CREDENTIALS_PATH, 'utf8');
-    const keys = JSON.parse(content);
-    const key = keys.installed || keys.web;
+    // Get credentials from environment variable instead of file
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+    const key = credentials.installed || credentials.web;
+    
+    if (!key || !key.client_id || !key.client_secret) {
+      throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS');
+    }
+    
     const payload = JSON.stringify({
       type: 'authorized_user',
       client_id: key.client_id,
@@ -82,13 +86,24 @@ export async function authorize(): Promise<OAuth2Client | null> {
  * Create OAuth2 client with credentials
  */
 export function createOAuth2Client(): OAuth2Client {
-  const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
-  const { client_secret, client_id } = credentials.installed || credentials.web;
-  
-  // Use the callback URL from environment or default to localhost
-  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
-  
-  return new google.auth.OAuth2(client_id, client_secret, redirectUri);
+  try {
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+    const key = credentials.installed || credentials.web;
+    
+    if (!key || !key.client_id || !key.client_secret) {
+      throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS. Make sure it contains valid Google OAuth2 credentials.');
+    }
+    
+    const { client_secret, client_id } = key;
+    
+    // Use the callback URL from environment or default to localhost
+    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
+    
+    return new google.auth.OAuth2(client_id, client_secret, redirectUri);
+  } catch (error) {
+    console.error('Error creating OAuth2 client:', error);
+    throw error;
+  }
 }
 
 /**

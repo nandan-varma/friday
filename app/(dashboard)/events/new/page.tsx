@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -14,10 +13,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { generateText } from "ai"
-import { openai } from "@ai-sdk/openai"
 
 const formSchema = z.object({
   title: z.string().min(2, {
@@ -39,8 +35,6 @@ const formSchema = z.object({
 
 export default function NewEventPage() {
   const router = useRouter()
-  const [naturalLanguageInput, setNaturalLanguageInput] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -65,60 +59,10 @@ export default function NewEventPage() {
     router.push("/calendar")
   }
 
-  async function processNaturalLanguage() {
-    if (!naturalLanguageInput.trim()) return
-
-    setIsProcessing(true)
-
-    try {
-      const { text } = await generateText({
-        model: openai("gpt-4o"),
-        prompt: `Parse the following natural language input into a calendar event with these fields: title, description (optional), location (optional), date (YYYY-MM-DD), startTime (HH:MM), endTime (HH:MM), isAllDay (true/false). Format the response as JSON. Input: "${naturalLanguageInput}"`,
-      })
-
-      // Parse the response
-      const eventData = JSON.parse(text)
-
-      // Update form values
-      form.setValue("title", eventData.title)
-      if (eventData.description) form.setValue("description", eventData.description)
-      if (eventData.location) form.setValue("location", eventData.location)
-      if (eventData.date) form.setValue("date", new Date(eventData.date))
-      if (eventData.startTime) form.setValue("startTime", eventData.startTime)
-      if (eventData.endTime) form.setValue("endTime", eventData.endTime)
-      form.setValue("isAllDay", eventData.isAllDay || false)
-    } catch (error) {
-      console.error("Error processing natural language input:", error)
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">Create New Event</h1>
-
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle>Natural Language Input</CardTitle>
-          <CardDescription>
-            Describe your event in natural language (e.g., "Lunch with John next Friday at 1pm")
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Input
-              placeholder="Lunch with John next Friday at 1pm"
-              value={naturalLanguageInput}
-              onChange={(e) => setNaturalLanguageInput(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={processNaturalLanguage} disabled={isProcessing}>
-              {isProcessing ? "Processing..." : "Process"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <h1 className="text-3xl font-bold mb-6">Create New Event ( Will be implemented )</h1>
+      {/* <NaturalLanguageEvent/> */}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

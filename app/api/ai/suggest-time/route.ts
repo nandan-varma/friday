@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { getUserFromCookie } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
-import { eq, and, gte, lte } from "drizzle-orm"
+import { EventService } from "@/services/eventService"
 import { generateText } from "ai"
 import { openai } from "@ai-sdk/openai"
 
@@ -16,16 +14,11 @@ export async function POST(request: Request) {
     const { duration, preferences, dateRange } = await request.json()
 
     // Get user's existing events
-    const userEvents = await db
-      .select()
-      .from(events)
-      .where(
-        and(
-          eq(events.userId, user.id),
-          gte(events.startTime, new Date(dateRange.start)),
-          lte(events.endTime, new Date(dateRange.end)),
-        ),
-      )
+    const userEvents = await EventService.getEventsInRange(
+      user.id,
+      new Date(dateRange.start),
+      new Date(dateRange.end)
+    )
 
     const { text } = await generateText({
       model: openai("gpt-4o"),

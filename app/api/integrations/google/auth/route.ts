@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthUrl } from '@/lib/calendar/google';
+import { GoogleIntegrationService } from '@/services/googleIntegrationService';
 
 export async function GET() {
   try {
-    const authUrl = getAuthUrl();
+    const authUrl = GoogleIntegrationService.getAuthUrl();
     
     return NextResponse.json({ authUrl });
   } catch (error) {

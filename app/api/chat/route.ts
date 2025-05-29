@@ -1,9 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 import { getUserFromCookie } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { events } from '@/lib/db/schema';
-import { eq, and, gte, lte, asc } from 'drizzle-orm';
+import { EventService } from '@/services/eventService';
 import { tool as createTool } from 'ai';
 import { z } from 'zod';
 
@@ -28,25 +26,8 @@ export async function POST(request: Request) {
             count: 0,
             error: 'Please log in to view your events',
           };
-        }
-
-        try {
-          const startDate = new Date();
-          const endDate = new Date();
-          endDate.setDate(endDate.getDate() + days);
-
-          const userEvents = await db
-            .select()
-            .from(events)
-            .where(
-              and(
-                eq(events.userId, user.id),
-                gte(events.startTime, startDate),
-                lte(events.endTime, endDate)
-              )
-            )
-            .orderBy(asc(events.startTime))
-            .limit(limit);
+        }        try {
+          const userEvents = await EventService.getUpcomingEvents(user.id, days, limit);
 
           const formattedEvents = userEvents.map((event) => ({
             id: event.id,
@@ -89,22 +70,16 @@ export async function POST(request: Request) {
             success: false,
             error: 'Please log in to create events',
           };
-        }
-
-        try {
-          const [newEvent] = await db
-            .insert(events)
-            .values({
-              userId: user.id,
-              title,
-              description: description || null,
-              location: location || null,
-              startTime: new Date(startTime),
-              endTime: new Date(endTime),
-              isAllDay: isAllDay || false,
-              recurrence: 'none',
-            })
-            .returning();
+        }        try {
+          const newEvent = await EventService.createEvent(user.id, {
+            title,
+            description,
+            location,
+            startTime: new Date(startTime),
+            endTime: new Date(endTime),
+            isAllDay,
+            recurrence: 'none',
+          });
 
           return {
             success: true,
@@ -154,18 +129,11 @@ export async function POST(request: Request) {
           const startOfDay = new Date(targetDate);
           startOfDay.setHours(0, 0, 0, 0);
           const endOfDay = new Date(targetDate);
-          endOfDay.setHours(23, 59, 59, 999);
-
-          const existingEvents = await db
-            .select()
-            .from(events)
-            .where(
-              and(
-                eq(events.userId, user.id),
-                gte(events.startTime, startOfDay),
-                lte(events.endTime, endOfDay)
-              )
-            );
+          endOfDay.setHours(23, 59, 59, 999);          const existingEvents = await EventService.getEventsInRange(
+            user.id,
+            startOfDay,
+            endOfDay
+          );
 
           // Generate time suggestions
           const suggestions = generateTimeSuggestions(

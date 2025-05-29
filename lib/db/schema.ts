@@ -15,6 +15,7 @@ export const users = pgTable("users", {
 export const usersRelations = relations(users, ({ many }) => ({
   events: many(events),
   settings: many(userSettings),
+  integrations: many(integrations),
 }))
 
 // Event recurrence enum
@@ -79,3 +80,11 @@ export const integrations = pgTable("integrations", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })
+
+// Integrations relations
+export const integrationsRelations = relations(integrations, ({ one }) => ({
+  user: one(users, {
+    fields: [integrations.userId],
+    references: [users.id],
+  }),
+}))

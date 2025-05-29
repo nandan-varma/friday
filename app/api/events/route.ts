@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
 import { getUserFromCookie } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
-import { eq, and, gte, lte } from "drizzle-orm"
+import { EventService } from "@/services/eventService"
 
 export async function GET(request: Request) {
   try {
@@ -15,22 +13,12 @@ export async function GET(request: Request) {
     const startDate = searchParams.get("start")
     const endDate = searchParams.get("end")
 
-    const filters = [eq(events.userId, user.id)]
-    
-    if (startDate) {
-      filters.push(gte(events.startTime, new Date(startDate)))
+    const filters = {
+      ...(startDate && { startDate }),
+      ...(endDate && { endDate })
     }
     
-    if (endDate) {
-      filters.push(lte(events.endTime, new Date(endDate)))
-    }
-    
-    const query = db
-      .select()
-      .from(events)
-      .where(and(...filters))
-
-    const userEvents = await query
+    const userEvents = await EventService.getEvents(user.id, filters)
 
     return NextResponse.json(userEvents)
   } catch (error) {
@@ -49,19 +37,15 @@ export async function POST(request: Request) {
     const body = await request.json()
     const { title, description, location, startTime, endTime, isAllDay, recurrence } = body
 
-    const [newEvent] = await db
-      .insert(events)
-      .values({
-        userId: user.id,
-        title,
-        description: description || null,
-        location: location || null,
-        startTime: new Date(startTime),
-        endTime: new Date(endTime),
-        isAllDay: isAllDay || false,
-        recurrence: recurrence || "none",
-      })
-      .returning()
+    const newEvent = await EventService.createEvent(user.id, {
+      title,
+      description,
+      location,
+      startTime,
+      endTime,
+      isAllDay,
+      recurrence
+    })
 
     return NextResponse.json(newEvent)
   } catch (error) {
