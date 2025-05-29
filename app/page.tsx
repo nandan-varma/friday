@@ -11,7 +11,7 @@ export default function HomePage() {
         <nav className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold">AI Calendar</span>
+            <span className="text-2xl font-bold">Friday</span>
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>

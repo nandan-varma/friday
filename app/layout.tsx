@@ -6,9 +6,9 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata = {
-  title: "AI Calendar",
+  title: "Friday - AI Calendar",
   description: "AI-powered calendar application",
-    generator: 'v0.dev'
+    generator: 'friday.nandanvarma.com'
 }
 
 export default function RootLayout({

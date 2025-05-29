@@ -3,7 +3,7 @@
 import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Calendar, Home, Plus, Settings, MessageSquare, Bell, Search, LogOut } from "lucide-react"
+import { Calendar, Home, Plus, Settings, MessageSquare, Bell, Search, LogOut, PackagePlus } from "lucide-react"
 import {
   Sidebar,
   SidebarContent,
@@ -56,6 +56,11 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
       label: "Settings",
       href: "/settings",
     },
+    {
+      icon: PackagePlus,
+      label: "Integrations",
+      href: "/integrations",
+    }
   ]
 
   return (
@@ -103,7 +108,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
               {routes.find((route) => route.href === pathname)?.label || "AI Calendar"}
             </div>
           </div>
-          <main className="container mx-auto p-4">{children}</main>
+          <main className="container mx-auto max-w-7xl p-4 w-full">{children}</main>
         </div>
       </div>
     </SidebarProvider>

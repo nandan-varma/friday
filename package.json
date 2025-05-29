@@ -60,6 +60,7 @@
     "drizzle-orm": "latest",
     "embla-carousel-react": "8.6.0",
     "expo-sqlite": "latest",
+    "google-auth-library": "^9.15.1",
     "googleapis": "^149.0.0",
     "input-otp": "1.4.2",
     "lucide-react": "^0.511.0",

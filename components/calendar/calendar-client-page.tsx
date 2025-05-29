@@ -23,32 +23,32 @@ type CalendarClientPageProps = {
 
 export function CalendarClientPage({ events }: CalendarClientPageProps) {
   const [currentView, setCurrentView] = useState<"day" | "week" | "month" | "agenda">("week")
-
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Calendar</h1>
         <Link href="/events/new">
-          <Button>
+          <Button className="w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             New Event
           </Button>
         </Link>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1 border rounded-md p-1">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <div className="flex items-center gap-1 border rounded-md p-1 w-full sm:w-auto overflow-x-auto">
           <Button
             variant={currentView === "day" ? "default" : "ghost"}
             size="sm"
             onClick={() => setCurrentView("day")}
+            className="flex-shrink-0"
           >
             Day
           </Button>
           <Button
             variant={currentView === "week" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setCurrentView("week")}
+            size="sm"            onClick={() => setCurrentView("week")}
+            className="flex-shrink-0"
           >
             Week
           </Button>
@@ -56,6 +56,7 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
             variant={currentView === "month" ? "default" : "ghost"}
             size="sm"
             onClick={() => setCurrentView("month")}
+            className="flex-shrink-0"
           >
             Month
           </Button>
@@ -63,17 +64,20 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
             variant={currentView === "agenda" ? "default" : "ghost"}
             size="sm"
             onClick={() => setCurrentView("agenda")}
+            className="flex-shrink-0"
           >
             Agenda
           </Button>
         </div>
         
-        <Badge variant="secondary" className="ml-auto">
+        <Badge variant="secondary" className="sm:ml-auto">
           {events.length} event{events.length !== 1 ? 's' : ''}
         </Badge>
       </div>
 
-      <CalendarView events={events} view={currentView} />
+      <div className="w-full">
+        <CalendarView events={events} view={currentView} />
+      </div>
     </div>
   )
 }

@@ -2,12 +2,13 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Calendar, Check, ExternalLink, Loader2, Plus } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
+import { Input } from "@/components/ui/input"
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
+import { toast } from "sonner"
+import { useGoogleCalendar } from "@/hooks/use-google-calendar"
 
 type Integration = {
   id: string
@@ -57,28 +59,66 @@ export default function IntegrationsPage() {
   const [integrations, setIntegrations] = useState(availableIntegrations)
   const [isConnecting, setIsConnecting] = useState<string | null>(null)
   const [selectedIntegration, setSelectedIntegration] = useState<Integration | null>(null)
+  const { isConnected: googleConnected, connectCalendar } = useGoogleCalendar()
+
+  // Update Google Calendar connection status when hook state changes
+  useEffect(() => {
+    setIntegrations(prev =>
+      prev.map(integration =>
+        integration.id === 'google-calendar'
+          ? { ...integration, connected: googleConnected, lastSync: googleConnected ? new Date() : undefined }
+          : integration
+      )
+    )
+  }, [googleConnected])
 
   const handleConnect = async (integrationId: string) => {
-    setIsConnecting(integrationId)
-
-    // Simulate OAuth flow
-    setTimeout(() => {
-      setIntegrations((prev) =>
-        prev.map((integration) =>
-          integration.id === integrationId ? { ...integration, connected: true, lastSync: new Date() } : integration,
-        ),
-      )
-      setIsConnecting(null)
-      setSelectedIntegration(null)
-    }, 2000)
+    if (integrationId === 'google-calendar') {
+      try {
+        setIsConnecting('google-calendar')
+        await connectCalendar()
+        toast.success('Google Calendar connected successfully!')
+        setSelectedIntegration(null)
+      } catch (error) {
+        console.error('Error connecting Google Calendar:', error)
+        toast.error('Failed to connect Google Calendar')
+      } finally {
+        setIsConnecting(null)
+      }
+    } else {
+      // Simulate OAuth flow for other integrations
+      setIsConnecting(integrationId)
+      setTimeout(() => {
+        setIntegrations((prev) =>
+          prev.map((integration) =>
+            integration.id === integrationId ? { ...integration, connected: true, lastSync: new Date() } : integration,
+          ),
+        )
+        setIsConnecting(null)
+        setSelectedIntegration(null)
+        toast.success(`${integrations.find(i => i.id === integrationId)?.name} connected successfully`)
+      }, 2000)
+    }
   }
 
-  const handleDisconnect = (integrationId: string) => {
-    setIntegrations((prev) =>
-      prev.map((integration) =>
-        integration.id === integrationId ? { ...integration, connected: false, lastSync: undefined } : integration,
-      ),
-    )
+  const handleDisconnect = async (integrationId: string) => {
+    if (integrationId === 'google-calendar') {
+      // In a real implementation, you might want to revoke tokens
+      // For now, just remove the local connection status
+      setIntegrations((prev) =>
+        prev.map((integration) =>
+          integration.id === integrationId ? { ...integration, connected: false, lastSync: undefined } : integration,
+        ),
+      )
+      toast.success('Google Calendar disconnected')
+    } else {
+      setIntegrations((prev) =>
+        prev.map((integration) =>
+          integration.id === integrationId ? { ...integration, connected: false, lastSync: undefined } : integration,
+        ),
+      )
+      toast.success(`${integrations.find(i => i.id === integrationId)?.name} disconnected`)
+    }
   }
 
   const handleToggleSync = (integrationId: string, enabled: boolean) => {

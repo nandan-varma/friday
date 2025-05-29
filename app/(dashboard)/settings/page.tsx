@@ -22,15 +22,15 @@ const profileFormSchema = z.object({
 })
 
 const notificationFormSchema = z.object({
-  emailNotifications: z.boolean().default(true),
+  emailNotifications: z.boolean(),
   reminderTime: z.string().min(1, {
     message: "Please select a reminder time.",
   }),
-  aiSuggestions: z.boolean().default(true),
+  aiSuggestions: z.boolean(),
 })
 
 const integrationFormSchema = z.object({
-  googleCalendar: z.boolean().default(false),
+  googleCalendar: z.boolean(),
 })
 
 export default function SettingsPage() {
@@ -228,7 +228,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Integrations</CardTitle>
-              <CardDescription>Connect with external calendar services</CardDescription>
+              <CardDescription>Connect your external services</CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...integrationForm}>
@@ -240,17 +240,10 @@ export default function SettingsPage() {
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                         <div className="space-y-0.5">
                           <FormLabel className="text-base">Google Calendar</FormLabel>
-                          <FormDescription>Sync events with Google Calendar</FormDescription>
+                          <FormDescription>Sync your events with Google Calendar</FormDescription>
                         </div>
                         <FormControl>
-                          <div className="flex items-center gap-2">
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                            {!field.value && (
-                              <Button variant="outline" size="sm" type="button">
-                                Connect
-                              </Button>
-                            )}
-                          </div>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
                       </FormItem>
                     )}

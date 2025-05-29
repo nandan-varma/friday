@@ -53,7 +53,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-6">          
           <Card>
             <CardHeader>
               <CardTitle>AI Assistant</CardTitle>
@@ -82,6 +82,11 @@ export default async function DashboardPage() {
               <Button variant="outline" asChild className="w-full justify-start">
                 <Link href="/events/new">
                   <Plus className="mr-2 h-4 w-4" /> Create New Event
+                </Link>
+              </Button>
+              <Button variant="outline" asChild className="w-full justify-start">
+                <Link href="/integrations">
+                  <CalendarIcon className="mr-2 h-4 w-4" /> Manage Integrations
                 </Link>
               </Button>
             </CardContent>
