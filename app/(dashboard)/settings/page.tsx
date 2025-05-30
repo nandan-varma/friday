@@ -1,12 +1,14 @@
 import { Suspense } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AccountSecurityCard } from "@/components/settings/account-security-card"
 import { ProfileForm } from "./profile-form"
 import { PreferencesForm } from "./preferences-form"
 import { getUserData } from "./actions"
+
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic'
 
 // Skeleton component for loading states
 function SettingsSkeleton() {
