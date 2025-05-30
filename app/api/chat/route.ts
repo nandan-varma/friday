@@ -159,7 +159,6 @@ export async function POST(request: Request) {
       },
     }),
   };
-
   const result = streamText({
     model: openai('gpt-4o'),
     system: `You are a helpful AI calendar assistant for Friday, a smart calendar application. 
@@ -199,7 +198,25 @@ export async function POST(request: Request) {
     tools: serverTools,
   });
 
-  return result.toDataStreamResponse();
+  return result.toDataStreamResponse({
+    getErrorMessage: (error: unknown) => {
+      console.error('Chat API Error:', error);
+      
+      if (error == null) {
+        return 'Unknown error occurred';
+      }
+
+      if (typeof error === 'string') {
+        return error;
+      }
+
+      if (error instanceof Error) {
+        return error.message;
+      }
+
+      return JSON.stringify(error);
+    },
+  });
 }
 
 function generateTimeSuggestions(

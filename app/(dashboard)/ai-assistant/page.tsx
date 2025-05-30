@@ -20,6 +20,7 @@ export default function AIAssistantPage() {
   
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
+    maxSteps: 5,
     initialMessages: [
       {
         id: '1',
