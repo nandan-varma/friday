@@ -53,7 +53,7 @@ export class GoogleIntegrationService {
   private static createOAuth2Client(): OAuth2Client {
     try {
       const { client_id, client_secret } = this.getCredentials();
-      const redirectUri = 'https://' + process.env.VERCEL_URL + '/auth/google/callback' || 'http://localhost:3000/auth/google/callback';
+      const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
 
       return new google.auth.OAuth2(client_id, client_secret, redirectUri);
     } catch (error) {

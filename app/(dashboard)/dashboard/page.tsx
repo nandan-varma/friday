@@ -51,7 +51,7 @@ export default async function DashboardPage() {
             <CardContent>
               <p className="mb-4">Ask me to schedule meetings, find free time, or manage your calendar.</p>
               <Button asChild className="w-full">
-                <Link href="/ai-assistant">
+                <Link href="/ai">
                   <MessageSquare className="mr-2 h-4 w-4" /> Open Assistant
                 </Link>
               </Button>
