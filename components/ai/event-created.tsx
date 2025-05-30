@@ -73,10 +73,10 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
   };
 
   return (
-    <Card className="border-green-200 bg-green-50/50">
+    <Card className="">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-green-700">
-          <div className="rounded-full bg-green-100 p-1">
+        <CardTitle className="flex items-center gap-2">
+          <div className="rounded-full p-1">
             <CheckIcon className="h-4 w-4" />
           </div>
           Event Created Successfully!
@@ -118,7 +118,7 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
               {event.isAllDay && (
                 <Badge variant="secondary">All Day</Badge>
               )}
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+              <Badge variant="outline">
                 Created
               </Badge>
             </div>

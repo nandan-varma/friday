@@ -98,7 +98,7 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
                 </Badge>
               )}
               {events.filter(e => e.source === 'local').length > 0 && (
-                <Badge className="text-xs text-green-700 border-green-200">
+                <Badge className="text-xs">
                   {events.filter(e => e.source === 'local').length} Local
                 </Badge>
               )}

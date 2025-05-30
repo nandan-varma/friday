@@ -69,10 +69,10 @@ export const MultipleEventsCreated = ({
   }
 
   return (
-    <Card className={hasErrors ? "border-yellow-200 bg-yellow-50/50" : "border-green-200 bg-green-50/50"}>
+    <Card className={hasErrors ? "border-yellow-200 bg-yellow-50/50" : ""}>
       <CardHeader>
-        <CardTitle className={`flex items-center gap-2 ${hasErrors ? 'text-yellow-700' : 'text-green-700'}`}>
-          <div className={`rounded-full p-1 ${hasErrors ? 'bg-yellow-100' : 'bg-green-100'}`}>
+        <CardTitle className={`flex items-center gap-2 ${hasErrors ? 'text-yellow-700' : ''}`}>
+          <div className={`rounded-full p-1 ${hasErrors ? 'bg-yellow-100' : ''}`}>
             <CheckIcon className="h-4 w-4" />
           </div>
           {hasErrors ? 'Events Partially Created' : 'Events Created Successfully!'}
@@ -90,7 +90,7 @@ export const MultipleEventsCreated = ({
         {hasSuccess && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-800 border-green-200">
+              <Badge>
                 {successCount} Created
               </Badge>
               <span className="text-sm text-muted-foreground">Successfully created events</span>
@@ -114,7 +114,7 @@ export const MultipleEventsCreated = ({
                             <p className="text-sm text-muted-foreground">{event.description}</p>
                           )}
                         </div>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                        <Badge variant="outline">
                           Created
                         </Badge>
                       </div>
