@@ -55,6 +55,7 @@ export const userSettings = pgTable("user_settings", {
   timezone: text("timezone").default("UTC"),
   notificationsEnabled: boolean("notifications_enabled").default(true),
   aiSuggestionsEnabled: boolean("ai_suggestions_enabled").default(true),
+  reminderTime: integer("reminder_time").default(30), // minutes before event
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 })

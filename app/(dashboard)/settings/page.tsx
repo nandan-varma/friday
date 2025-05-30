@@ -1,93 +1,177 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-
-const profileFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "Name must be at least 2 characters.",
-  }),
-  email: z.string().email({
-    message: "Please enter a valid email address.",
-  }),
-})
+import { useToast } from "@/hooks/use-toast"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { UserProfileCard } from "@/components/settings/user-profile-card"
+import { AccountSecurityCard } from "@/components/settings/account-security-card"
 
 const notificationFormSchema = z.object({
-  emailNotifications: z.boolean(),
-  reminderTime: z.string().min(1, {
-    message: "Please select a reminder time.",
+  notificationsEnabled: z.boolean(),
+  aiSuggestionsEnabled: z.boolean(),
+  timezone: z.string().min(1, {
+    message: "Please select a timezone.",
   }),
-  aiSuggestions: z.boolean(),
 })
 
-const integrationFormSchema = z.object({
-  googleCalendar: z.boolean(),
-})
+// Skeleton component for loading states
+function SettingsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-48" />
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-64" />
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Skeleton className="h-10 w-32" />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
 
 export default function SettingsPage() {
+  const [isLoading, setIsLoading] = useState(true)
   const [isPending, setIsPending] = useState(false)
-
-  const profileForm = useForm<z.infer<typeof profileFormSchema>>({
-    resolver: zodResolver(profileFormSchema),
-    defaultValues: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-    },
-  })
+  const [userProfile, setUserProfile] = useState({ name: "", email: "" })
+  const { toast } = useToast()
 
   const notificationForm = useForm<z.infer<typeof notificationFormSchema>>({
     resolver: zodResolver(notificationFormSchema),
     defaultValues: {
-      emailNotifications: true,
-      reminderTime: "30",
-      aiSuggestions: true,
+      notificationsEnabled: true,
+      aiSuggestionsEnabled: true,
+      timezone: "UTC",
     },
   })
 
-  const integrationForm = useForm<z.infer<typeof integrationFormSchema>>({
-    resolver: zodResolver(integrationFormSchema),
-    defaultValues: {
-      googleCalendar: false,
-    },
-  })
+  // Load user data on component mount
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        // Load profile data
+        const profileResponse = await fetch("/api/profile")
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json()
+          setUserProfile({
+            name: profileData.name || "",
+            email: profileData.email || "",
+          })
+        }
 
-  function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-    setIsPending(true)
+        // Load settings data
+        const settingsResponse = await fetch("/api/settings")
+        if (settingsResponse.ok) {
+          const settingsData = await settingsResponse.json()
+          notificationForm.reset({
+            notificationsEnabled: settingsData.notificationsEnabled ?? true,
+            aiSuggestionsEnabled: settingsData.aiSuggestionsEnabled ?? true,
+            timezone: settingsData.timezone || "UTC",
+          })
+        }
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to load user data",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-    // Simulate API call
-    setTimeout(() => {
-      console.log(values)
-      setIsPending(false)
-    }, 1000)
+    loadUserData()
+  }, [notificationForm, toast])
+
+  async function onProfileUpdate(values: { name: string; email: string }) {
+    try {
+      const response = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile")
+      }
+
+      const updatedProfile = await response.json()
+      setUserProfile({
+        name: updatedProfile.name || "",
+        email: updatedProfile.email || "",
+      })
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      })
+      throw error
+    }
   }
 
-  function onNotificationSubmit(values: z.infer<typeof notificationFormSchema>) {
+  async function onNotificationSubmit(values: z.infer<typeof notificationFormSchema>) {
     setIsPending(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      console.log(values)
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update settings")
+      }
+
+      toast({
+        title: "Success",
+        description: "Settings updated successfully",
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update settings",
+        variant: "destructive",
+      })
+    } finally {
       setIsPending(false)
-    }, 1000)
+    }
   }
 
-  function onIntegrationSubmit(values: z.infer<typeof integrationFormSchema>) {
-    setIsPending(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      console.log(values)
-      setIsPending(false)
-    }, 1000)
+  if (isLoading) {
+    return <SettingsSkeleton />
   }
 
   return (
@@ -95,51 +179,106 @@ export default function SettingsPage() {
       <h1 className="text-3xl font-bold">Settings</h1>
 
       <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile">Profile</TabsTrigger>
-          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="space-y-6">
+          <UserProfileCard
+            name={userProfile.name}
+            email={userProfile.email}
+            onProfileUpdate={onProfileUpdate}
+            isLoading={isLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="preferences">
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
-              <CardDescription>Manage your personal information</CardDescription>
+              <CardTitle>Preferences & Notifications</CardTitle>
+              <CardDescription>Configure your notification preferences and system settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <Form {...profileForm}>
-                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-8">
+              <Form {...notificationForm}>
+                <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-6">
                   <FormField
-                    control={profileForm.control}
-                    name="name"
+                    control={notificationForm.control}
+                    name="notificationsEnabled"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Name</FormLabel>
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Email Notifications</FormLabel>
+                          <FormDescription>
+                            Receive email notifications for events and reminders
+                          </FormDescription>
+                        </div>
                         <FormControl>
-                          <Input placeholder="Your name" {...field} />
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
                         </FormControl>
-                        <FormMessage />
                       </FormItem>
                     )}
                   />
 
                   <FormField
-                    control={profileForm.control}
-                    name="email"
+                    control={notificationForm.control}
+                    name="aiSuggestionsEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">AI Suggestions</FormLabel>
+                          <FormDescription>
+                            Receive AI-powered suggestions for scheduling and productivity
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <Separator />
+
+                  <FormField
+                    control={notificationForm.control}
+                    name="timezone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Your email" {...field} />
-                        </FormControl>
+                        <FormLabel>Timezone</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select your timezone" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="UTC">UTC (Coordinated Universal Time)</SelectItem>
+                            <SelectItem value="America/New_York">Eastern Time (EST/EDT)</SelectItem>
+                            <SelectItem value="America/Chicago">Central Time (CST/CDT)</SelectItem>
+                            <SelectItem value="America/Denver">Mountain Time (MST/MDT)</SelectItem>
+                            <SelectItem value="America/Los_Angeles">Pacific Time (PST/PDT)</SelectItem>
+                            <SelectItem value="Europe/London">London (GMT/BST)</SelectItem>
+                            <SelectItem value="Europe/Paris">Paris (CET/CEST)</SelectItem>
+                            <SelectItem value="Europe/Berlin">Berlin (CET/CEST)</SelectItem>
+                            <SelectItem value="Asia/Tokyo">Tokyo (JST)</SelectItem>
+                            <SelectItem value="Asia/Shanghai">Shanghai (CST)</SelectItem>
+                            <SelectItem value="Asia/Kolkata">India (IST)</SelectItem>
+                            <SelectItem value="Australia/Sydney">Sydney (AEST/AEDT)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Your timezone affects how dates and times are displayed
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
                   <Button type="submit" disabled={isPending}>
-                    {isPending ? "Saving..." : "Save Changes"}
+                    {isPending ? "Saving..." : "Save Settings"}
                   </Button>
                 </form>
               </Form>
@@ -147,113 +286,56 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="notifications">
-          <Card>
-            <CardHeader>
-              <CardTitle>Notifications</CardTitle>
-              <CardDescription>Configure how you receive notifications</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...notificationForm}>
-                <form onSubmit={notificationForm.handleSubmit(onNotificationSubmit)} className="space-y-8">
-                  <FormField
-                    control={notificationForm.control}
-                    name="emailNotifications"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Email Notifications</FormLabel>
-                          <FormDescription>Receive email notifications for events</FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="reminderTime"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Default Reminder Time</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select reminder time" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="5">5 minutes before</SelectItem>
-                            <SelectItem value="10">10 minutes before</SelectItem>
-                            <SelectItem value="15">15 minutes before</SelectItem>
-                            <SelectItem value="30">30 minutes before</SelectItem>
-                            <SelectItem value="60">1 hour before</SelectItem>
-                            <SelectItem value="1440">1 day before</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>When to send reminders for events</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={notificationForm.control}
-                    name="aiSuggestions"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">AI Suggestions</FormLabel>
-                          <FormDescription>Receive AI-powered suggestions for your calendar</FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+        <TabsContent value="security">
+          <AccountSecurityCard />
         </TabsContent>
 
         <TabsContent value="integrations">
           <Card>
             <CardHeader>
               <CardTitle>Integrations</CardTitle>
-              <CardDescription>Connect your external services</CardDescription>
+              <CardDescription>Connect your external accounts and services</CardDescription>
             </CardHeader>
-            <CardContent>
-              <Form {...integrationForm}>
-                <form onSubmit={integrationForm.handleSubmit(onIntegrationSubmit)} className="space-y-8">
-                  <FormField
-                    control={integrationForm.control}
-                    name="googleCalendar"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">Google Calendar</FormLabel>
-                          <FormDescription>Sync your events with Google Calendar</FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch checked={field.value} onCheckedChange={field.onChange} />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">Google Calendar</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sync your events with Google Calendar
+                  </p>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+              
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">Microsoft Outlook</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sync your events with Outlook Calendar
+                  </p>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
 
-                  <Button type="submit" disabled={isPending}>
-                    {isPending ? "Saving..." : "Save Changes"}
-                  </Button>
-                </form>
-              </Form>
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">Slack</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Get notifications and updates in Slack
+                  </p>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
+
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-medium">Zoom</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Automatically add Zoom links to events
+                  </p>
+                </div>
+                <Badge variant="secondary">Coming Soon</Badge>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

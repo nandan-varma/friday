@@ -48,6 +48,16 @@ export async function signUp(email: string, password: string, name?: string) {
       })
       .returning({ id: users.id })
 
+    // Automatically sign in the user after signup
+    const cookieStore = await cookies()
+    cookieStore.set("auth-token", user.id.toString(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7, // 1 week
+      path: "/",
+      sameSite: "lax"
+    })
+
     return { success: true, userId: user.id }
   } catch (error) {
     console.error("Error signing up:", error)
@@ -79,6 +89,7 @@ export async function signIn(email: string, password: string) {
       secure: process.env.NODE_ENV === "production",
       maxAge: 60 * 60 * 24 * 7, // 1 week
       path: "/",
+      sameSite: "lax"
     })
 
     return { success: true, userId: user.id }

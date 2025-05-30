@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -11,6 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Spinner } from "@/components/ui/spinner"
+import { useRouter } from "next/router"
 
 const formSchema = z
   .object({
@@ -31,9 +33,9 @@ const formSchema = z
   })
 
 export default function SignupPage() {
-  const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -50,7 +52,6 @@ export default function SignupPage() {
     setError(null)
 
     try {
-      // In a real app, this would be a server action
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
@@ -68,12 +69,15 @@ export default function SignupPage() {
         throw new Error(data.error || "Failed to sign up")
       }
 
-      // Redirect to dashboard
+      // Small delay to ensure cookie is set
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      // This ensures the cookie is properly set before navigation
       router.push("/dashboard")
+      
     } catch (error) {
       console.error("Signup error:", error)
       setError(error instanceof Error ? error.message : "Failed to sign up")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -89,7 +93,11 @@ export default function SignupPage() {
           <CardDescription className="text-center">Enter your information to create an account</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md mb-4">{error}</div>}
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -150,7 +158,14 @@ export default function SignupPage() {
               />
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Create Account"}
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <Spinner size="sm" />
+                    Creating account...
+                  </div>
+                ) : (
+                  "Create Account"
+                )}
               </Button>
             </form>
           </Form>

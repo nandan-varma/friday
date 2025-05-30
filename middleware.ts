@@ -3,8 +3,11 @@ import type { NextRequest } from "next/server"
 
 export function middleware(request: NextRequest) {
   const authToken = request.cookies.get("auth-token")
-  const isAuthPage = request.nextUrl.pathname.startsWith("/login") || request.nextUrl.pathname.startsWith("/signup")
-  const isPublicPage = request.nextUrl.pathname === "/"
+  const isAuthPage = request.nextUrl.pathname.startsWith("/login") || 
+                     request.nextUrl.pathname.startsWith("/signup")
+  const isPublicPage = request.nextUrl.pathname === "/" || 
+                       request.nextUrl.pathname.startsWith("/privacy") ||
+                       request.nextUrl.pathname.startsWith("/service")
 
   // If user is not authenticated and trying to access protected routes
   if (!authToken && !isAuthPage && !isPublicPage) {

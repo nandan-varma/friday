@@ -1,0 +1,1 @@
+ALTER TABLE "user_settings" ADD COLUMN "reminder_time" integer DEFAULT 30;
