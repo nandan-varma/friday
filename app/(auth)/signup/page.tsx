@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Spinner } from "@/components/ui/spinner"
-import { useRouter } from "next/router"
+import { signupAction } from "../actions"
 
 const formSchema = z
   .object({
@@ -33,9 +33,8 @@ const formSchema = z
   })
 
 export default function SignupPage() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const router = useRouter()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,38 +47,25 @@ export default function SignupPage() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+    startTransition(async () => {
+      setError(null)
+      
+      try {
+        const result = await signupAction({
           name: values.name,
           email: values.email,
           password: values.password,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || "Failed to sign up")
+        })
+        
+        if (!result.success) {
+          setError(result.error || "Failed to create account")
+        }
+        // If successful, the server action will redirect automatically
+      } catch (error) {
+        console.error("Signup error:", error)
+        setError(error instanceof Error ? error.message : "Failed to create account")
       }
-
-      // Small delay to ensure cookie is set
-      await new Promise(resolve => setTimeout(resolve, 100))
-
-      // This ensures the cookie is properly set before navigation
-      router.push("/dashboard")
-      
-    } catch (error) {
-      console.error("Signup error:", error)
-      setError(error instanceof Error ? error.message : "Failed to sign up")
-      setIsLoading(false)
-    }
+    })
   }
 
   return (
@@ -157,8 +143,8 @@ export default function SignupPage() {
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
+              <Button type="submit" className="w-full" disabled={isPending}>
+                {isPending ? (
                   <div className="flex items-center gap-2">
                     <Spinner size="sm" />
                     Creating account...

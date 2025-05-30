@@ -4,6 +4,7 @@ import { getUserFromCookie } from '@/lib/auth';
 import { EventService } from '@/services/eventService';
 import { tool as createTool } from 'ai';
 import { z } from 'zod';
+import LocalIntegrationService from '@/services/localIntegrationService';
 
 export async function POST(request: Request) {
   const { messages } = await request.json();
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
             error: 'Please log in to create events',
           };
         }        try {
-          const newEvent = await EventService.createEvent(user.id, {
+          const newEvent = await LocalIntegrationService.createEvent(user.id, {
             title,
             description,
             location,

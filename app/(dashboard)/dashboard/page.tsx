@@ -10,7 +10,16 @@ export default async function DashboardPage() {
   const user = await getUserFromCookie()
 
   if (!user) {
-    return null
+    return (
+      <div className="w-full max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+        </div>
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">Please log in to view your dashboard.</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -25,11 +34,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle>Upcoming Events</CardTitle>
-            <CardDescription>Your schedule for the next few days</CardDescription>
-          </CardHeader>
+        <Card className="pt-4 md:col-span-2">
           <CardContent>
             <Suspense fallback={<UpcomingEventsSkeleton />}>
               <UpcomingEvents />
@@ -37,7 +42,7 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">          
+        <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>AI Assistant</CardTitle>

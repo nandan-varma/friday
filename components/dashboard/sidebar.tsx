@@ -4,6 +4,7 @@ import type React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Calendar, Home, Plus, Settings, MessageSquare, Bell, Search, LogOut, PackagePlus } from "lucide-react"
+import { logoutAction } from "@/app/(auth)/actions"
 import {
   Sidebar,
   SidebarContent,
@@ -32,14 +33,9 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
       href: "/calendar",
     },
     {
-      icon: Plus,
-      label: "New Event",
-      href: "/events/new",
-    },
-    {
       icon: MessageSquare,
       label: "AI Assistant",
-      href: "/ai-assistant",
+      href: "/ai",
     },
     {
       icon: Bell,
@@ -88,17 +84,12 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            {/* <form
-              action={async () => {
-                "use server"
-                // Sign out logic would go here
-              }}
-            > */}
-              <Button variant="ghost" className="w-full justify-start">
+            <form action={logoutAction}>
+              <Button type="submit" variant="ghost" className="w-full justify-start">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign Out
               </Button>
-            {/* </form> */}
+            </form>
           </SidebarFooter>
         </Sidebar>
         <div className="flex-1 overflow-auto">

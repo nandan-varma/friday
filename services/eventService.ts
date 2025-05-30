@@ -4,7 +4,6 @@ import { z } from "zod"
 import { GoogleIntegrationService, GoogleCalendarEvent } from "./googleIntegrationService"
 import { 
     LocalIntegrationService, 
-    LocalEvent, 
     CreateEventData, 
     UpdateEventData, 
     EventFilters 
@@ -43,69 +42,8 @@ export interface CombinedEventFilters extends EventFilters {
 }
 
 export class EventService {
-    // ============================================
-    // LOCAL EVENT OPERATIONS (Delegated to LocalIntegrationService)
-    // ============================================
-
-    /**
-     * Get all local events for a user with optional date filtering
-     */
-    static async getEvents(userId: number, filters?: EventFilters) {
-        return LocalIntegrationService.getEvents(userId, filters)
-    }
-
-    /**
-     * Get a single local event by ID for a specific user
-     */
-    static async getEventById(eventId: number, userId: number) {
-        return LocalIntegrationService.getEventById(eventId, userId)
-    }
-
-    /**
-     * Create a new local event for a user
-     */
-    static async createEvent(userId: number, eventData: CreateEventData) {
-        return LocalIntegrationService.createEvent(userId, eventData)
-    }
-
-    /**
-     * Update an existing local event
-     */
-    static async updateEvent(eventId: number, userId: number, eventData: UpdateEventData) {
-        return LocalIntegrationService.updateEvent(eventId, userId, eventData)
-    }
-
-    /**
-     * Delete a local event
-     */
-    static async deleteEvent(eventId: number, userId: number) {
-        return LocalIntegrationService.deleteEvent(eventId, userId)
-    }
-
-    /**
-     * Get local events within a specific date range
-     */
-    static async getEventsInRange(userId: number, startDate: Date, endDate: Date) {
-        return LocalIntegrationService.getEventsInRange(userId, startDate, endDate)
-    }
-
-    /**
-     * Get today's local events for a user
-     */
-    static async getTodayEvents(userId: number) {
-        return LocalIntegrationService.getTodayEvents(userId)
-    }
-
-    /**
-     * Get upcoming local events for a user (next 7 days)
-     */
-    static async getUpcomingEvents(userId: number, days: number = 7, limit?: number) {
-        return LocalIntegrationService.getUpcomingEvents(userId, days, limit)
-    }
 
     // ============================================
-    // AI-POWERED EVENT CREATION
-    // ============================================    // ============================================
     // AI-POWERED EVENT CREATION
     // ============================================
 
@@ -128,7 +66,7 @@ export class EventService {
                 prompt: `Parse the following natural language input into a calendar event: "${input}"`,
             })
 
-            return await this.createEvent(userId, {
+            return await LocalIntegrationService.createEvent(userId, {
                 title: object.title,
                 description: object.description,
                 location: object.location,
