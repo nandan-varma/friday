@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckIcon, XIcon, CalendarPlusIcon } from "lucide-react";
-import { format } from "date-fns";
+import { CheckIcon, XIcon, CalendarPlusIcon, ClockIcon, MapPinIcon, ExternalLinkIcon } from "lucide-react";
+import { format, isToday, isTomorrow } from "date-fns";
 
 type Event = {
   id: number;
@@ -23,7 +23,7 @@ type EventCreatedProps = {
 export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
   if (!success || error) {
     return (
-      <Card className="border-destructive">
+      <Card className="border-destructive bg-destructive/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <XIcon className="h-5 w-5" />
@@ -31,9 +31,12 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             {error || "An error occurred while creating the event."}
           </p>
+          <Button variant="outline" size="sm" asChild>
+            <a href="/events/new">Try Again</a>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -41,7 +44,7 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
 
   if (!event) {
     return (
-      <Card className="border-destructive">
+      <Card className="border-destructive bg-destructive/5">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-destructive">
             <XIcon className="h-5 w-5" />
@@ -49,9 +52,12 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground mb-4">
             No event data was returned.
           </p>
+          <Button variant="outline" size="sm" asChild>
+            <a href="/events/new">Try Again</a>
+          </Button>
         </CardContent>
       </Card>
     );
@@ -59,53 +65,82 @@ export const EventCreated = ({ success, event, error }: EventCreatedProps) => {
 
   const startDate = new Date(event.startTime);
   const endDate = new Date(event.endTime);
+  
+  const getDateLabel = (date: Date) => {
+    if (isToday(date)) return "Today";
+    if (isTomorrow(date)) return "Tomorrow";
+    return format(date, "EEEE, MMM dd");
+  };
 
   return (
-    <Card>
+    <Card className="border-green-200 bg-green-50/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CheckIcon className="h-5 w-5" />
+        <CardTitle className="flex items-center gap-2 text-green-700">
+          <div className="rounded-full bg-green-100 p-1">
+            <CheckIcon className="h-4 w-4" />
+          </div>
           Event Created Successfully!
         </CardTitle>
         <CardDescription>Your event has been added to your calendar</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-3">
-          <div>
-            <h3 className="font-semibold text-lg">{event.title}</h3>
+      <CardContent className="space-y-6">
+        <div className="bg-card border rounded-lg p-4 space-y-4">
+          <div className="space-y-2">
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <CalendarPlusIcon className="h-5 w-5 text-primary" />
+              {event.title}
+            </h3>
             {event.description && (
-              <p className="text-sm text-muted-foreground mt-1">{event.description}</p>
+              <p className="text-sm text-muted-foreground">{event.description}</p>
             )}
           </div>
           
-          <div className="flex flex-wrap gap-2 text-sm">
-            <Badge variant="outline" className="flex items-center gap-1">
-              <CalendarPlusIcon className="h-3 w-3" />
-              {event.isAllDay ? (
-                format(startDate, "MMM dd, yyyy")
-              ) : (
-                <>
-                  {format(startDate, "MMM dd, h:mm a")} - {format(endDate, "h:mm a")}
-                </>
-              )}
-            </Badge>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm">
+              <ClockIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">
+                {event.isAllDay ? (
+                  `${getDateLabel(startDate)} (All Day)`
+                ) : (
+                  `${getDateLabel(startDate)} • ${format(startDate, "h:mm a")} - ${format(endDate, "h:mm a")}`
+                )}
+              </span>
+            </div>
             
             {event.location && (
-              <Badge variant="outline">{event.location}</Badge>
+              <div className="flex items-center gap-2 text-sm">
+                <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+                <span>{event.location}</span>
+              </div>
             )}
             
-            {event.isAllDay && (
-              <Badge variant="secondary">All Day</Badge>
-            )}
+            <div className="flex flex-wrap gap-2">
+              {event.isAllDay && (
+                <Badge variant="secondary">All Day</Badge>
+              )}
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                Created
+              </Badge>
+            </div>
           </div>
         </div>
         
-        <div className="flex gap-2">
-          <Button asChild size="sm">
-            <a href="/calendar">View Calendar</a>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <a href="/calendar" className="flex items-center gap-2">
+              <CalendarPlusIcon className="h-4 w-4" />
+              View Calendar
+            </a>
           </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a href="/events/new">Create Another Event</a>
+          <Button variant="outline" asChild>
+            <a href="/events/new" className="flex items-center gap-2">
+              Create Another
+            </a>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <a href={`/events/${event.id}`} className="flex items-center gap-2">
+              Edit Event <ExternalLinkIcon className="h-3 w-3" />
+            </a>
           </Button>
         </div>
       </CardContent>

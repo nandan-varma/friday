@@ -234,8 +234,90 @@ export const suggestEventTimeTool = createTool({
   },
 });
 
+export const createMultipleEventsTool = createTool({
+  description: 'Create multiple calendar events at once',
+  parameters: z.object({
+    events: z.array(z.object({
+      title: z.string().describe('Event title'),
+      description: z.string().optional().describe('Event description'),
+      location: z.string().optional().describe('Event location'),
+      startTime: z.string().describe('Event start time in ISO format'),
+      endTime: z.string().describe('Event end time in ISO format'),
+      isAllDay: z.boolean().optional().describe('Whether the event is all day'),
+    })).describe('Array of events to create'),
+  }),
+  execute: async function ({ events }) {
+    const results = [];
+    const errors = [];
+    
+    try {
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      
+      // Create events one by one
+      for (let i = 0; i < events.length; i++) {
+        const event = events[i];
+        try {
+          const response = await fetch(`${baseUrl}/api/events`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              title: event.title,
+              description: event.description,
+              location: event.location,
+              startTime: event.startTime,
+              endTime: event.endTime,
+              isAllDay: event.isAllDay || false,
+              recurrence: 'none',
+            }),
+          });
+          
+          if (!response.ok) {
+            if (response.status === 401) {
+              errors.push(`Failed to create "${event.title}": Please log in to create events`);
+              continue;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const createdEvent = await response.json();
+          results.push({
+            id: createdEvent.id,
+            title: createdEvent.title,
+            description: createdEvent.description,
+            location: createdEvent.location,
+            startTime: createdEvent.startTime,
+            endTime: createdEvent.endTime,
+            isAllDay: createdEvent.isAllDay,
+          });
+        } catch (error) {
+          console.error(`Error creating event "${event.title}":`, error);
+          errors.push(`Failed to create "${event.title}": ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+      }
+      
+      return {
+        success: results.length > 0,
+        events: results,
+        errors: errors.length > 0 ? errors : undefined,
+        totalAttempted: events.length,
+      };
+    } catch (error) {
+      console.error('Error in createMultipleEvents:', error);
+      return {
+        success: false,
+        events: [],
+        errors: [`Failed to create events: ${error instanceof Error ? error.message : 'Unknown error'}`],
+        totalAttempted: events.length,
+      };
+    }
+  },
+});
+
 export const tools = {
   getUpcomingEvents: getUpcomingEventsTool,
   createEvent: createEventTool,
   suggestEventTime: suggestEventTimeTool,
+  createMultipleEvents: createMultipleEventsTool,
 };

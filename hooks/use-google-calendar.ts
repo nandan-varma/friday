@@ -106,16 +106,19 @@ export function useGoogleCalendar(): UseGoogleCalendarReturn {
           'google-auth',
           'width=500,height=600,scrollbars=yes,resizable=yes'
         )
-        
-        return new Promise<void>((resolve, reject) => {
+          return new Promise<void>((resolve, reject) => {
+          let authCompleted = false
+          
           // Listen for the OAuth callback
           const messageListener = async (event: MessageEvent) => {
             if (event.origin !== window.location.origin) return
             
             if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
               const { code } = event.data
+              authCompleted = true
               
-              try {                // Exchange code for tokens
+              try {
+                // Exchange code for tokens
                 const callbackResponse = await fetch('/api/integrations/google/callback', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
@@ -137,10 +140,13 @@ export function useGoogleCalendar(): UseGoogleCalendarReturn {
               
               popup?.close()
               window.removeEventListener('message', messageListener)
+              clearInterval(checkClosed)
             } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+              authCompleted = true
               reject(new Error(event.data.error || 'Authentication failed'))
               popup?.close()
               window.removeEventListener('message', messageListener)
+              clearInterval(checkClosed)
             }
           }
           
@@ -148,10 +154,14 @@ export function useGoogleCalendar(): UseGoogleCalendarReturn {
           
           // Check if popup was closed without completing auth
           const checkClosed = setInterval(() => {
-            if (popup?.closed) {
+            if (popup?.closed && !authCompleted) {
               clearInterval(checkClosed)
               window.removeEventListener('message', messageListener)
               reject(new Error('Authentication cancelled'))
+            } else if (popup?.closed && authCompleted) {
+              // Auth completed successfully, just clean up
+              clearInterval(checkClosed)
+              window.removeEventListener('message', messageListener)
             }
           }, 1000)
         })

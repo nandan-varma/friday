@@ -18,7 +18,7 @@ export async function GET(request: Request) {
       ...(endDate && { endDate })
     }
     
-    const userEvents = await EventService.getEvents(user.id, filters)
+    const userEvents = await EventService.getAllEvents(user.id, filters)
 
     return NextResponse.json(userEvents)
   } catch (error) {

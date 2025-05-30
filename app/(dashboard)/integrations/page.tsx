@@ -21,6 +21,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
 import { useGoogleCalendar } from "@/hooks/use-google-calendar"
+import Google from "@/components/icons/google"
 
 type Integration = {
   id: string
@@ -36,7 +37,7 @@ const availableIntegrations: Integration[] = [
     id: "google-calendar",
     name: "Google Calendar",
     description: "Sync events with your Google Calendar",
-    icon: <Calendar className="h-5 w-5" />,
+    icon: <Google />,
     connected: false,
   },
   {

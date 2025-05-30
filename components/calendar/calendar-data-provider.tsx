@@ -8,40 +8,8 @@ interface CalendarDataProviderProps {
 
 export async function CalendarDataProvider({ userId }: CalendarDataProviderProps) {
   // Fetch user's events from the database
-  const userEvents = await EventService.getEvents(userId)
-
-  // Fetch Google Calendar events if connected
-  let googleEvents: any[] = []
-  try {
-    const integration = await GoogleIntegrationService.getUserIntegration(userId)
-    if (integration) {
-      // Get events for the next 30 days
-      const timeMin = new Date()
-      const timeMax = new Date()
-      timeMax.setDate(timeMax.getDate() + 30)
-      
-      const googleCalendarEvents = await GoogleIntegrationService.getCalendarEvents(userId, {
-        timeMin,
-        timeMax,
-        maxResults: 100
-      })
-      
-      // Format Google Calendar events for the calendar component
-      googleEvents = googleCalendarEvents.map((event) => ({
-        id: `google-${event.id}`,
-        title: event.summary || 'Untitled Event',
-        startTime: event.start?.dateTime || event.start?.date || new Date().toISOString(),
-        endTime: event.end?.dateTime || event.end?.date || new Date().toISOString(),
-        isAllDay: !!event.start?.date, // All-day events use 'date' instead of 'dateTime'
-        description: event.description || null,
-        location: event.location || null,
-        source: 'google' // Add source identifier
-      }))
-    }
-  } catch (error) {
-    console.error('Error fetching Google Calendar events:', error)
-    // Continue without Google events if there's an error
-  }
+  const userEvents = await EventService.getAllEvents(userId)
+  
 
   // Format local events for the calendar component
   const formattedLocalEvents = userEvents.map((event) => ({
@@ -52,11 +20,11 @@ export async function CalendarDataProvider({ userId }: CalendarDataProviderProps
     isAllDay: event.isAllDay ?? false,
     description: event.description,
     location: event.location,
-    source: 'local' // Add source identifier
+    source: event.origin  // Add source identifier with proper typing
   }))
 
   // Combine both local and Google events
-  const allEvents = [...formattedLocalEvents, ...googleEvents]
+  const allEvents = [...formattedLocalEvents]
 
   return <CalendarClientPage events={allEvents} />
 }

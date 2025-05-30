@@ -27,7 +27,7 @@ export async function POST(request: Request) {
             error: 'Please log in to view your events',
           };
         }        try {
-          const userEvents = await EventService.getUpcomingEvents(user.id, days, limit);
+          const userEvents = await EventService.getAllUpcomingEvents(user.id, days, limit);
 
           const formattedEvents = userEvents.map((event) => ({
             id: event.id,
@@ -129,7 +129,8 @@ export async function POST(request: Request) {
           const startOfDay = new Date(targetDate);
           startOfDay.setHours(0, 0, 0, 0);
           const endOfDay = new Date(targetDate);
-          endOfDay.setHours(23, 59, 59, 999);          const existingEvents = await EventService.getEventsInRange(
+          endOfDay.setHours(23, 59, 59, 999);          
+          const existingEvents = await EventService.getAllEventsInRange(
             user.id,
             startOfDay,
             endOfDay
