@@ -1,7 +1,8 @@
 import type React from "react"
 import { Suspense } from "react"
 import { GoogleIntegrationService } from "@/services/googleIntegrationService"
-import { getUserFromCookie } from "@/lib/auth"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { IntegrationsContent } from "./integrations-content"
 import { IntegrationsPageSkeleton } from "./integrations-skeleton"
 import { revalidatePath } from "next/cache"
@@ -21,15 +22,17 @@ export type Integration = {
 }
 
 async function getIntegrationsData(): Promise<Integration[]> {
-  const user = await getUserFromCookie()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
 
   let googleConnected = false
   let googleIntegration = null
 
-  if (user) {
+  if (session?.user) {
     try {
-      googleConnected = await GoogleIntegrationService.hasValidIntegration(user.id)
-      googleIntegration = await GoogleIntegrationService.getUserIntegration(user.id)
+      googleConnected = await GoogleIntegrationService.hasValidIntegration(session.user.id)
+      googleIntegration = await GoogleIntegrationService.getUserIntegration(session.user.id)
     } catch (error) {
       console.error('Error checking Google integration:', error)
     }
