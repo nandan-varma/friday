@@ -32,7 +32,7 @@ export function EventCard({
   const getEventStyles = () => {
     const baseStyles = "rounded-lg border transition-all duration-200 cursor-pointer group"
     
-    if (event.source === 'google') {
+    if (event.origin === 'google') {
       return cn(
         baseStyles,
         "bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 hover:shadow-sm dark:bg-blue-950/20 dark:border-blue-800 dark:hover:bg-blue-900/30"
@@ -50,7 +50,7 @@ export function EventCard({
       <div
         className={cn(
           "text-xs p-1 rounded truncate cursor-pointer transition-colors",
-          event.source === 'google' 
+          event.origin === 'google' 
             ? "text-blue-700 hover:bg-blue-200 dark:text-blue-400 dark:hover:bg-blue-900/30" 
             : "bg-primary/10 text-primary hover:bg-primary/20",
           className
@@ -76,7 +76,7 @@ export function EventCard({
           <div className="text-xs text-muted-foreground mt-1 opacity-80 group-hover:opacity-100 transition-opacity">
             {event.isAllDay
               ? "All day"
-              : format(parseISO(event.startTime), "h:mm a")
+              : format(event.startTime, "h:mm a")
             }
           </div>
         )}
@@ -100,7 +100,7 @@ export function EventCard({
               <Clock className="h-3 w-3 flex-shrink-0" />
               {event.isAllDay
                 ? "All day"
-                : `${format(parseISO(event.startTime), "h:mm a")} - ${format(parseISO(event.endTime), "h:mm a")}`
+                : `${format(event.startTime, "h:mm a")} - ${format(event.endTime, "h:mm a")}`
               }
             </div>
           )}

@@ -66,7 +66,7 @@ export function WeekView({
                 </div>
                 {days.map((day, i) => {
                   const allDayEvents = events.filter(event => 
-                    event.isAllDay && isSameDay(parseISO(event.startTime), day)
+                    event.isAllDay && isSameDay(event.startTime, day)
                   )
                   
                   return (
@@ -121,8 +121,8 @@ export function WeekView({
                 </div>
                 {days.map((day, dayIndex) => {
                   const hourEvents = events.filter((event) => {
-                    const startHour = new Date(parseISO(event.startTime)).getHours()
-                    return isSameDay(parseISO(event.startTime), day) && 
+                    const startHour = new Date(event.startTime).getHours()
+                    return isSameDay(event.startTime, day) && 
                            !event.isAllDay && 
                            startHour === hour
                   })

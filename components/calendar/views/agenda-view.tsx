@@ -22,12 +22,12 @@ export function AgendaView({
 
   // Group events by date
   const groupedEvents = events
-    .filter(event => isAfter(parseISO(event.startTime), new Date()) || 
-                    format(parseISO(event.startTime), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'))
+    .filter(event => isAfter(event.startTime, new Date()) || 
+                    format(event.startTime, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'))
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 50) // Limit to 50 upcoming events
     .reduce((groups, event) => {
-      const date = format(parseISO(event.startTime), 'yyyy-MM-dd')
+      const date = format(event.startTime, 'yyyy-MM-dd')
       if (!groups[date]) {
         groups[date] = []
       }
@@ -45,7 +45,7 @@ export function AgendaView({
           <h2 className="text-lg md:text-xl lg:text-2xl font-semibold">Upcoming Events</h2>
           <p className="text-muted-foreground text-sm mt-1">
             {groupedEventEntries.length > 0 
-              ? `${events.filter(e => isAfter(parseISO(e.startTime), new Date())).length} upcoming events`
+              ? `${events.filter(e => isAfter(e.startTime, new Date())).length} upcoming events`
               : "No upcoming events"
             }
           </p>
@@ -103,7 +103,7 @@ export function AgendaView({
                               All Day
                             </Badge>
                           )}
-                          {dayEvents.some(e => e.source === 'google') && (
+                          {dayEvents.some(e => e.origin === 'google') && (
                             <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                               Google
                             </Badge>

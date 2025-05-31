@@ -23,7 +23,7 @@ export function DayView({
   onCreateEvent 
 }: CalendarViewProps) {
   const dayEvents = events.filter(event => 
-    isSameDay(parseISO(event.startTime), currentDate)
+    isSameDay(event.startTime, currentDate)
   )
   
   const allDayEvents = dayEvents.filter(event => event.isAllDay)
@@ -116,7 +116,7 @@ export function DayView({
           <div className="divide-y">
             {hours.map((hour) => {
               const hourEvents = timedEvents.filter((event) => {
-                const startHour = new Date(parseISO(event.startTime)).getHours()
+                const startHour = new Date(event.startTime).getHours()
                 return startHour === hour
               })
 

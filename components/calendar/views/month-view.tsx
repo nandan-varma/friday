@@ -76,7 +76,7 @@ export function MonthView({
         <div className="grid grid-cols-7">
           {calendarDays.map((day, i) => {
             const dayEvents = events.filter(event => 
-              isSameDay(parseISO(event.startTime), day)
+              isSameDay(event.startTime, day)
             )
             const isCurrentMonth = isSameMonth(day, currentDate)
             const isTodayDate = isToday(day)

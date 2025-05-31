@@ -92,14 +92,14 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
               <Badge variant="secondary" className="font-medium">
                 {events.length} event{events.length !== 1 ? 's' : ''}
               </Badge>
-              {events.filter(e => e.source === 'google').length > 0 && (
+              {events.filter(e => e.origin === 'google').length > 0 && (
                 <Badge className="text-xs text-blue-700 border-blue-200">
-                  {events.filter(e => e.source === 'google').length} Google
+                  {events.filter(e => e.origin === 'google').length} Google
                 </Badge>
               )}
-              {events.filter(e => e.source === 'local').length > 0 && (
+              {events.filter(e => e.origin === 'local').length > 0 && (
                 <Badge className="text-xs">
-                  {events.filter(e => e.source === 'local').length} Local
+                  {events.filter(e => e.origin === 'local').length} Local
                 </Badge>
               )}
               {events.filter(e => e.isAllDay).length > 0 && (
