@@ -13,16 +13,7 @@ export async function UpcomingEvents() {
   // Get upcoming events - this is the slow operation
   const upcomingEvents = await EventService.getAllUpcomingEvents(user.id, 5)
 
-  // Format events for the calendar component
-  const formattedEvents = upcomingEvents.map((event) => ({
-    id: event.id.toString(),
-    title: event.title,
-    startTime: event.startTime.toISOString(),
-    endTime: event.endTime.toISOString(),
-    isAllDay: event.isAllDay ?? false,
-  }))
-
-  return <CalendarView events={formattedEvents} view="agenda" />
+  return <CalendarView events={upcomingEvents} view="agenda" />
 }
 
 

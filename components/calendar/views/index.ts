@@ -8,4 +8,4 @@ export {
   CalendarViewSkeleton,
   CalendarHeaderSkeleton 
 } from './skeletons'
-export type { CalendarEvent, ViewType, CalendarViewProps } from './types'
+export type { ViewType, CalendarViewProps } from './types'

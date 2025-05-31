@@ -30,18 +30,8 @@ export async function POST(request: Request) {
         }        try {
           const userEvents = await EventService.getAllUpcomingEvents(user.id, days, limit);
 
-          const formattedEvents = userEvents.map((event) => ({
-            id: event.id,
-            title: event.title,
-            description: event.description,
-            location: event.location,
-            startTime: event.startTime.toISOString(),
-            endTime: event.endTime.toISOString(),
-            isAllDay: event.isAllDay ?? false,
-          }));
-
           return {
-            events: formattedEvents,
+            events: userEvents,
             count: userEvents.length,
           };
         } catch (error) {

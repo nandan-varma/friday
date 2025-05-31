@@ -33,12 +33,12 @@ Reusable header component with navigation controls and title display.
 Flexible event display component with multiple variants.
 
 **Props:**
-- `event: CalendarEvent` - The event data
+- `event: UnifiedEvent` - The event data
 - `variant?: 'default' | 'compact' | 'minimal'` - Display variant
 - `showTime?: boolean` - Whether to show event time
 - `showLocation?: boolean` - Whether to show event location
 - `showDescription?: boolean` - Whether to show event description
-- `onClick?: (event: CalendarEvent) => void` - Click handler
+- `onClick?: (event: UnifiedEvent) => void` - Click handler
 - `className?: string` - Additional CSS classes
 
 ### Views
@@ -46,10 +46,10 @@ Flexible event display component with multiple variants.
 Each view component (`MonthView`, `WeekView`, `DayView`, `AgendaView`) implements the `CalendarViewProps` interface:
 
 **Props:**
-- `events: CalendarEvent[]` - Array of events to display
+- `events: UnifiedEvent[]` - Array of events to display
 - `currentDate: Date` - Currently selected date
 - `onDateChange: (date: Date) => void` - Date change handler
-- `onEventClick?: (event: CalendarEvent) => void` - Event click handler
+- `onEventClick?: (event: UnifiedEvent) => void` - Event click handler
 - `onCreateEvent?: (date: Date, hour?: number) => void` - Create event handler
 
 ## Features
@@ -86,9 +86,9 @@ Each view component (`MonthView`, `WeekView`, `DayView`, `AgendaView`) implement
 ## Usage
 
 ```tsx
-import { MonthView, type CalendarEvent } from '@/components/calendar/views'
+import { MonthView, type UnifiedEvent } from '@/components/calendar/views'
 
-const events: CalendarEvent[] = [
+const events: UnifiedEvent[] = [
   {
     id: '1',
     title: 'Team Meeting',
@@ -104,7 +104,7 @@ const events: CalendarEvent[] = [
 function MyCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date())
   
-  const handleEventClick = (event: CalendarEvent) => {
+  const handleEventClick = (event: UnifiedEvent) => {
     // Handle event interaction
   }
   

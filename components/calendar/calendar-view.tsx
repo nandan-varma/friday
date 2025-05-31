@@ -6,17 +6,15 @@ import {
   WeekView, 
   DayView, 
   AgendaView,
-  type CalendarEvent,
   type ViewType,
   CalendarViewSkeleton as Skeleton
 } from "./views"
-
-export type { CalendarEvent } from "./views"
+import { type UnifiedEvent } from "@/services/eventService"
 
 interface CalendarViewProps {
-  events: CalendarEvent[]
+  events: UnifiedEvent[]
   view: ViewType
-  onEventClick?: (event: CalendarEvent) => void
+  onEventClick?: (event: UnifiedEvent) => void
   onCreateEvent?: (date: Date, hour?: number) => void
 }
 

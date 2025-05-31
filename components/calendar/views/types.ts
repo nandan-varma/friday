@@ -1,20 +1,11 @@
-export type CalendarEvent = {
-  id: string
-  title: string
-  startTime: string
-  endTime: string
-  isAllDay: boolean
-  description?: string | null
-  location?: string | null
-  source?: 'local' | 'google'
-}
+import { type UnifiedEvent } from "@/services/eventService"
 
 export type ViewType = "day" | "week" | "month" | "agenda"
 
 export interface CalendarViewProps {
-  events: CalendarEvent[]
+  events: UnifiedEvent[]
   currentDate: Date
   onDateChange: (date: Date) => void
-  onEventClick?: (event: CalendarEvent) => void
+  onEventClick?: (event: UnifiedEvent) => void
   onCreateEvent?: (date: Date, hour?: number) => void
 }

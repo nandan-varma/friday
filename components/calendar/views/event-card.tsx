@@ -4,15 +4,15 @@ import { Clock, MapPin, MoreHorizontal } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { CalendarEvent } from "./types"
+import { type UnifiedEvent } from "@/services/eventService"
 
 interface EventCardProps {
-  event: CalendarEvent
+  event: UnifiedEvent
   variant?: 'default' | 'compact' | 'minimal'
   showTime?: boolean
   showLocation?: boolean
   showDescription?: boolean
-  onClick?: (event: CalendarEvent) => void
+  onClick?: (event: UnifiedEvent) => void
   className?: string
 }
 

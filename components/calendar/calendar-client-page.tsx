@@ -3,16 +3,16 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CalendarView } from "./calendar-view"
-import { type CalendarEvent } from "./views"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Plus, Calendar, List, Grid3X3, LayoutGrid } from "lucide-react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { type UnifiedEvent } from "@/services/eventService"
 
 type CalendarClientPageProps = {
-  events: CalendarEvent[]
+  events: UnifiedEvent[]
 }
 
 export function CalendarClientPage({ events }: CalendarClientPageProps) {
@@ -26,7 +26,7 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
     { value: "agenda", label: "Agenda", icon: List },
   ] as const
 
-  const handleEventClick = (event: CalendarEvent) => {
+  const handleEventClick = (event: UnifiedEvent) => {
     // Navigate to event details or open edit modal
     console.log("Event clicked:", event)
     // For now, just log the event. Later we can implement event editing
