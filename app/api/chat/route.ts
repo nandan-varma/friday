@@ -1,6 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { streamText } from 'ai';
-import { getUserFromCookie } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import { headers } from 'next/headers';
 import { EventService } from '@/services/eventService';
 import { tool as createTool } from 'ai';
 import { z } from 'zod';
@@ -10,7 +11,10 @@ export async function POST(request: Request) {
   const { messages } = await request.json();
   
   // Get user for server-side tools
-  const user = await getUserFromCookie();
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+  const user = session?.user;
   
   // Create server-side tools that have access to the user context
   const serverTools = {
@@ -28,7 +32,7 @@ export async function POST(request: Request) {
             error: 'Please log in to view your events',
           };
         }        try {
-          const userEvents = await EventService.getAllUpcomingEvents(user.id, days, limit);
+          const userEvents = await EventService.getAllUpcomingEvents(parseInt(user.id), days, limit);
 
           return {
             events: userEvents,
@@ -120,9 +124,8 @@ export async function POST(request: Request) {
           const startOfDay = new Date(targetDate);
           startOfDay.setHours(0, 0, 0, 0);
           const endOfDay = new Date(targetDate);
-          endOfDay.setHours(23, 59, 59, 999);          
-          const existingEvents = await EventService.getAllEventsInRange(
-            user.id,
+          endOfDay.setHours(23, 59, 59, 999);            const existingEvents = await EventService.getAllEventsInRange(
+            parseInt(user.id),
             startOfDay,
             endOfDay
           );

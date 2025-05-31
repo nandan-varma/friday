@@ -1,32 +1,33 @@
 import { db } from "@/lib/db"
-import { users, userSettings } from "@/lib/db/schema"
+import { user } from "@/lib/db/schema/auth"
+import { userSettings } from "@/lib/db/schema/calendar"
 import { eq } from "drizzle-orm"
 
 export interface UserProfile {
-  id: number
+  id: string
   name: string | null
   email: string
 }
 
-export interface UserSettingsData {
+export interface userSettingsData {
   timezone: string | null
   notificationsEnabled: boolean | null
   aiSuggestionsEnabled: boolean | null
   reminderTime: number | null
 }
 
-export async function getUserProfile(userId: number): Promise<UserProfile | null> {
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
-    const [user] = await db
+    const [currentUser] = await db
       .select({
-        id: users.id,
-        name: users.name,
-        email: users.email,
+        id: user.id,
+        name: user.name,
+        email: user.email,
       })
-      .from(users)
-      .where(eq(users.id, userId))
+      .from(user)
+      .where(eq(user.id, userId))
 
-    return user || null
+    return currentUser || null
   } catch (error) {
     console.error("Error fetching user profile:", error)
     throw new Error("Failed to fetch user profile")
@@ -34,21 +35,21 @@ export async function getUserProfile(userId: number): Promise<UserProfile | null
 }
 
 export async function updateUserProfile(
-  userId: number,
+  userId: string,
   data: { name?: string; email?: string }
 ): Promise<UserProfile> {
   try {
     const [updatedUser] = await db
-      .update(users)
+      .update(user)
       .set({
         ...data,
         updatedAt: new Date(),
       })
-      .where(eq(users.id, userId))
+      .where(eq(user.id, userId))
       .returning({
-        id: users.id,
-        name: users.name,
-        email: users.email,
+        id: user.id,
+        name: user.name,
+        email: user.email,
       })
 
     return updatedUser
@@ -58,7 +59,7 @@ export async function updateUserProfile(
   }
 }
 
-export async function getUserSettings(userId: number): Promise<UserSettingsData | null> {
+export async function getuserSettings(userId: string): Promise<userSettingsData | null> {
   try {
     const [settings] = await db
       .select({
@@ -77,13 +78,13 @@ export async function getUserSettings(userId: number): Promise<UserSettingsData 
   }
 }
 
-export async function updateUserSettings(
-  userId: number,
-  data: Partial<UserSettingsData>
-): Promise<UserSettingsData> {
+export async function updateuserSettings(
+  userId: string,
+  data: Partial<userSettingsData>
+): Promise<userSettingsData> {
   try {
     // Check if settings exist
-    const existingSettings = await getUserSettings(userId)
+    const existingSettings = await getuserSettings(userId)
 
     if (existingSettings) {      // Update existing settings
       const [updatedSettings] = await db
@@ -126,7 +127,7 @@ export async function updateUserSettings(
   }
 }
 
-export async function createDefaultUserSettings(userId: number): Promise<void> {
+export async function createDefaultuserSettings(userId: string): Promise<void> {
   try {
     await db.insert(userSettings).values({
       userId,

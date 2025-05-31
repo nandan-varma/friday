@@ -1,17 +1,19 @@
-import { getUserFromCookie } from "@/lib/auth"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { EventService } from "@/services/eventService"
 import { CalendarView } from "@/components/calendar/calendar-view"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export async function UpcomingEvents() {
-  const user = await getUserFromCookie()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
 
-  if (!user) {
+  if (!session?.user) {
     return null
   }
-
   // Get upcoming events - this is the slow operation
-  const upcomingEvents = await EventService.getAllUpcomingEvents(user.id, 5)
+  const upcomingEvents = await EventService.getAllUpcomingEvents(parseInt(session.user.id), 5)
 
   return <CalendarView events={upcomingEvents} view="agenda" />
 }

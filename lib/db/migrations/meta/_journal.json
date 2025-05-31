@@ -5,15 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1748466029837,
-      "tag": "0000_stale_quicksilver",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1748571569077,
-      "tag": "0001_orange_bishop",
+      "when": 1748666529727,
+      "tag": "0000_sudden_micromax",
       "breakpoints": true
     }
   ]

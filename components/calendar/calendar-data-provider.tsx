@@ -2,7 +2,7 @@ import { EventService } from "@/services/eventService"
 import { CalendarClientPage } from "@/components/calendar/calendar-client-page"
 
 interface CalendarDataProviderProps {
-  userId: number
+  userId: string
 }
 
 export async function CalendarDataProvider({ userId }: CalendarDataProviderProps) {

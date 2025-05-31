@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
+import { events } from "@/lib/db/schema/calendar"
 import { eq, and, gte, lte } from "drizzle-orm"
 
 export interface CreateEventData {
@@ -29,7 +29,7 @@ export interface EventFilters {
 
 export interface LocalEvent {
     id: number
-    userId: number
+    userId: string
     title: string
     description?: string | null
     location?: string | null
@@ -41,11 +41,10 @@ export interface LocalEvent {
     updatedAt?: Date
 }
 
-export class LocalIntegrationService {
-    /**
+export class LocalIntegrationService {    /**
      * Get all local events for a user with optional date filtering
      */
-    static async getEvents(userId: number, filters?: EventFilters): Promise<LocalEvent[]> {
+    static async getEvents(userId: string, filters?: EventFilters): Promise<LocalEvent[]> {
         try {
             const conditions = [eq(events.userId, userId)]
 
@@ -63,17 +62,15 @@ export class LocalIntegrationService {
                 .where(and(...conditions))
                 .orderBy(events.startTime)
 
-            return userEvents as LocalEvent[]
+            return userEvents as unknown as LocalEvent[]
         } catch (error) {
             console.error("Error fetching local events:", error)
             throw new Error("Failed to fetch local events")
         }
-    }
-
-    /**
+    }    /**
      * Get a single local event by ID for a specific user
      */
-    static async getEventById(eventId: number, userId: number): Promise<LocalEvent> {
+    static async getEventById(eventId: number, userId: string): Promise<LocalEvent> {
         try {
             const event = await db.query.events.findFirst({
                 where: and(eq(events.id, eventId), eq(events.userId, userId)),
@@ -83,17 +80,15 @@ export class LocalIntegrationService {
                 throw new Error("Event not found")
             }
 
-            return event as LocalEvent
+            return event as unknown as LocalEvent
         } catch (error) {
             console.error("Error fetching local event:", error)
             throw error
         }
-    }
-
-    /**
+    }    /**
      * Create a new local event for a user
      */
-    static async createEvent(userId: number, eventData: CreateEventData): Promise<LocalEvent> {
+    static async createEvent(userId: string, eventData: CreateEventData): Promise<LocalEvent> {
         try {
             const [newEvent] = await db
                 .insert(events)
@@ -109,17 +104,15 @@ export class LocalIntegrationService {
                 })
                 .returning()
 
-            return newEvent as LocalEvent
+            return newEvent as unknown as LocalEvent
         } catch (error) {
             console.error("Error creating local event:", error)
             throw new Error("Failed to create local event")
         }
-    }
-
-    /**
+    }    /**
      * Update an existing local event
      */
-    static async updateEvent(eventId: number, userId: number, eventData: UpdateEventData): Promise<LocalEvent> {
+    static async updateEvent(eventId: number, userId: string, eventData: UpdateEventData): Promise<LocalEvent> {
         try {
             const updateData: any = {
                 ...eventData,
@@ -144,17 +137,15 @@ export class LocalIntegrationService {
                 throw new Error("Event not found")
             }
 
-            return updatedEvent as LocalEvent
+            return updatedEvent as unknown as LocalEvent
         } catch (error) {
             console.error("Error updating local event:", error)
             throw error
         }
-    }
-
-    /**
+    }    /**
      * Delete a local event
      */
-    static async deleteEvent(eventId: number, userId: number): Promise<LocalEvent> {
+    static async deleteEvent(eventId: number, userId: string): Promise<LocalEvent> {
         try {
             const [deletedEvent] = await db
                 .delete(events)
@@ -175,7 +166,7 @@ export class LocalIntegrationService {
     /**
      * Get local events within a specific date range
      */
-    static async getEventsInRange(userId: number, startDate: Date, endDate: Date): Promise<LocalEvent[]> {
+    static async getEventsInRange(userId: string, startDate: Date, endDate: Date): Promise<LocalEvent[]> {
         try {
             return await this.getEvents(userId, { startDate, endDate })
         } catch (error) {
@@ -187,7 +178,7 @@ export class LocalIntegrationService {
     /**
      * Get today's local events for a user
      */
-    static async getTodayEvents(userId: number): Promise<LocalEvent[]> {
+    static async getTodayEvents(userId: string): Promise<LocalEvent[]> {
         try {
             const today = new Date()
             const startOfDay = new Date(today.setHours(0, 0, 0, 0))
@@ -203,7 +194,7 @@ export class LocalIntegrationService {
     /**
      * Get upcoming local events for a user (next N days)
      */
-    static async getUpcomingEvents(userId: number, days: number = 7, limit?: number): Promise<LocalEvent[]> {
+    static async getUpcomingEvents(userId: string, days: number = 7, limit?: number): Promise<LocalEvent[]> {
         try {
             const now = new Date()
             const futureDate = new Date()
@@ -237,7 +228,7 @@ export class LocalIntegrationService {
     /**
      * Search local events by title, description, or location
      */
-    static async searchEvents(userId: number, searchTerm: string, filters?: EventFilters): Promise<LocalEvent[]> {
+    static async searchEvents(userId: string, searchTerm: string, filters?: EventFilters): Promise<LocalEvent[]> {
         try {
             // Get all events for the user with filters
             const allEvents = await this.getEvents(userId, filters)
@@ -258,7 +249,7 @@ export class LocalIntegrationService {
     /**
      * Get local event statistics for a user
      */
-    static async getEventStatistics(userId: number, filters?: EventFilters): Promise<{
+    static async getEventStatistics(userId: string, filters?: EventFilters): Promise<{
         totalEvents: number
         todayEvents: number
         upcomingEvents: number
@@ -286,7 +277,7 @@ export class LocalIntegrationService {
     /**
      * Check if user has any local events
      */
-    static async hasEvents(userId: number): Promise<boolean> {
+    static async hasEvents(userId: string): Promise<boolean> {
         try {
             const events = await this.getEvents(userId)
             return events.length > 0
@@ -299,7 +290,7 @@ export class LocalIntegrationService {
     /**
      * Get count of local events for a user
      */
-    static async getEventCount(userId: number, filters?: EventFilters): Promise<number> {
+    static async getEventCount(userId: string, filters?: EventFilters): Promise<number> {
         try {
             const events = await this.getEvents(userId, filters)
             return events.length

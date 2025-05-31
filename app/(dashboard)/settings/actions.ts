@@ -1,14 +1,15 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
-import { getUserFromCookie } from '@/lib/auth'
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { 
   getUserProfile, 
   updateUserProfile, 
-  getUserSettings, 
-  updateUserSettings,
+  getuserSettings, 
+  updateuserSettings,
   type UserProfile,
-  type UserSettingsData 
+  type userSettingsData 
 } from '@/services/profileService'
 
 export interface ActionResult<T = any> {
@@ -23,14 +24,15 @@ export interface ActionResult<T = any> {
 export async function updateUserProfileAction(data: { 
   name: string
   email: string 
-}): Promise<ActionResult<UserProfile>> {
-  try {
-    const user = await getUserFromCookie()
-    if (!user) {
+}): Promise<ActionResult<UserProfile>> {  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+    if (!session?.user) {
       return { success: false, error: 'User not authenticated' }
     }
 
-    const updatedProfile = await updateUserProfile(user.id, data)
+    const updatedProfile = await updateUserProfile(session.user.id, data)
     
     // Don't revalidate immediately to prevent state loss in client components
     // The client component will handle optimistic updates
@@ -52,14 +54,15 @@ export async function updateUserSettingsAction(data: {
   notificationsEnabled: boolean
   aiSuggestionsEnabled: boolean
   timezone: string
-}): Promise<ActionResult<UserSettingsData>> {
-  try {
-    const user = await getUserFromCookie()
-    if (!user) {
+}): Promise<ActionResult<userSettingsData>> {try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+    if (!session?.user) {
       return { success: false, error: 'User not authenticated' }
     }
 
-    const updatedSettings = await updateUserSettings(user.id, data)
+    const updatedSettings = await updateuserSettings(session.user.id, data)
     
     // Don't revalidate immediately to prevent state loss in client components
     // The client component will handle optimistic updates
@@ -79,17 +82,16 @@ export async function updateUserSettingsAction(data: {
  */
 export async function getUserData(): Promise<ActionResult<{
   profile: UserProfile
-  settings: UserSettingsData
-}>> {
-  try {
-    const user = await getUserFromCookie()
-    if (!user) {
+  settings: userSettingsData
+}>> {try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    })
+    if (!session?.user) {
       return { success: false, error: 'User not authenticated' }
-    }
-
-    const [profile, settings] = await Promise.all([
-      getUserProfile(user.id),
-      getUserSettings(user.id)
+    }    const [profile, settings] = await Promise.all([
+      getUserProfile(session.user.id),
+      getuserSettings(session.user.id)
     ])
 
     if (!profile) {
