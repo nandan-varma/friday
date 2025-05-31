@@ -14,7 +14,7 @@ export default async function DashboardLayout({
     })
 
   if (!session) {
-    redirect("/login")
+    redirect("/auth")
   }
 
   return (
