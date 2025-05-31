@@ -1,7 +1,8 @@
 'use server'
 
 import { GoogleIntegrationService } from '@/services/googleIntegrationService'
-import { getUserFromCookie } from '@/lib/auth'
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -16,8 +17,10 @@ export interface ActionResult<T = any> {
  */
 export async function getGoogleAuthUrl(): Promise<ActionResult<{ authUrl: string }>> {
     try {
-        const user = await getUserFromCookie()
-        if (!user) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
@@ -34,12 +37,14 @@ export async function getGoogleAuthUrl(): Promise<ActionResult<{ authUrl: string
  */
 export async function exchangeGoogleAuthCode(code: string): Promise<ActionResult> {
     try {
-        const user = await getUserFromCookie()
-        if (!user) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        await GoogleIntegrationService.exchangeCodeForTokens(code, user.id)
+        await GoogleIntegrationService.exchangeCodeForTokens(code, session.user.id)
 
         // Revalidate the integrations page
         revalidatePath('/dashboard/integrations')
@@ -61,15 +66,16 @@ export async function checkGoogleConnection(): Promise<ActionResult<{
         expiresAt: Date | null
         hasRefreshToken: boolean
     }
-}>> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+}>> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        const connected = await GoogleIntegrationService.hasValidIntegration(user.id)
-        const integration = await GoogleIntegrationService.getUserIntegration(user.id)
+        const connected = await GoogleIntegrationService.hasValidIntegration(session.user.id)
+        const integration = await GoogleIntegrationService.getUserIntegration(session.user.id)
 
         return {
             success: true,
@@ -91,14 +97,15 @@ export async function checkGoogleConnection(): Promise<ActionResult<{
 /**
  * Disconnect Google Calendar integration
  */
-export async function disconnectGoogleCalendar(): Promise<ActionResult> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+export async function disconnectGoogleCalendar(): Promise<ActionResult> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        await GoogleIntegrationService.disconnectIntegration(user.id)
+        await GoogleIntegrationService.disconnectIntegration(session.user.id)
 
         // Revalidate the integrations page
         revalidatePath('/dashboard/integrations')
@@ -115,12 +122,14 @@ export async function disconnectGoogleCalendar(): Promise<ActionResult> {
  */
 export async function getGoogleCalendars(): Promise<ActionResult<{ calendars: any[] }>> {
     try {
-        const user = await getUserFromCookie()
-        if (!user) {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        const calendars = await GoogleIntegrationService.getCalendarList(user.id)
+        const calendars = await GoogleIntegrationService.getCalendarList(session.user.id)
         return { success: true, data: { calendars } }
     } catch (error) {
         console.error('Error fetching calendars:', error)
@@ -136,14 +145,15 @@ export async function getGoogleCalendarEvents(options: {
     timeMin?: Date
     timeMax?: Date
     calendarId?: string
-} = {}): Promise<ActionResult<{ events: any[] }>> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+} = {}): Promise<ActionResult<{ events: any[] }>> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        const events = await GoogleIntegrationService.getCalendarEvents(user.id, options)
+        const events = await GoogleIntegrationService.getCalendarEvents(session.user.id, options)
         return { success: true, data: { events } }
     } catch (error) {
         console.error('Error fetching calendar events:', error)
@@ -157,14 +167,15 @@ export async function getGoogleCalendarEvents(options: {
 export async function createGoogleCalendarEvent(
     event: any,
     calendarId: string = 'primary'
-): Promise<ActionResult<{ event: any }>> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+): Promise<ActionResult<{ event: any }>> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        const createdEvent = await GoogleIntegrationService.createCalendarEvent(user.id, event, calendarId)
+        const createdEvent = await GoogleIntegrationService.createCalendarEvent(session.user.id, event, calendarId)
 
         // Revalidate calendar-related pages
         revalidatePath('/dashboard/calendar')
@@ -184,14 +195,15 @@ export async function updateGoogleCalendarEvent(
     eventId: string,
     event: any,
     calendarId: string = 'primary'
-): Promise<ActionResult<{ event: any }>> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+): Promise<ActionResult<{ event: any }>> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(user.id, eventId, event, calendarId)
+        const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(session.user.id, eventId, event, calendarId)
 
         // Revalidate calendar-related pages
         revalidatePath('/dashboard/calendar')
@@ -210,14 +222,15 @@ export async function updateGoogleCalendarEvent(
 export async function deleteGoogleCalendarEvent(
     eventId: string,
     calendarId: string = 'primary'
-): Promise<ActionResult> {
-    try {
-        const user = await getUserFromCookie()
-        if (!user) {
+): Promise<ActionResult> {    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+        if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
 
-        await GoogleIntegrationService.deleteCalendarEvent(user.id, eventId, calendarId)
+        await GoogleIntegrationService.deleteCalendarEvent(session.user.id, eventId, calendarId)
 
         // Revalidate calendar-related pages
         revalidatePath('/dashboard/calendar')

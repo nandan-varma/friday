@@ -1,13 +1,16 @@
 import { Suspense } from "react"
-import { getUserFromCookie } from "@/lib/auth"
 import { CalendarDataProvider } from "@/components/calendar/calendar-data-provider"
 import { CalendarPageSkeleton } from "@/components/calendar/calendar-page-skeleton"
 import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
+import { auth } from "@/lib/auth"
+import { headers } from "next/headers"
 
 export default async function CalendarPage() {
-  const user = await getUserFromCookie()
+  const session = await auth.api.getSession({
+    headers: await headers()
+  })
 
-  if (!user) {
+  if (!session) {
     return (
       <div className="w-full max-w-7xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
@@ -23,7 +26,7 @@ export default async function CalendarPage() {
   return (
     <CalendarErrorBoundary>
       <Suspense fallback={<CalendarPageSkeleton />}>
-        <CalendarDataProvider userId={user.id} />
+        <CalendarDataProvider userId={session.user.id} />
       </Suspense>
     </CalendarErrorBoundary>
   )

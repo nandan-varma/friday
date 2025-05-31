@@ -15,7 +15,7 @@ export default async function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild className="transition-all duration-200 hover:scale-105">
-              <Link href="/login">Sign In</Link>
+              <Link href="/auth">Sign In</Link>
             </Button>
             <Button asChild className="transition-all duration-200 hover:scale-105 hover:shadow-lg">
               <Link href="/dashboard">Get Started</Link>

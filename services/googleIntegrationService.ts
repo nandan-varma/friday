@@ -1,7 +1,7 @@
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { db } from '@/lib/db';
-import { integrations } from '@/lib/db/schema';
+import { integrations } from '@/lib/db/schema/calendar';
 import { eq, and } from 'drizzle-orm';
 
 // Google Calendar scopes
@@ -32,7 +32,7 @@ export interface GoogleCalendarEvent {
 
 export interface GoogleIntegration {
   id: number;
-  userId: number;
+  userId: string;
   accessToken: string | null;
   refreshToken: string | null;
   expiresAt: Date | null;
@@ -74,11 +74,10 @@ export class GoogleIntegrationService {
       prompt: 'consent', // Force consent to get refresh token
     });
   }
-
   /**
    * Exchange authorization code for tokens and save to database
    */
-  static async exchangeCodeForTokens(code: string, userId: number): Promise<GoogleIntegration> {
+  static async exchangeCodeForTokens(code: string, userId: string): Promise<GoogleIntegration> {
     const oAuth2Client = this.createOAuth2Client();
     
     try {
@@ -118,7 +117,7 @@ export class GoogleIntegrationService {
           .where(eq(integrations.id, existingIntegration[0].id))
           .returning();
         
-        integration = updated as GoogleIntegration;
+        integration = updated as unknown as GoogleIntegration;
       } else {
         // Create new integration
         const [created] = await db
@@ -132,7 +131,7 @@ export class GoogleIntegrationService {
           })
           .returning();
         
-        integration = created as GoogleIntegration;
+        integration = created as unknown as GoogleIntegration;
       }
 
       return integration;
@@ -141,11 +140,10 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Get user's Google Calendar integration from database
    */
-  static async getUserIntegration(userId: number): Promise<GoogleIntegration | null> {
+  static async getUserIntegration(userId: string): Promise<GoogleIntegration | null> {
     const result = await db
       .select()
       .from(integrations)
@@ -157,13 +155,12 @@ export class GoogleIntegrationService {
       )
       .limit(1);
 
-    return result.length > 0 ? (result[0] as GoogleIntegration) : null;
+    return result.length > 0 ? (result[0] as unknown as GoogleIntegration) : null;
   }
-
   /**
    * Create authenticated OAuth2 client for a user
    */
-  static async createAuthenticatedClient(userId: number): Promise<OAuth2Client | null> {
+  static async createAuthenticatedClient(userId: string): Promise<OAuth2Client | null> {
     const integration = await this.getUserIntegration(userId);
     
     if (!integration || !integration.accessToken) {
@@ -204,11 +201,10 @@ export class GoogleIntegrationService {
 
     return oAuth2Client;
   }
-
   /**
    * Check if user has valid Google Calendar integration
    */
-  static async hasValidIntegration(userId: number): Promise<boolean> {
+  static async hasValidIntegration(userId: string): Promise<boolean> {
     try {
       const client = await this.createAuthenticatedClient(userId);
       if (!client) return false;
@@ -223,12 +219,11 @@ export class GoogleIntegrationService {
       return false;
     }
   }
-
   /**
    * Fetch events from Google Calendar (no caching)
    */
   static async getCalendarEvents(
-    userId: number, 
+    userId: string, 
     options: {
       maxResults?: number;
       timeMin?: Date;
@@ -267,12 +262,11 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Create a new event in Google Calendar
    */
   static async createCalendarEvent(
-    userId: number,
+    userId: string,
     event: Partial<GoogleCalendarEvent>,
     calendarId: string = 'primary'
   ): Promise<GoogleCalendarEvent> {
@@ -296,12 +290,11 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Update an existing event in Google Calendar
    */
   static async updateCalendarEvent(
-    userId: number,
+    userId: string,
     eventId: string,
     event: Partial<GoogleCalendarEvent>,
     calendarId: string = 'primary'
@@ -327,12 +320,11 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Delete an event from Google Calendar
    */
   static async deleteCalendarEvent(
-    userId: number,
+    userId: string,
     eventId: string,
     calendarId: string = 'primary'
   ): Promise<void> {
@@ -354,11 +346,10 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Get list of user's calendars
    */
-  static async getCalendarList(userId: number) {
+  static async getCalendarList(userId: string) {
     const client = await this.createAuthenticatedClient(userId);
     
     if (!client) {
@@ -375,11 +366,10 @@ export class GoogleIntegrationService {
       throw error;
     }
   }
-
   /**
    * Disconnect Google Calendar integration
    */
-  static async disconnectIntegration(userId: number): Promise<void> {
+  static async disconnectIntegration(userId: string): Promise<void> {
     await db
       .delete(integrations)
       .where(
