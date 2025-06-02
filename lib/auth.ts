@@ -18,4 +18,3 @@ export const auth = betterAuth({
   ]
   //... the rest of your config
 });
-

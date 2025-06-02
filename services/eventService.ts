@@ -1,3 +1,4 @@
+"use server"
 import { openai } from "@ai-sdk/openai"
 import { generateObject } from "ai"
 import { z } from "zod"
@@ -50,7 +51,7 @@ export class EventService {
     /**
      * Create event from natural language input
      */
-    static async createEventFromNaturalLanguage(userId: number, input: string) {
+    static async createEventFromNaturalLanguage(userId: string, input: string) {
         try {
             const { object } = await generateObject({
                 model: openai('gpt-4-turbo'),
@@ -146,7 +147,7 @@ export class EventService {
      * Get all events from both local and Google Calendar with unified format
      */
     static async getAllEvents(
-        userId: number, 
+        userId: string, 
         filters?: CombinedEventFilters
     ): Promise<UnifiedEvent[]> {
         try {
@@ -195,7 +196,7 @@ export class EventService {
      * Get today's events from both local and Google Calendar
      */
     static async getAllTodayEvents(
-        userId: number,
+        userId: string,
         filters?: Pick<CombinedEventFilters, 'includeLocal' | 'includeGoogle' | 'calendarId'>
     ): Promise<UnifiedEvent[]> {
         try {
@@ -218,7 +219,7 @@ export class EventService {
      * Get upcoming events from both local and Google Calendar
      */
     static async getAllUpcomingEvents(
-        userId: number,
+        userId: string,
         days: number = 7,
         limit?: number,
         filters?: Pick<CombinedEventFilters, 'includeLocal' | 'includeGoogle' | 'calendarId'>
@@ -246,7 +247,7 @@ export class EventService {
      * Get events in a specific date range from both local and Google Calendar
      */
     static async getAllEventsInRange(
-        userId: number,
+        userId: string,
         startDate: Date,
         endDate: Date,
         filters?: Pick<CombinedEventFilters, 'includeLocal' | 'includeGoogle' | 'calendarId'>
@@ -267,7 +268,7 @@ export class EventService {
      * Get events by origin type only
      */
     static async getEventsByOrigin(
-        userId: number,
+        userId: string,
         origin: EventOrigin,
         filters?: EventFilters
     ): Promise<UnifiedEvent[]> {
@@ -300,7 +301,7 @@ export class EventService {
      * Search events across both local and Google Calendar
      */
     static async searchAllEvents(
-        userId: number,
+        userId: string,
         searchTerm: string,
         filters?: CombinedEventFilters
     ): Promise<UnifiedEvent[]> {
@@ -324,7 +325,7 @@ export class EventService {
      * Get event statistics across both calendars
      */
     static async getEventStatistics(
-        userId: number,
+        userId: string,
         filters?: CombinedEventFilters
     ): Promise<{
         totalEvents: number
@@ -363,7 +364,7 @@ export class EventService {
      * Create a new event in Google Calendar
      */
     static async createGoogleEvent(
-        userId: number,
+        userId: string,
         eventData: CreateEventData,
         calendarId?: string
     ): Promise<GoogleCalendarEvent> {
@@ -391,7 +392,7 @@ export class EventService {
      * Update an existing event in Google Calendar
      */
     static async updateGoogleEvent(
-        userId: number,
+        userId: string,
         eventId: string,
         eventData: UpdateEventData,
         calendarId?: string
@@ -426,7 +427,7 @@ export class EventService {
      * Delete an event from Google Calendar
      */
     static async deleteGoogleEvent(
-        userId: number,
+        userId: string,
         eventId: string,
         calendarId?: string
     ): Promise<void> {
@@ -441,7 +442,7 @@ export class EventService {
     /**
      * Get list of user's Google calendars
      */
-    static async getGoogleCalendars(userId: number) {
+    static async getGoogleCalendars(userId: string) {
         try {
             return await GoogleIntegrationService.getCalendarList(userId)
         } catch (error) {
@@ -457,14 +458,14 @@ export class EventService {
     /**
      * Check if user has valid Google Calendar integration
      */
-    static async hasGoogleIntegration(userId: number): Promise<boolean> {
+    static async hasGoogleIntegration(userId: string): Promise<boolean> {
         return GoogleIntegrationService.hasValidIntegration(userId)
     }
 
     /**
      * Get comprehensive integration status
      */
-    static async getIntegrationStatus(userId: number): Promise<{
+    static async getIntegrationStatus(userId: string): Promise<{
         hasLocalEvents: boolean
         hasGoogleIntegration: boolean
         totalIntegrations: number
