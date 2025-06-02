@@ -80,16 +80,14 @@ export class EventService {
             console.error("Error creating event from natural language:", error)
             throw new Error("Failed to create event from natural language")
         }
-    }
-
-    // ============================================
+    }    // ============================================
     // UNIFIED EVENT FORMATTING
     // ============================================
 
     /**
      * Format local database event to unified event format
      */
-    private static formatLocalEvent(event: any): UnifiedEvent {
+    private static async formatLocalEvent(event: any): Promise<UnifiedEvent> {
         return {
             id: `local_${event.id}`,
             title: event.title,
@@ -104,12 +102,10 @@ export class EventService {
             createdAt: event.createdAt ? new Date(event.createdAt) : undefined,
             updatedAt: event.updatedAt ? new Date(event.updatedAt) : undefined,
         }
-    }
-
-    /**
+    }    /**
      * Format Google Calendar event to unified event format
      */
-    private static formatGoogleEvent(event: GoogleCalendarEvent): UnifiedEvent {
+    private static async formatGoogleEvent(event: GoogleCalendarEvent): Promise<UnifiedEvent> {
         const startTime = event.start?.dateTime 
             ? new Date(event.start.dateTime)
             : event.start?.date 
@@ -153,12 +149,10 @@ export class EventService {
         try {
             const includeLocal = filters?.includeLocal !== false
             const includeGoogle = filters?.includeGoogle !== false
-            const allEvents: UnifiedEvent[] = []
-
-            // Fetch local events if enabled
+            const allEvents: UnifiedEvent[] = []            // Fetch local events if enabled
             if (includeLocal) {
                 const localEvents = await LocalIntegrationService.getEvents(userId, filters)
-                const formattedLocalEvents = localEvents.map(event => this.formatLocalEvent(event))
+                const formattedLocalEvents = await Promise.all(localEvents.map(event => this.formatLocalEvent(event)))
                 allEvents.push(...formattedLocalEvents)
             }
 
@@ -171,9 +165,9 @@ export class EventService {
                         if (filters?.startDate) googleOptions.timeMin = new Date(filters.startDate)
                         if (filters?.endDate) googleOptions.timeMax = new Date(filters.endDate)
                         if (filters?.calendarId) googleOptions.calendarId = filters.calendarId
-
+                        
                         const googleEvents = await GoogleIntegrationService.getCalendarEvents(userId, googleOptions)
-                        const formattedGoogleEvents = googleEvents.map(event => this.formatGoogleEvent(event))
+                        const formattedGoogleEvents = await Promise.all(googleEvents.map(event => this.formatGoogleEvent(event)))
                         allEvents.push(...formattedGoogleEvents)
                     }
                 } catch (googleError) {
@@ -272,10 +266,9 @@ export class EventService {
         origin: EventOrigin,
         filters?: EventFilters
     ): Promise<UnifiedEvent[]> {
-        try {
-            if (origin === "local") {
+        try {            if (origin === "local") {
                 const localEvents = await LocalIntegrationService.getEvents(userId, filters)
-                return localEvents.map(event => this.formatLocalEvent(event))
+                return await Promise.all(localEvents.map(event => this.formatLocalEvent(event)))
             } else if (origin === "google") {
                 const hasIntegration = await GoogleIntegrationService.hasValidIntegration(userId)
                 if (!hasIntegration) {
@@ -287,7 +280,7 @@ export class EventService {
                 if (filters?.endDate) googleOptions.timeMax = new Date(filters.endDate)
 
                 const googleEvents = await GoogleIntegrationService.getCalendarEvents(userId, googleOptions)
-                return googleEvents.map(event => this.formatGoogleEvent(event))
+                return await Promise.all(googleEvents.map(event => this.formatGoogleEvent(event)))
             }
 
             return []

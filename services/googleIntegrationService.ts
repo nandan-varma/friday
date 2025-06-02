@@ -39,8 +39,7 @@ export interface GoogleIntegration {
   expiresAt: Date | null;
 }
 
-export class GoogleIntegrationService {
-  private static getCredentials() {
+export class GoogleIntegrationService {  private static async getCredentials() {
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
     const key = credentials.installed || credentials.web;
     
@@ -50,10 +49,9 @@ export class GoogleIntegrationService {
     
     return key;
   }
-
-  private static createOAuth2Client(): OAuth2Client {
+  private static async createOAuth2Client(): Promise<OAuth2Client> {
     try {
-      const { client_id, client_secret } = this.getCredentials();
+      const { client_id, client_secret } = await this.getCredentials();
       const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
 
       return new google.auth.OAuth2(client_id, client_secret, redirectUri);
@@ -61,25 +59,22 @@ export class GoogleIntegrationService {
       console.error('Error creating OAuth2 client:', error);
       throw error;
     }
-  }
-
-  /**
+  }  /**
    * Generate authorization URL for OAuth flow
    */
-  static getAuthUrl(): string {
-    const oAuth2Client = this.createOAuth2Client();
+  static async getAuthUrl(): Promise<string> {
+    const oAuth2Client = await this.createOAuth2Client();
     
     return oAuth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
       prompt: 'consent', // Force consent to get refresh token
     });
-  }
-  /**
+  }  /**
    * Exchange authorization code for tokens and save to database
    */
   static async exchangeCodeForTokens(code: string, userId: string): Promise<GoogleIntegration> {
-    const oAuth2Client = this.createOAuth2Client();
+    const oAuth2Client = await this.createOAuth2Client();
     
     try {
       const { tokens } = await oAuth2Client.getToken(code);
@@ -157,8 +152,7 @@ export class GoogleIntegrationService {
       .limit(1);
 
     return result.length > 0 ? (result[0] as unknown as GoogleIntegration) : null;
-  }
-  /**
+  }  /**
    * Create authenticated OAuth2 client for a user
    */
   static async createAuthenticatedClient(userId: string): Promise<OAuth2Client | null> {
@@ -168,7 +162,7 @@ export class GoogleIntegrationService {
       return null;
     }
 
-    const oAuth2Client = this.createOAuth2Client();
+    const oAuth2Client = await this.createOAuth2Client();
     
     // Set the credentials
     oAuth2Client.setCredentials({

@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator"
 import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { updateUserSettingsAction } from "./actions"
-import type { UserSettingsData } from "@/services/profileService"
+import type { userSettingsData } from "@/services/profileService"
 
 const notificationFormSchema = z.object({
   notificationsEnabled: z.boolean(),
@@ -32,7 +32,7 @@ const notificationFormSchema = z.object({
 })
 
 interface PreferencesFormProps {
-  initialSettings: UserSettingsData
+  initialSettings: userSettingsData
 }
 
 export function PreferencesForm({ initialSettings }: PreferencesFormProps) {

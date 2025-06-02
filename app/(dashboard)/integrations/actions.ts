@@ -24,7 +24,7 @@ export async function getGoogleAuthUrl(): Promise<ActionResult<{ authUrl: string
             return { success: false, error: 'User not authenticated' }
         }
 
-        const authUrl = GoogleIntegrationService.getAuthUrl()
+        const authUrl = await GoogleIntegrationService.getAuthUrl()
         return { success: true, data: { authUrl } }
     } catch (error) {
         console.error('Error generating auth URL:', error)
