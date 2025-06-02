@@ -1,4 +1,3 @@
-"use server"
 import { db } from "@/lib/db"
 import { events } from "@/lib/db/schema/calendar"
 import { eq, and, gte, lte } from "drizzle-orm"

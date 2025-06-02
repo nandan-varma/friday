@@ -1,4 +1,3 @@
-"use server"
 import { db } from "@/lib/db"
 import { user } from "@/lib/db/schema/auth"
 import { userSettings } from "@/lib/db/schema/calendar"
