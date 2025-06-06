@@ -12,7 +12,7 @@ export async function UpcomingEvents() {
   if (!session?.user) {
     return null
   }
-  // Get upcoming events - this is the slow operation
+
   const upcomingEvents = await EventService.getAllUpcomingEvents(session.user.id, 5)
 
   return <CalendarView events={upcomingEvents} view="agenda" />

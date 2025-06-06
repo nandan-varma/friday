@@ -100,12 +100,12 @@ export function AgendaView({
                             {dayEvents.length} event{dayEvents.length === 1 ? '' : 's'}
                           </Badge>
                           {dayEvents.some(e => e.isAllDay) && (
-                            <Badge variant="outline" className="text-xs">
+                            <Badge className="text-xs">
                               All Day
                             </Badge>
                           )}
                           {dayEvents.some(e => e.origin === 'google') && (
-                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            <Badge variant="outline" className="text-xs">
                               Google
                             </Badge>
                           )}

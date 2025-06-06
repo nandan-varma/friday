@@ -4,6 +4,12 @@ applyTo: '**'
 
 try to create components that are reusable and modular. Use props to pass data and methods to child components. Avoid using global state unless necessary.
 
+Always create skeleton component in the same file of components
+use suspense loaders for components that fetch data or take time to render. This improves user experience by providing visual feedback during loading states.
+
+use only tailwind defaults for colors like primary, secondary, accent, etc. Avoid using custom colors unless absolutely necessary. This ensures a consistent look and feel across the application.
+use tailwind classes for styling components. Avoid using inline styles or CSS modules unless absolutely necessary. This keeps the codebase clean and maintainable.
+
 try to use my UI primitive components for starting point which are present in /components/ui folder for common elements like 
 buttons, inputs, calendars and modals. here is the list
 accordion.tsx
@@ -57,6 +63,3 @@ tooltip.tsx
 use-mobile.tsx
 use-toast.ts
 This will help maintain consistency across the application.
-
-Always create skeleton component in the same file of components
-use suspense loaders for components that fetch data or take time to render. This improves user experience by providing visual feedback during loading states.

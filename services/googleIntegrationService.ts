@@ -1,7 +1,9 @@
+import 'server-only'
+
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { db } from '@/lib/db';
-import { integrations } from '@/lib/db/schema/calendar';
+import { integrations } from "@/lib/db/schema";
 import { eq, and } from 'drizzle-orm';
 
 // Google Calendar scopes

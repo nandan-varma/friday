@@ -1,7 +1,8 @@
 import { drizzle } from 'drizzle-orm/neon-http';
 import { upstashCache } from "drizzle-orm/cache/upstash";
 import { neon } from '@neondatabase/serverless';
-import * as schema from './schema';
+import * as schema from './db/schema';
+
 
 const sql = neon(process.env.DATABASE_URL!);
 

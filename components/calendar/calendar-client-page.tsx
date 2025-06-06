@@ -94,12 +94,12 @@ export function CalendarClientPage({ events, timezone }: CalendarClientPageProps
                 {events.length} event{events.length !== 1 ? 's' : ''}
               </Badge>
               {events.filter(e => e.origin === 'google').length > 0 && (
-                <Badge className="text-xs text-blue-700 border-blue-200">
+                <Badge className="text-xs">
                   {events.filter(e => e.origin === 'google').length} Google
                 </Badge>
               )}
               {events.filter(e => e.origin === 'local').length > 0 && (
-                <Badge className="text-xs">
+                <Badge variant={"outline"} className="text-xs">
                   {events.filter(e => e.origin === 'local').length} Local
                 </Badge>
               )}

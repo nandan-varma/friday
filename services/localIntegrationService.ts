@@ -1,5 +1,7 @@
+import 'server-only'
+
 import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema/calendar"
+import { events } from "@/lib/db/schema"
 import { eq, and, gte, lte } from "drizzle-orm"
 
 export interface CreateEventData {

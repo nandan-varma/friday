@@ -1,3 +1,5 @@
+import 'server-only'
+
 import { openai } from "@ai-sdk/openai"
 import { generateObject } from "ai"
 import { z } from "zod"
@@ -9,8 +11,6 @@ import {
     EventFilters 
 } from "./localIntegrationService"
 
-// Re-export types from local integration service for backward compatibility
-export type { CreateEventData, UpdateEventData, EventFilters } from "./localIntegrationService"
 
 export type EventOrigin = "local" | "google"
 

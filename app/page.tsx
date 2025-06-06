@@ -8,7 +8,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/50 to-background">
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
-        <nav className="flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 transition-transform duration-200 hover:scale-105">
             <Calendar className="h-8 w-8 text-primary" />
             <span className="text-2xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">Friday</span>
@@ -21,7 +21,7 @@ export default async function HomePage() {
               <Link href="/dashboard">Get Started</Link>
             </Button>
           </div>
-        </nav>
+        </div>
       </header>
 
       {/* Hero Section */}

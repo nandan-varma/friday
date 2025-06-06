@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  MonthView, 
-  WeekView, 
-  DayView, 
-  AgendaView,
-  type ViewType,
-  CalendarViewSkeleton as Skeleton
-} from "./views"
+import { MonthView } from "./views/month-view"
+import { WeekView } from "./views/week-view"
+import { DayView } from "./views/day-view"
+import { AgendaView } from "./views/agenda-view"
+import { CalendarViewSkeleton as Skeleton } from "./views/skeletons"
+import { type ViewType } from "./views/types"
 import { type UnifiedEvent } from "@/services/eventService"
 
 interface CalendarViewProps {
