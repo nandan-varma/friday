@@ -12,6 +12,9 @@ export const auth = betterAuth({
   },
   plugins : [
     nextCookies()
+  ],
+  trustedOrigins: [
+    "http://localhost:3000",
   ]
   //... the rest of your config
 });

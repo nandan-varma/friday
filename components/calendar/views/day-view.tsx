@@ -20,7 +20,8 @@ export function DayView({
   currentDate, 
   onDateChange, 
   onEventClick,
-  onCreateEvent 
+  onCreateEvent,
+  timezone 
 }: CalendarViewProps) {
   const dayEvents = events.filter(event => 
     isSameDay(event.startTime, currentDate)

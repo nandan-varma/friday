@@ -22,7 +22,8 @@ export function WeekView({
   currentDate, 
   onDateChange, 
   onEventClick,
-  onCreateEvent 
+  onCreateEvent,
+  timezone 
 }: CalendarViewProps) {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 })

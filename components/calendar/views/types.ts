@@ -8,4 +8,5 @@ export interface CalendarViewProps {
   onDateChange: (date: Date) => void
   onEventClick?: (event: UnifiedEvent) => void
   onCreateEvent?: (date: Date, hour?: number) => void
+  timezone?: string
 }

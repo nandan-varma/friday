@@ -70,6 +70,7 @@ export async function getuserSettings(userId: string): Promise<userSettingsData 
       })
       .from(userSettings)
       .where(eq(userSettings.userId, userId))
+      .$withCache()
 
     return settings || null
   } catch (error) {

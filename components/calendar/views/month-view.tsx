@@ -25,7 +25,8 @@ export function MonthView({
   currentDate, 
   onDateChange, 
   onEventClick,
-  onCreateEvent 
+  onCreateEvent,
+  timezone 
 }: CalendarViewProps) {
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)

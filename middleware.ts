@@ -8,14 +8,15 @@ export async function middleware(request: NextRequest) {
     headers: await headers()
   })
 
-  const isAuthPage = request.nextUrl.pathname.startsWith("/register")
+  const isAuthPage = request.nextUrl.pathname.startsWith("/login") ||
+                     request.nextUrl.pathname.startsWith("/signup")
   const isPublicPage = request.nextUrl.pathname === "/" || 
                        request.nextUrl.pathname.startsWith("/privacy") ||
                        request.nextUrl.pathname.startsWith("/service")
 
   // If user is not authenticated and trying to access protected routes
   if (!session && !isAuthPage && !isPublicPage) {
-    return NextResponse.redirect(new URL("/register", request.url))
+    return NextResponse.redirect(new URL("/login", request.url))
   }
 
   // If user is authenticated and trying to access auth pages

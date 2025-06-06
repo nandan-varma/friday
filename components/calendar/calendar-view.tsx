@@ -16,13 +16,15 @@ interface CalendarViewProps {
   view: ViewType
   onEventClick?: (event: UnifiedEvent) => void
   onCreateEvent?: (date: Date, hour?: number) => void
+  timezone?: string
 }
 
 export function CalendarView({ 
   events, 
   view, 
   onEventClick,
-  onCreateEvent 
+  onCreateEvent,
+  timezone 
 }: CalendarViewProps) {
   const [currentDate, setCurrentDate] = useState(new Date())
 
@@ -35,7 +37,8 @@ export function CalendarView({
     currentDate,
     onDateChange: handleDateChange,
     onEventClick,
-    onCreateEvent
+    onCreateEvent,
+    timezone
   }
 
   switch (view) {

@@ -13,9 +13,10 @@ import { type UnifiedEvent } from "@/services/eventService"
 
 type CalendarClientPageProps = {
   events: UnifiedEvent[]
+  timezone?: string
 }
 
-export function CalendarClientPage({ events }: CalendarClientPageProps) {
+export function CalendarClientPage({ events, timezone }: CalendarClientPageProps) {
   const router = useRouter()
   const [currentView, setCurrentView] = useState<"day" | "week" | "month" | "agenda">("week")
   
@@ -117,6 +118,7 @@ export function CalendarClientPage({ events }: CalendarClientPageProps) {
           view={currentView}
           onEventClick={handleEventClick}
           onCreateEvent={handleCreateEvent}
+          timezone={timezone}
         />
       </div>
     </div>

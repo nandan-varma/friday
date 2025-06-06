@@ -14,7 +14,8 @@ export function AgendaView({
   events, 
   currentDate, 
   onDateChange, 
-  onEventClick 
+  onEventClick,
+  timezone 
 }: CalendarViewProps) {
   const handleToday = () => {
     onDateChange(new Date())
