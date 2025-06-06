@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { 
   format, 
   isSameDay,
@@ -10,10 +11,12 @@ import {
 import { CalendarViewProps } from "./types"
 import { CalendarHeader } from "./calendar-header"
 import { EventCard } from "./event-card"
+import { EventModal } from "../event-modal"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { type UnifiedEvent } from "@/services/eventService"
 
 export function DayView({ 
   events, 
@@ -23,6 +26,11 @@ export function DayView({
   onCreateEvent,
   timezone 
 }: CalendarViewProps) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined)
+
   const dayEvents = events.filter(event => 
     isSameDay(event.startTime, currentDate)
   )
@@ -41,9 +49,29 @@ export function DayView({
   const handleToday = () => {
     onDateChange(new Date())
   }
-
   const handleTimeSlotClick = (hour: number) => {
+    setSelectedDate(currentDate)
+    setSelectedHour(hour)
+    setSelectedEvent(null)
+    setModalOpen(true)
     onCreateEvent?.(currentDate, hour)
+  }
+
+  const handleEventClick = (event: UnifiedEvent) => {
+    setSelectedEvent(event)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
+    setModalOpen(true)
+    onEventClick?.(event)
+  }
+  const handleEventSaved = (event: UnifiedEvent) => {
+    // Event saved successfully, views will be updated via revalidation
+    console.log("Event saved:", event)
+  }
+
+  const handleEventDeleted = (eventId: string) => {
+    // Event deleted successfully, views will be updated via revalidation
+    console.log("Event deleted:", eventId)
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -94,12 +122,11 @@ export function DayView({
               All Day Events
             </h3>
             <div className="space-y-3">
-              {allDayEvents.map((event) => (
-                <EventCard
+              {allDayEvents.map((event) => (                <EventCard
                   key={event.id}
                   event={event}
                   showTime={false}
-                  onClick={onEventClick}
+                  onClick={handleEventClick}
                 />
               ))}
             </div>
@@ -134,11 +161,10 @@ export function DayView({
                     onClick={() => handleTimeSlotClick(hour)}
                   >
                     {hourEvents.length > 0 ? (
-                      hourEvents.map((event) => (
-                        <EventCard
+                      hourEvents.map((event) => (                        <EventCard
                           key={event.id}
                           event={event}
-                          onClick={onEventClick}
+                          onClick={handleEventClick}
                           className="shadow-sm"
                         />
                       ))
@@ -153,11 +179,21 @@ export function DayView({
                     )}
                   </div>
                 </div>
-              )
-            })}
+              )            })}
           </div>
         </Card>
       </div>
+
+      <EventModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        event={selectedEvent}
+        selectedDate={selectedDate}
+        selectedHour={selectedHour}
+        timezone={timezone}
+        onEventSaved={handleEventSaved}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   )
 }

@@ -3,17 +3,16 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { Calendar, Mail, Smartphone, Shield, Key, Trash2 } from "lucide-react"
+import Link from "next/link"
 
 interface AccountSecurityCardProps {
   lastLoginDate?: string
   twoFactorEnabled?: boolean
-  connectedDevices?: number
 }
 
 export function AccountSecurityCard({ 
   lastLoginDate = new Date().toLocaleDateString(),
   twoFactorEnabled = false,
-  connectedDevices = 1 
 }: AccountSecurityCardProps) {
   return (
     <Card>
@@ -55,18 +54,11 @@ export function AccountSecurityCard({
           </div>
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Smartphone className="h-4 w-4 text-muted-foreground" />
-              <div>
-                <p className="text-sm font-medium">Connected Devices</p>
-                <p className="text-sm text-muted-foreground">
-                  {connectedDevices} device{connectedDevices !== 1 ? 's' : ''} connected
-                </p>
-              </div>
-            </div>
+            <Link href={"/sessions"}>
             <Button variant="outline" size="sm">
               Manage
             </Button>
+            </Link>
           </div>
         </div>
 

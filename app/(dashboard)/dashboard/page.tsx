@@ -28,11 +28,9 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Welcome, {session.user.name || session.user.email}</h1>
-        <Button asChild>
-          <Link href="/events/new">
+        <h1 className="text-xl font-bold">Welcome, {session.user.name || session.user.email}</h1>
+        <Button>
             <Plus className="mr-2 h-4 w-4" /> New Event
-          </Link>
         </Button>
       </div>
 
@@ -71,10 +69,8 @@ export default async function DashboardPage() {
                   <CalendarIcon className="mr-2 h-4 w-4" /> View Full Calendar
                 </Link>
               </Button>
-              <Button variant="outline" asChild className="w-full justify-start">
-                <Link href="/events/new">
+              <Button variant="outline" className="w-full justify-start">
                   <Plus className="mr-2 h-4 w-4" /> Create New Event
-                </Link>
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
                 <Link href="/integrations">

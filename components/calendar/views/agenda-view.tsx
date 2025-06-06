@@ -1,14 +1,17 @@
 "use client"
 
+import { useState } from "react"
 import { format, parseISO, isAfter, isBefore, addDays } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { CalendarViewProps } from "./types"
 import { EventCard } from "./event-card"
+import { EventModal } from "../event-modal"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
+import { type UnifiedEvent } from "@/services/eventService"
 
 export function AgendaView({ 
   events, 
@@ -17,8 +20,26 @@ export function AgendaView({
   onEventClick,
   timezone 
 }: CalendarViewProps) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
+
   const handleToday = () => {
     onDateChange(new Date())
+  }
+
+  const handleEventClick = (event: UnifiedEvent) => {
+    setSelectedEvent(event)
+    setModalOpen(true)
+    onEventClick?.(event)
+  }
+  const handleEventSaved = (event: UnifiedEvent) => {
+    // Event saved successfully, views will be updated via revalidation
+    console.log("Event saved:", event)
+  }
+
+  const handleEventDeleted = (eventId: string) => {
+    // Event deleted successfully, views will be updated via revalidation
+    console.log("Event deleted:", eventId)
   }
 
   // Group events by date
@@ -115,11 +136,10 @@ export function AgendaView({
                     
                     {/* Events for this date */}
                     <div className="ml-[92px] space-y-3">
-                      {dayEvents.map((event) => (
-                        <EventCard
+                      {dayEvents.map((event) => (                        <EventCard
                           key={event.id}
                           event={event}
-                          onClick={onEventClick}
+                          onClick={handleEventClick}
                           className="shadow-sm hover:shadow-md transition-shadow"
                         />
                       ))}
@@ -146,10 +166,18 @@ export function AgendaView({
               >
                 Create your first event
               </Button>
-            </div>
-          </Card>
+            </div>          </Card>
         )}
       </div>
+
+      <EventModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        event={selectedEvent}
+        timezone={timezone}
+        onEventSaved={handleEventSaved}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   )
 }

@@ -20,7 +20,7 @@ import { MarkdownRenderer } from "@/components/ui/markdown"
 const ChatWindowSkeleton = () => {
   return (
     <Card className="flex-1 overflow-hidden flex flex-col h-full">
-      <ScrollArea className="flex-1">
+      <ScrollArea className="h-96 flex-1">
         <div className="p-4 space-y-4">
           {/* Assistant message skeleton */}
           <div className="flex items-start gap-3 rounded-lg p-4 bg-muted/50">

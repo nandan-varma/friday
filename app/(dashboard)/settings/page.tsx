@@ -58,9 +58,8 @@ async function SettingsContent() {
   }
 
   const { profile, settings } = result.data
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-96">
       <h1 className="text-3xl font-bold">Settings</h1>
 
       <Tabs defaultValue="profile" className="space-y-6">

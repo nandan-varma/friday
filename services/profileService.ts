@@ -1,8 +1,7 @@
 import 'server-only'
 
 import { db } from "@/lib/db"
-import { user } from "@/lib/db/schema/auth"
-import { userSettings } from "@/lib/db/schema/calendar"
+import { user, userSettings } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
 export interface UserProfile {

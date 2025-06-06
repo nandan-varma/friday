@@ -452,9 +452,7 @@ export class EventService {
      */
     static async hasGoogleIntegration(userId: string): Promise<boolean> {
         return GoogleIntegrationService.hasValidIntegration(userId)
-    }
-
-    /**
+    }    /**
      * Get comprehensive integration status
      */
     static async getIntegrationStatus(userId: string): Promise<{
@@ -476,6 +474,77 @@ export class EventService {
         } catch (error) {
             console.error("Error getting integration status:", error)
             throw new Error("Failed to get integration status")
+        }
+    }
+
+    // ============================================
+    // UNIFIED EVENT SAVE/DELETE OPERATIONS
+    // ============================================
+
+    /**
+     * Save an event (create or update) with unified handling
+     */
+    static async saveEvent(
+        userId: string,
+        eventData: CreateEventData,
+        options?: {
+            eventId?: string
+            preferredOrigin?: EventOrigin
+            calendarId?: string
+        }
+    ): Promise<UnifiedEvent> {
+        try {
+            const { eventId, preferredOrigin = "local", calendarId } = options || {}
+
+            if (eventId && eventId.startsWith("local_")) {
+                // Update existing local event
+                const localId = parseInt(eventId.replace("local_", ""))
+                const updatedEvent = await LocalIntegrationService.updateEvent(localId, userId, eventData)
+                return this.formatLocalEvent(updatedEvent)
+            } else if (eventId && eventId.startsWith("google_")) {
+                // Update existing Google event
+                const googleId = eventId.replace("google_", "")
+                const updatedEvent = await this.updateGoogleEvent(userId, googleId, eventData, calendarId)
+                return this.formatGoogleEvent(updatedEvent)
+            } else if (!eventId) {
+                // Create new event
+                if (preferredOrigin === "google" && await this.hasGoogleIntegration(userId)) {
+                    const createdEvent = await this.createGoogleEvent(userId, eventData, calendarId)
+                    return this.formatGoogleEvent(createdEvent)
+                } else {
+                    const createdEvent = await LocalIntegrationService.createEvent(userId, eventData)
+                    return this.formatLocalEvent(createdEvent)
+                }
+            } else {
+                throw new Error("Invalid event ID format")
+            }
+        } catch (error) {
+            console.error("Error saving event:", error)
+            throw new Error("Failed to save event")
+        }
+    }
+
+    /**
+     * Delete an event with unified handling
+     */
+    static async deleteEvent(
+        userId: string,
+        eventId: string,
+        calendarId?: string
+    ): Promise<void> {
+        try {
+            if (eventId.startsWith("local_")) {
+                const localId = parseInt(eventId.replace("local_", ""))
+                await LocalIntegrationService.deleteEvent(localId, userId)
+            } else if (eventId.startsWith("google_")) {
+                const googleId = eventId.replace("google_", "")
+                await this.deleteGoogleEvent(userId, googleId, calendarId)
+            } else {
+                throw new Error("Invalid event ID format")
+            }
+        } catch (error) {
+            console.error("Error deleting event:", error)
+            throw new Error("Failed to delete event")
         }
     }
 }

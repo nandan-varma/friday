@@ -40,7 +40,6 @@ export function CalendarClientPage({ events, timezone }: CalendarClientPageProps
     if (hour !== undefined) {
       searchParams.set('hour', hour.toString())
     }
-    router.push(`/events/new?${searchParams.toString()}`)
   }
 
   return (

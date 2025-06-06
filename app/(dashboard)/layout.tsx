@@ -9,9 +9,9 @@ export default async function DashboardLayout({
 }) {
 
   return (
-    <div className="flex h-screen w-full">
+    <>
       <DashboardSidebar>{children}</DashboardSidebar>
       <MinimizedChatWindow />
-    </div>
+    </>
   )
 }

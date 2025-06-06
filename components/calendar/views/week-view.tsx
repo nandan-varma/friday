@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { 
   format, 
   startOfWeek, 
@@ -15,7 +16,9 @@ import { cn } from "@/lib/utils"
 import { CalendarViewProps } from "./types"
 import { CalendarHeader } from "./calendar-header"
 import { EventCard } from "./event-card"
+import { EventModal } from "../event-modal"
 import { Skeleton } from "@/components/ui/skeleton"
+import { type UnifiedEvent } from "@/services/eventService"
 
 export function WeekView({ 
   events, 
@@ -25,6 +28,11 @@ export function WeekView({
   onCreateEvent,
   timezone 
 }: CalendarViewProps) {
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined)
+
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 })
   const days = eachDayOfInterval({ start: weekStart, end: weekEnd })
@@ -42,7 +50,28 @@ export function WeekView({
   }
 
   const handleTimeSlotClick = (day: Date, hour: number) => {
+    setSelectedDate(day)
+    setSelectedHour(hour)
+    setSelectedEvent(null)
+    setModalOpen(true)
     onCreateEvent?.(day, hour)
+  }
+
+  const handleEventClick = (event: UnifiedEvent) => {
+    setSelectedEvent(event)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
+    setModalOpen(true)
+    onEventClick?.(event)
+  }
+  const handleEventSaved = (event: UnifiedEvent) => {
+    // Event saved successfully, views will be updated via revalidation
+    console.log("Event saved:", event)
+  }
+
+  const handleEventDeleted = (eventId: string) => {
+    // Event deleted successfully, views will be updated via revalidation  
+    console.log("Event deleted:", eventId)
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -72,13 +101,12 @@ export function WeekView({
                   
                   return (
                     <div key={i} className="border-r last:border-r-0 p-2 space-y-1">
-                      {allDayEvents.map((event) => (
-                        <EventCard
+                      {allDayEvents.map((event) => (                        <EventCard
                           key={event.id}
                           event={event}
                           variant="compact"
                           showTime={false}
-                          onClick={onEventClick}
+                          onClick={handleEventClick}
                         />
                       ))}
                     </div>
@@ -134,13 +162,12 @@ export function WeekView({
                       className="border-r last:border-r-0 p-1 space-y-1 relative cursor-pointer group/cell"
                       onClick={() => handleTimeSlotClick(day, hour)}
                     >
-                      {hourEvents.map((event) => (
-                        <EventCard
+                      {hourEvents.map((event) => (                        <EventCard
                           key={event.id}
                           event={event}
                           variant="compact"
                           showLocation={false}
-                          onClick={onEventClick}
+                          onClick={handleEventClick}
                         />
                       ))}
                       
@@ -154,12 +181,22 @@ export function WeekView({
                       )}
                     </div>
                   )
-                })}
-              </div>
+                })}              </div>
             ))}
           </div>
         </div>
       </div>
+
+      <EventModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        event={selectedEvent}
+        selectedDate={selectedDate}
+        selectedHour={selectedHour}
+        timezone={timezone}
+        onEventSaved={handleEventSaved}
+        onEventDeleted={handleEventDeleted}
+      />
     </div>
   )
 }

@@ -98,7 +98,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
               {routes.find((route) => route.href === pathname)?.label || "Friday - AI Calendar"}
             </div>
           </div>
-          <main className="container mx-auto max-w-7xl p-4 w-full">{children}</main>
+          <main className="p-4 w-full h-full">{children}</main>
         </div>
       </div>
     </SidebarProvider>
