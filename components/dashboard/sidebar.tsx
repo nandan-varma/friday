@@ -15,7 +15,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
+import { useSession } from "@/lib/auth-client"
 
 export function DashboardSidebar({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()

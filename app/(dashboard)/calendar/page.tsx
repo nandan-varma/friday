@@ -1,14 +1,16 @@
-import { Suspense } from "react"
-import { CalendarDataProvider } from "@/components/calendar/calendar-data-provider"
-import { CalendarPageSkeleton } from "@/components/calendar/calendar-page-skeleton"
-import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
+import EventService from "@/services/eventService"
+import { getuserSettings } from "@/services/profileService"
+import { CalendarClientPage } from "./calendar"
+
 
 export default async function CalendarPage() {
   const session = await auth.api.getSession({
     headers: await headers()
   })
+
+
 
   if (!session) {
     return (
@@ -23,11 +25,10 @@ export default async function CalendarPage() {
     )
   }
 
+  const userEvents = await EventService.getAllEvents(session.user.id)
+  const userSettings = await getuserSettings(session.user.id);
+
   return (
-    <CalendarErrorBoundary>
-      <Suspense fallback={<CalendarPageSkeleton />}>
-        <CalendarDataProvider userId={session.user.id} />
-      </Suspense>
-    </CalendarErrorBoundary>
+    <CalendarClientPage events={userEvents} timezone={userSettings?.timezone ? userSettings?.timezone : undefined} />
   )
 }

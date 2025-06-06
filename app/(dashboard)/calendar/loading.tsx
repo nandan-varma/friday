@@ -1,13 +1,33 @@
-import { Suspense } from "react"
-import { CalendarDataProvider } from "@/components/calendar/calendar-data-provider"
-import { CalendarPageSkeleton } from "@/components/calendar/calendar-page-skeleton"
-import { CalendarErrorBoundary } from "@/components/calendar/calendar-error-boundary"
-import { auth } from "@/lib/auth"
-import { headers } from "next/headers"
+import { MonthViewSkeleton } from "@/components/calendar/views/month-view"
+import { WeekViewSkeleton } from "@/components/calendar/views/week-view"
+import { DayViewSkeleton } from "@/components/calendar/views/day-view"
+import { AgendaViewSkeleton } from "@/components/calendar/views/agenda-view"
+import { ViewType } from "@/components/calendar/views/types"
 
-export default async function CalendarPage() {
+
+export default async function CalendarPageSkeleton() {
+  const renderViewSkeleton = () => {
+    switch ("month" as ViewType) {
+      case "month":
+        return <MonthViewSkeleton />
+      case "week":
+        return <WeekViewSkeleton />
+      case "day":
+        return <DayViewSkeleton />
+      case "agenda":
+        return <AgendaViewSkeleton />
+      default:
+        return <MonthViewSkeleton />
+    }
+  }
 
   return (
-    <CalendarPageSkeleton />
+    <div className="w-full max-w-7xl mx-auto space-y-6 p-4 md:p-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Calendar</h1>
+      </div>
+
+      {renderViewSkeleton()}
+    </div>
   )
 }

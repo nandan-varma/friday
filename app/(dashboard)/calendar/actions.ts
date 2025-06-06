@@ -51,7 +51,7 @@ export async function saveEvent(
 export async function deleteEvent(
     eventId: string,
     calendarId?: string
-): Promise<ActionResult> {
+): Promise<ActionResult<null>> {
     try {
         const session = await auth.api.getSession({
             headers: await headers()
@@ -66,7 +66,7 @@ export async function deleteEvent(
         // Revalidate calendar-related pages
         revalidatePath('/calendar')
 
-        return { success: true }
+        return { success: true, data: null }
     } catch (error) {
         console.error('Error deleting event:', error)
         return { 

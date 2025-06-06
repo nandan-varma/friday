@@ -410,12 +410,22 @@ export class EventService {
             } else if (eventId && eventId.startsWith("google_")) {
                 // Update existing Google event
                 const googleId = eventId.replace("google_", "")
-                const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(userId, googleId, eventData, calendarId)
+                const googleEventData = {
+                    ...eventData,
+                    description: eventData.description === null ? undefined : eventData.description,
+                    location: eventData.location === null ? undefined : eventData.location
+                }
+                const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(userId, googleId, googleEventData, calendarId)
                 return this.formatGoogleEvent(updatedEvent)
             } else if (!eventId) {
                 // Create new event
                 if (preferredOrigin === "google" && await this.hasGoogleIntegration(userId)) {
-                    const createdEvent = await GoogleIntegrationService.createCalendarEvent(userId, eventData, calendarId)
+                    const googleEventData = {
+                        ...eventData,
+                        description: eventData.description === null ? undefined : eventData.description,
+                        location: eventData.location === null ? undefined : eventData.location
+                    }
+                    const createdEvent = await GoogleIntegrationService.createCalendarEvent(userId, googleEventData, calendarId)
                     return this.formatGoogleEvent(createdEvent)
                 } else {
                     const createdEvent = await LocalIntegrationService.createEvent(userId, eventData)
