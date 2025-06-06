@@ -34,7 +34,6 @@ export async function saveEvent(
 
         // Revalidate calendar-related pages
         revalidatePath('/calendar')
-        revalidatePath('/dashboard/calendar')
 
         return { success: true, data: { event: savedEvent } }
     } catch (error) {
@@ -66,7 +65,6 @@ export async function deleteEvent(
 
         // Revalidate calendar-related pages
         revalidatePath('/calendar')
-        revalidatePath('/dashboard/calendar')
 
         return { success: true }
     } catch (error) {

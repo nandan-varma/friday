@@ -47,7 +47,7 @@ export async function exchangeGoogleAuthCode(code: string): Promise<ActionResult
         await GoogleIntegrationService.exchangeCodeForTokens(code, session.user.id)
 
         // Revalidate the integrations page
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/integrations')
 
         return { success: true }
     } catch (error) {
@@ -108,7 +108,7 @@ export async function disconnectGoogleCalendar(): Promise<ActionResult> {    try
         await GoogleIntegrationService.disconnectIntegration(session.user.id)
 
         // Revalidate the integrations page
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/integrations')
 
         return { success: true }
     } catch (error) {
@@ -178,8 +178,8 @@ export async function createGoogleCalendarEvent(
         const createdEvent = await GoogleIntegrationService.createCalendarEvent(session.user.id, event, calendarId)
 
         // Revalidate calendar-related pages
-        revalidatePath('/dashboard/calendar')
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/calendar')
+        revalidatePath('/integrations')
 
         return { success: true, data: { event: createdEvent } }
     } catch (error) {
@@ -206,8 +206,8 @@ export async function updateGoogleCalendarEvent(
         const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(session.user.id, eventId, event, calendarId)
 
         // Revalidate calendar-related pages
-        revalidatePath('/dashboard/calendar')
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/calendar')
+        revalidatePath('/integrations')
 
         return { success: true, data: { event: updatedEvent } }
     } catch (error) {
@@ -233,8 +233,8 @@ export async function deleteGoogleCalendarEvent(
         await GoogleIntegrationService.deleteCalendarEvent(session.user.id, eventId, calendarId)
 
         // Revalidate calendar-related pages
-        revalidatePath('/dashboard/calendar')
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/calendar')
+        revalidatePath('/integrations')
 
         return { success: true }
     } catch (error) {
@@ -248,7 +248,7 @@ export async function deleteGoogleCalendarEvent(
  */
 export async function refreshIntegrationsPage(): Promise<ActionResult> {
     try {
-        revalidatePath('/dashboard/integrations')
+        revalidatePath('/integrations')
         return { success: true }
     } catch (error) {
         console.error('Error refreshing integrations page:', error)

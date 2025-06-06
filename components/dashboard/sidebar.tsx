@@ -83,12 +83,16 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             </SidebarMenu>
           </SidebarContent>
           <SidebarFooter>
-            {/* <form action={logoutAction}>
-              <Button type="submit" variant="ghost" className="w-full justify-start">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Button>
-            </form> */}
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <Link href="/logout">
+                    <LogOut className="h-5 w-5" />
+                    <span>Sign Out</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
           </SidebarFooter>
         </Sidebar>
         <div className="flex-1 overflow-auto">

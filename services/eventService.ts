@@ -4,11 +4,11 @@ import { openai } from "@ai-sdk/openai"
 import { generateObject } from "ai"
 import { z } from "zod"
 import { GoogleIntegrationService, GoogleCalendarEvent } from "./googleIntegrationService"
-import { 
-    LocalIntegrationService, 
-    CreateEventData, 
-    UpdateEventData, 
-    EventFilters 
+import {
+    LocalIntegrationService,
+    CreateEventData,
+    UpdateEventData,
+    EventFilters
 } from "./localIntegrationService"
 
 
@@ -105,15 +105,15 @@ export class EventService {
      * Format Google Calendar event to unified event format
      */
     private static async formatGoogleEvent(event: GoogleCalendarEvent): Promise<UnifiedEvent> {
-        const startTime = event.start?.dateTime 
+        const startTime = event.start?.dateTime
             ? new Date(event.start.dateTime)
-            : event.start?.date 
+            : event.start?.date
                 ? new Date(event.start.date)
                 : new Date()
 
-        const endTime = event.end?.dateTime 
+        const endTime = event.end?.dateTime
             ? new Date(event.end.dateTime)
-            : event.end?.date 
+            : event.end?.date
                 ? new Date(event.end.date)
                 : new Date(startTime.getTime() + 60 * 60 * 1000) // Default 1 hour
 
@@ -142,7 +142,7 @@ export class EventService {
      * Get all events from both local and Google Calendar with unified format
      */
     static async getAllEvents(
-        userId: string, 
+        userId: string,
         filters?: CombinedEventFilters
     ): Promise<UnifiedEvent[]> {
         try {
@@ -164,7 +164,7 @@ export class EventService {
                         if (filters?.startDate) googleOptions.timeMin = new Date(filters.startDate)
                         if (filters?.endDate) googleOptions.timeMax = new Date(filters.endDate)
                         if (filters?.calendarId) googleOptions.calendarId = filters.calendarId
-                        
+
                         const googleEvents = await GoogleIntegrationService.getCalendarEvents(userId, googleOptions)
                         const formattedGoogleEvents = await Promise.all(googleEvents.map(event => this.formatGoogleEvent(event)))
                         allEvents.push(...formattedGoogleEvents)
@@ -265,7 +265,8 @@ export class EventService {
         origin: EventOrigin,
         filters?: EventFilters
     ): Promise<UnifiedEvent[]> {
-        try {            if (origin === "local") {
+        try {
+            if (origin === "local") {
                 const localEvents = await LocalIntegrationService.getEvents(userId, filters)
                 return await Promise.all(localEvents.map(event => this.formatLocalEvent(event)))
             } else if (origin === "google") {
@@ -299,10 +300,10 @@ export class EventService {
     ): Promise<UnifiedEvent[]> {
         try {
             const allEvents = await this.getAllEvents(userId, filters)
-            
+
             const searchLower = searchTerm.toLowerCase()
-            
-            return allEvents.filter(event => 
+
+            return allEvents.filter(event =>
                 event.title.toLowerCase().includes(searchLower) ||
                 (event.description && event.description.toLowerCase().includes(searchLower)) ||
                 (event.location && event.location.toLowerCase().includes(searchLower))
@@ -345,101 +346,6 @@ export class EventService {
         } catch (error) {
             console.error("Error getting event statistics:", error)
             throw new Error("Failed to get event statistics")
-        }
-    }
-
-    // ============================================
-    // GOOGLE CALENDAR INTEGRATION METHODS
-    // ============================================
-
-    /**
-     * Create a new event in Google Calendar
-     */
-    static async createGoogleEvent(
-        userId: string,
-        eventData: CreateEventData,
-        calendarId?: string
-    ): Promise<GoogleCalendarEvent> {
-        try {
-            const googleEvent: Partial<GoogleCalendarEvent> = {
-                summary: eventData.title,
-                description: eventData.description || undefined,
-                location: eventData.location || undefined,
-                start: eventData.isAllDay 
-                    ? { date: eventData.startTime.toISOString().split('T')[0] }
-                    : { dateTime: eventData.startTime.toISOString() },
-                end: eventData.isAllDay 
-                    ? { date: eventData.endTime.toISOString().split('T')[0] }
-                    : { dateTime: eventData.endTime.toISOString() },
-            }
-
-            return await GoogleIntegrationService.createCalendarEvent(userId, googleEvent, calendarId)
-        } catch (error) {
-            console.error("Error creating Google Calendar event:", error)
-            throw new Error("Failed to create Google Calendar event")
-        }
-    }
-
-    /**
-     * Update an existing event in Google Calendar
-     */
-    static async updateGoogleEvent(
-        userId: string,
-        eventId: string,
-        eventData: UpdateEventData,
-        calendarId?: string
-    ): Promise<GoogleCalendarEvent> {
-        try {
-            const googleEvent: Partial<GoogleCalendarEvent> = {}
-
-            if (eventData.title !== undefined) googleEvent.summary = eventData.title
-            if (eventData.description !== undefined) googleEvent.description = eventData.description || undefined
-            if (eventData.location !== undefined) googleEvent.location = eventData.location || undefined
-            
-            if (eventData.startTime) {
-                googleEvent.start = eventData.isAllDay 
-                    ? { date: eventData.startTime.toISOString().split('T')[0] }
-                    : { dateTime: eventData.startTime.toISOString() }
-            }
-            
-            if (eventData.endTime) {
-                googleEvent.end = eventData.isAllDay 
-                    ? { date: eventData.endTime.toISOString().split('T')[0] }
-                    : { dateTime: eventData.endTime.toISOString() }
-            }
-
-            return await GoogleIntegrationService.updateCalendarEvent(userId, eventId, googleEvent, calendarId)
-        } catch (error) {
-            console.error("Error updating Google Calendar event:", error)
-            throw new Error("Failed to update Google Calendar event")
-        }
-    }
-
-    /**
-     * Delete an event from Google Calendar
-     */
-    static async deleteGoogleEvent(
-        userId: string,
-        eventId: string,
-        calendarId?: string
-    ): Promise<void> {
-        try {
-            await GoogleIntegrationService.deleteCalendarEvent(userId, eventId, calendarId)
-        } catch (error) {
-            console.error("Error deleting Google Calendar event:", error)
-            throw new Error("Failed to delete Google Calendar event")
-        }
-    }
-
-    /**
-     * Get list of user's Google calendars
-     */
-    static async getGoogleCalendars(userId: string) {
-        try {
-            return await GoogleIntegrationService.getCalendarList(userId)
-        } catch (error) {
-            console.error("Error fetching Google Calendar list:", error)
-            throw new Error("Failed to fetch Google Calendar list")
         }
     }
 
@@ -504,12 +410,12 @@ export class EventService {
             } else if (eventId && eventId.startsWith("google_")) {
                 // Update existing Google event
                 const googleId = eventId.replace("google_", "")
-                const updatedEvent = await this.updateGoogleEvent(userId, googleId, eventData, calendarId)
+                const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(userId, googleId, eventData, calendarId)
                 return this.formatGoogleEvent(updatedEvent)
             } else if (!eventId) {
                 // Create new event
                 if (preferredOrigin === "google" && await this.hasGoogleIntegration(userId)) {
-                    const createdEvent = await this.createGoogleEvent(userId, eventData, calendarId)
+                    const createdEvent = await GoogleIntegrationService.createCalendarEvent(userId, eventData, calendarId)
                     return this.formatGoogleEvent(createdEvent)
                 } else {
                     const createdEvent = await LocalIntegrationService.createEvent(userId, eventData)
@@ -538,7 +444,7 @@ export class EventService {
                 await LocalIntegrationService.deleteEvent(localId, userId)
             } else if (eventId.startsWith("google_")) {
                 const googleId = eventId.replace("google_", "")
-                await this.deleteGoogleEvent(userId, googleId, calendarId)
+                await GoogleIntegrationService.deleteCalendarEvent(userId, googleId, calendarId)
             } else {
                 throw new Error("Invalid event ID format")
             }

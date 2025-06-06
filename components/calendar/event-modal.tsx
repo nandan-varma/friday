@@ -66,8 +66,8 @@ const eventFormSchema = z.object({
     required_error: "End date is required", 
   }),
   endTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, "Invalid time format"),
-  isAllDay: z.boolean().default(false),
-  recurrence: z.enum(["none", "daily", "weekly", "monthly", "yearly"]).default("none"),
+  isAllDay: z.boolean(),
+  recurrence: z.enum(["none", "daily", "weekly", "monthly", "yearly"]),
 }).refine((data) => {
   if (data.isAllDay) return true
   

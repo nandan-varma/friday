@@ -40,14 +40,15 @@ export interface GoogleIntegration {
   expiresAt: Date | null;
 }
 
-export class GoogleIntegrationService {  private static async getCredentials() {
+export class GoogleIntegrationService {
+  private static async getCredentials() {
     const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
     const key = credentials.installed || credentials.web;
-    
+
     if (!key || !key.client_id || !key.client_secret) {
       throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS');
     }
-    
+
     return key;
   }
   private static async createOAuth2Client(): Promise<OAuth2Client> {
@@ -65,7 +66,7 @@ export class GoogleIntegrationService {  private static async getCredentials() {
    */
   static async getAuthUrl(): Promise<string> {
     const oAuth2Client = await this.createOAuth2Client();
-    
+
     return oAuth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
@@ -76,10 +77,10 @@ export class GoogleIntegrationService {  private static async getCredentials() {
    */
   static async exchangeCodeForTokens(code: string, userId: string): Promise<GoogleIntegration> {
     const oAuth2Client = await this.createOAuth2Client();
-    
+
     try {
       const { tokens } = await oAuth2Client.getToken(code);
-      
+
       if (!tokens.access_token) {
         throw new Error('No access token received from Google');
       }
@@ -113,7 +114,7 @@ export class GoogleIntegrationService {  private static async getCredentials() {
           })
           .where(eq(integrations.id, existingIntegration[0].id))
           .returning();
-        
+
         integration = updated as unknown as GoogleIntegration;
       } else {
         // Create new integration
@@ -127,7 +128,7 @@ export class GoogleIntegrationService {  private static async getCredentials() {
             expiresAt,
           })
           .returning();
-        
+
         integration = created as unknown as GoogleIntegration;
       }
 
@@ -158,13 +159,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
    */
   static async createAuthenticatedClient(userId: string): Promise<OAuth2Client | null> {
     const integration = await this.getUserIntegration(userId);
-    
+
     if (!integration || !integration.accessToken) {
       return null;
     }
 
     const oAuth2Client = await this.createOAuth2Client();
-    
+
     // Set the credentials
     oAuth2Client.setCredentials({
       access_token: integration.accessToken,
@@ -176,7 +177,7 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     if (integration.expiresAt && new Date() >= integration.expiresAt) {
       try {
         const { credentials } = await oAuth2Client.refreshAccessToken();
-        
+
         // Update database with new tokens
         await db
           .update(integrations)
@@ -204,11 +205,11 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     try {
       const client = await this.createAuthenticatedClient(userId);
       if (!client) return false;
-      
+
       // Try to make a simple API call to verify credentials
       const calendar = google.calendar({ version: 'v3', auth: client });
       await calendar.calendarList.list({ maxResults: 1 });
-      
+
       return true;
     } catch (error) {
       console.error('Error checking integration validity:', error);
@@ -219,7 +220,7 @@ export class GoogleIntegrationService {  private static async getCredentials() {
    * Fetch events from Google Calendar (no caching)
    */
   static async getCalendarEvents(
-    userId: string, 
+    userId: string,
     options: {
       maxResults?: number;
       timeMin?: Date;
@@ -228,13 +229,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     } = {}
   ): Promise<GoogleCalendarEvent[]> {
     const client = await this.createAuthenticatedClient(userId);
-    
+
     if (!client) {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
     const calendar = google.calendar({ version: 'v3', auth: client });
-    
+
     const {
       maxResults = 50,
       timeMin = new Date(),
@@ -267,13 +268,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     calendarId: string = 'primary'
   ): Promise<GoogleCalendarEvent> {
     const client = await this.createAuthenticatedClient(userId);
-    
+
     if (!client) {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
     const calendar = google.calendar({ version: 'v3', auth: client });
-    
+
     try {
       const response = await calendar.events.insert({
         calendarId,
@@ -296,13 +297,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     calendarId: string = 'primary'
   ): Promise<GoogleCalendarEvent> {
     const client = await this.createAuthenticatedClient(userId);
-    
+
     if (!client) {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
     const calendar = google.calendar({ version: 'v3', auth: client });
-    
+
     try {
       const response = await calendar.events.update({
         calendarId,
@@ -325,13 +326,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
     calendarId: string = 'primary'
   ): Promise<void> {
     const client = await this.createAuthenticatedClient(userId);
-    
+
     if (!client) {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
     const calendar = google.calendar({ version: 'v3', auth: client });
-    
+
     try {
       await calendar.events.delete({
         calendarId,
@@ -347,13 +348,13 @@ export class GoogleIntegrationService {  private static async getCredentials() {
    */
   static async getCalendarList(userId: string) {
     const client = await this.createAuthenticatedClient(userId);
-    
+
     if (!client) {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
     const calendar = google.calendar({ version: 'v3', auth: client });
-    
+
     try {
       const response = await calendar.calendarList.list();
       return response.data.items || [];

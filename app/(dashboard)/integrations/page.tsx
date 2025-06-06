@@ -67,7 +67,7 @@ async function getIntegrationsData(): Promise<Integration[]> {
 // Server action to refresh the page data
 async function refreshIntegrations() {
   'use server'
-  revalidatePath('/dashboard/integrations')
+  revalidatePath('/integrations')
 }
 
 // Server action to get fresh integrations data
