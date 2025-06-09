@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 import { EventService, type UnifiedEvent } from "@/services/eventService"
 import { type CreateEventData, type UpdateEventData } from "@/services/localIntegrationService"
 
-export type ActionResult<T = any> = 
+export type ActionResult<T = any> =
     | { success: true; data: T }
     | { success: false; error: string }
 
@@ -25,7 +25,7 @@ export async function saveEvent(
         const session = await auth.api.getSession({
             headers: await headers()
         })
-        
+
         if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
@@ -38,9 +38,9 @@ export async function saveEvent(
         return { success: true, data: { event: savedEvent } }
     } catch (error) {
         console.error('Error saving event:', error)
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Failed to save event' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to save event'
         }
     }
 }
@@ -56,7 +56,7 @@ export async function deleteEvent(
         const session = await auth.api.getSession({
             headers: await headers()
         })
-        
+
         if (!session?.user) {
             return { success: false, error: 'User not authenticated' }
         }
@@ -69,9 +69,9 @@ export async function deleteEvent(
         return { success: true, data: null }
     } catch (error) {
         console.error('Error deleting event:', error)
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : 'Failed to delete event' 
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to delete event'
         }
     }
 }

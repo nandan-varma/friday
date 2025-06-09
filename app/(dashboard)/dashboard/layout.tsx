@@ -18,21 +18,6 @@ export default function DashboardLayout({
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>AI Assistant</CardTitle>
-              <CardDescription>Get help with your schedule</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="mb-4">Ask me to schedule meetings, find free time, or manage your calendar.</p>
-              <Button asChild className="w-full">
-                <Link href="/ai">
-                  <MessageSquare className="mr-2 h-4 w-4" /> Open Assistant
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
@@ -42,7 +27,7 @@ export default function DashboardLayout({
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start">
-                  <Plus className="mr-2 h-4 w-4" /> Create New Event
+                <Plus className="mr-2 h-4 w-4" /> Create New Event
               </Button>
               <Button variant="outline" asChild className="w-full justify-start">
                 <Link href="/integrations">

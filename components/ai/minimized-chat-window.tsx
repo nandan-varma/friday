@@ -113,11 +113,9 @@ export default function MinimizedChatWindow({
                             />
                         </div>
                     </DialogContent>
-                </Dialog>
-            ) : (
-                // Windowed state - floating card
-                <Card className="w-96 h-[32rem] shadow-xl flex flex-col">
-                    <div className="flex items-center justify-between p-3 border-b">
+                </Dialog>            ) : (                // Windowed state - floating card
+                <Card className="w-[28rem] h-[32rem] shadow-xl flex flex-col">
+                    <div className="flex items-center justify-between p-3 border-b shrink-0">
                         <h3 className="font-semibold text-sm">AI Assistant</h3>
                         <div className="flex items-center gap-1">
                             <Button
@@ -138,7 +136,7 @@ export default function MinimizedChatWindow({
                             </Button>
                         </div>
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-h-0 overflow-hidden">
                         <ChatWindow
                             {...chatProps}
                             height="h-full"

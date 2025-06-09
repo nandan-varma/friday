@@ -73,7 +73,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <span className="text-xl font-bold">Friday</span>
         </div>
         <AccountMenu />
-        {/* <SearchForm /> */}
+        <SearchForm />
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

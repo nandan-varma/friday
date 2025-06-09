@@ -19,39 +19,43 @@ import { MarkdownRenderer } from "@/components/ui/markdown"
 // Skeleton component for loading state
 const ChatWindowSkeleton = () => {
   return (
-    <Card className="flex-1 overflow-hidden flex flex-col h-full">
-      <ScrollArea className="h-96 flex-1">
-        <div className="p-4 space-y-4">
-          {/* Assistant message skeleton */}
-          <div className="flex items-start gap-3 rounded-lg p-4 bg-muted/50">
-            <Skeleton className="size-8 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-2/3" />
+    <Card className="flex flex-col h-full">
+      {/* Messages area with ScrollArea */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-4 space-y-4">
+            {/* Assistant message skeleton */}
+            <div className="flex items-start gap-3 rounded-lg p-4 bg-muted/50">
+              <Skeleton className="size-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
             </div>
-          </div>
-          
-          {/* User message skeleton */}
-          <div className="flex items-start gap-3 rounded-lg p-4 ml-auto bg-primary/10 max-w-[85%] flex-row-reverse">
-            <Skeleton className="size-8 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </div>
-          
-          {/* Another assistant message skeleton */}
-          <div className="flex items-start gap-3 rounded-lg p-4 bg-muted/50">
-            <Skeleton className="size-8 rounded-full" />
-            <div className="flex-1 space-y-2">
-              <Skeleton className="h-4 w-4/5" />
-              <Skeleton className="h-4 w-3/5" />
-            </div>
-          </div>
-        </div>
-      </ScrollArea>
 
-      <div className="border-t p-4 bg-muted/30">
+            {/* User message skeleton */}
+            <div className="flex items-start gap-3 rounded-lg p-4 ml-auto bg-primary/10 max-w-[85%] flex-row-reverse">
+              <Skeleton className="size-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-full" />
+              </div>
+            </div>
+
+            {/* Another assistant message skeleton */}
+            <div className="flex items-start gap-3 rounded-lg p-4 bg-muted/50">
+              <Skeleton className="size-8 rounded-full" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-3/5" />
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Input area - fixed at bottom */}
+      <div className="border-t p-4 bg-muted/30 shrink-0">
         <div className="flex gap-2">
           <Skeleton className="flex-1 h-10" />
           <Skeleton className="size-10" />
@@ -109,11 +113,11 @@ export default function ChatWindow({
     { label: "Find times", value: "Find available time slots for a 30-minute meeting this week" },
   ],
   customToolRenderer,
-  height = "h-[calc(100vh-8rem)]",
+  height = "h-full",
   className,
 }: ChatWindowProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  
+
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: apiEndpoint,
     maxSteps,
@@ -150,28 +154,28 @@ export default function ChatWindow({
       if (toolName === 'getUpcomingEvents') {
         const { result } = toolInvocation
         return (
-          <div key={toolCallId} className="mt-3">
+          <div key={toolCallId} className="mt-3 w-full max-w-full overflow-hidden">
             <UpcomingEvents {...result} />
           </div>
         )
       } else if (toolName === 'createEvent') {
         const { result } = toolInvocation
         return (
-          <div key={toolCallId} className="mt-3">
+          <div key={toolCallId} className="mt-3 w-full max-w-full overflow-hidden">
             <EventCreated {...result} />
           </div>
         )
       } else if (toolName === 'createMultipleEvents') {
         const { result } = toolInvocation
         return (
-          <div key={toolCallId} className="mt-3">
+          <div key={toolCallId} className="mt-3 w-full max-w-full overflow-hidden">
             <MultipleEventsCreated {...result} />
           </div>
         )
       } else if (toolName === 'suggestEventTime') {
         const { result } = toolInvocation
         return (
-          <div key={toolCallId} className="mt-3">
+          <div key={toolCallId} className="mt-3 w-full max-w-full overflow-hidden">
             <TimeSuggestions {...result} />
           </div>
         )
@@ -189,17 +193,17 @@ export default function ChatWindow({
               <div className="space-y-1">
                 <span className="text-sm font-medium text-foreground">
                   {toolName === 'getUpcomingEvents' ? 'Loading your events...' :
-                   toolName === 'createEvent' ? 'Creating event...' :
-                   toolName === 'createMultipleEvents' ? 'Creating multiple events...' :
-                   toolName === 'suggestEventTime' ? 'Finding available times...' : 
-                   'Processing...'}
+                    toolName === 'createEvent' ? 'Creating event...' :
+                      toolName === 'createMultipleEvents' ? 'Creating multiple events...' :
+                        toolName === 'suggestEventTime' ? 'Finding available times...' :
+                          'Processing...'}
                 </span>
                 <p className="text-xs text-muted-foreground">
                   {toolName === 'getUpcomingEvents' ? 'Fetching your calendar data' :
-                   toolName === 'createEvent' ? 'Adding event to your calendar' :
-                   toolName === 'createMultipleEvents' ? 'Processing each event in batch' :
-                   toolName === 'suggestEventTime' ? 'Analyzing your schedule for optimal times' : 
-                   'Working on your request'}
+                    toolName === 'createEvent' ? 'Adding event to your calendar' :
+                      toolName === 'createMultipleEvents' ? 'Processing each event in batch' :
+                        toolName === 'suggestEventTime' ? 'Analyzing your schedule for optimal times' :
+                          'Working on your request'}
                 </p>
               </div>
             </div>
@@ -208,75 +212,75 @@ export default function ChatWindow({
       )
     }
   }
-
   const handleSuggestionClick = (value: string) => {
     handleInputChange({ target: { value } } as any)
   }
-
   return (
     <div className={cn("flex flex-col", height, className)}>
       <Suspense fallback={<ChatWindowSkeleton />}>
-        <Card className="flex-1 overflow-hidden flex flex-col h-full">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {messages.map((message) => (
-                <div key={message.id}>
-                  <div
-                    className={cn(
-                      "flex items-start gap-3 rounded-lg p-4 transition-all duration-200 hover:shadow-sm",
-                      message.role === "user" 
-                        ? "ml-auto bg-primary text-primary-foreground max-w-[85%] flex-row-reverse" 
-                        : "bg-muted/50 hover:bg-muted/70",
-                    )}
-                  >
-                    <div className={cn(
-                      "flex size-8 shrink-0 items-center justify-center rounded-full border-2",
-                      message.role === "user" 
-                        ? "bg-primary-foreground text-primary border-primary-foreground/20" 
-                        : "bg-background text-foreground border-border"
-                    )}>
-                      {message.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
-                    </div>
-                    <div className={cn(
-                      "text-sm flex-1 space-y-2",
-                      message.role === "user" ? "text-right" : ""
-                    )}>
-                      {message.parts ? (
-                        message.parts.map((part, index) => {
-                          switch (part.type) {
-                            case 'text':
-                              return (
-                                <MarkdownRenderer 
-                                  key={index} 
-                                  content={part.text}
-                                  isUserMessage={message.role === "user"}
-                                />
-                              )
-                            case 'tool-invocation':
-                              return (
-                                <div key={index} className="animate-in slide-in-from-bottom-2 duration-300">
-                                  {renderToolInvocation(part.toolInvocation)}
-                                </div>
-                              )
-                            default:
-                              return null
-                          }
-                        })
-                      ) : (
-                        <MarkdownRenderer 
-                          content={message.content}
-                          isUserMessage={message.role === "user"}
-                        />
+        <Card className="flex flex-col h-full">
+          {/* Messages area with ScrollArea */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-4">
+                {messages.map((message) => (
+                  <div key={message.id}>
+                    <div
+                      className={cn(
+                        "flex items-start gap-3 rounded-lg p-4 transition-all duration-200 hover:shadow-sm",
+                        message.role === "user"
+                          ? "ml-auto bg-primary text-primary-foreground max-w-[85%] flex-row-reverse"
+                          : "bg-muted/50 hover:bg-muted/70",
                       )}
+                    >
+                      <div className={cn(
+                        "flex size-6 shrink-0 items-center justify-center rounded-full border-2",
+                        message.role === "user"
+                          ? "bg-primary-foreground text-primary border-primary-foreground/20"
+                          : "bg-background text-foreground border-border"
+                      )}>
+                        {message.role === "user" ? <User className="size-4" /> : <Bot className="size-4" />}
+                      </div>
+                      <div className={cn(
+                        "text-sm flex-1 space-y-2 min-w-0 overflow-hidden",
+                        message.role === "user" ? "text-right" : ""
+                      )}>
+                        {message.parts ? (
+                          message.parts.map((part, index) => {
+                            switch (part.type) {
+                              case 'text':
+                                return (
+                                  <MarkdownRenderer
+                                    key={index}
+                                    content={part.text}
+                                    isUserMessage={message.role === "user"}
+                                  />
+                                );
+                              case 'tool-invocation':
+                                return (
+                                  <div key={index} className="animate-in slide-in-from-bottom-2 duration-300 w-full max-w-full overflow-hidden">
+                                    {renderToolInvocation(part.toolInvocation)}
+                                  </div>
+                                );
+                              default:
+                                return null
+                            }
+                          })
+                        ) : (
+                          <MarkdownRenderer
+                            content={message.content}
+                            isUserMessage={message.role === "user"}
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-
-          <div className="border-t p-4 bg-muted/30">
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>          {/* Input area - fixed at bottom */}
+          <div className="border-t p-4 bg-muted/30 shrink-0">
             <form onSubmit={handleSubmit} className="flex gap-2">
               <Input
                 value={input}
@@ -289,13 +293,13 @@ export default function ChatWindow({
                 <Send className="size-4" />
               </Button>
             </form>
-            
+
             {suggestions.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1 text-xs text-muted-foreground">
                 <span>Try:</span>
                 {suggestions.map((suggestion, index) => (
                   <div key={suggestion.value} className="flex items-center gap-1">
-                    <button 
+                    <button
                       type="button"
                       className="text-primary hover:underline"
                       onClick={() => handleSuggestionClick(suggestion.value)}

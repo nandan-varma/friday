@@ -74,8 +74,8 @@ export const UpcomingEvents = ({ events, count, error }: UpcomingEventsProps) =>
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
+          <div className="flex items-center gap-1 text-sm">
+            <CalendarIcon className="h-5 w-10" />
             Upcoming Events
           </div>
           <Button variant="ghost" size="sm" asChild>
