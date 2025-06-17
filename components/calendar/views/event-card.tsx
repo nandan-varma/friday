@@ -14,6 +14,7 @@ interface EventCardProps {
   showDescription?: boolean
   onClick?: (event: UnifiedEvent) => void
   className?: string
+  currentHour?: number // New prop to indicate which hour this card is being rendered in
 }
 
 export function EventCard({ 
@@ -23,9 +24,10 @@ export function EventCard({
   showLocation = true,
   showDescription = true,
   onClick,
-  className 
-}: EventCardProps) {
-  const handleClick = () => {
+  className,
+  currentHour
+}: EventCardProps) {const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent event bubbling
     onClick?.(event)
   }
 
@@ -62,22 +64,36 @@ export function EventCard({
       </div>
     )
   }
-
   if (variant === 'compact') {
-    return (
-      <div
-        className={cn(getEventStyles(), "p-2", className)}
+    const startHour = new Date(event.startTime).getHours()
+    const endHour = new Date(event.endTime).getHours()
+    const isMultiHour = endHour > startHour || (endHour === startHour && new Date(event.endTime).getMinutes() > new Date(event.startTime).getMinutes() + 30)
+    const isFirstHour = currentHour === startHour
+    const isContinuation = currentHour !== undefined && currentHour > startHour && currentHour <= endHour
+    
+    return (      <div
+        className={cn(
+          getEventStyles(), 
+          "p-2",
+          isContinuation && "border-t-0 rounded-t-none opacity-80",
+          className
+        )}
         onClick={handleClick}
       >
         <div className="font-medium text-sm truncate group-hover:text-foreground transition-colors">
-          {event.title}
+          {isContinuation ? `↳ ${event.title}` : event.title}
         </div>
         {showTime && (
           <div className="text-xs text-muted-foreground mt-1 opacity-80 group-hover:opacity-100 transition-opacity">
-            {event.isAllDay
-              ? "All day"
-              : format(event.startTime, "h:mm a")
-            }
+            {event.isAllDay && "All day"}
+              {/* 
+              ? "All day"              
+              : isContinuation
+                ? `(until ${format(event.endTime, "h:mm a")})`
+                : isMultiHour
+                  ? `${format(event.startTime, "h:mm a")} - ${format(event.endTime, "h:mm a")}`
+                  : format(event.startTime, "h:mm a") 
+              // */}
           </div>
         )}
       </div>

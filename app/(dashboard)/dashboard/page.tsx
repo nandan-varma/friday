@@ -1,8 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
 import { Suspense } from "react"
 import { UpcomingEvents, UpcomingEventsSkeleton } from "@/components/dashboard/upcoming-events"
+import { NewEventButton } from "@/components/dashboard/new-event-button"
 import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 
@@ -28,9 +27,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold">Welcome, {session.user.name || session.user.email}</h1>
-        <Button>
-            <Plus className="mr-2 h-4 w-4" /> New Event
-        </Button>
+        <NewEventButton />
       </div>
 
       <Card className="pt-4">

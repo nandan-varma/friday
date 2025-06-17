@@ -21,6 +21,7 @@ import { CalendarHeader } from "./calendar-header"
 import { EventCard } from "./event-card"
 import { EventModal } from "../event-modal"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useClientDate } from "@/hooks/use-client-date"
 import { type UnifiedEvent } from "@/services/eventService"
 
 export function MonthView({ 
@@ -34,6 +35,7 @@ export function MonthView({
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const clientDate = useClientDate()
   
   const monthStart = startOfMonth(currentDate)
   const monthEnd = endOfMonth(currentDate)
@@ -57,15 +59,20 @@ export function MonthView({
     setModalOpen(true)
     onEventClick?.(event)
   }  
-  
-  const handleEventSaved = (event: UnifiedEvent) => {
+    const handleEventSaved = (event: UnifiedEvent) => {
     // Event saved successfully, views will be updated via revalidation
     console.log("Event saved:", event)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
   }
   
   const handleEventDeleted = (eventId: string) => {
     // Event deleted successfully, views will be updated via revalidation
     console.log("Event deleted:", eventId)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
   }
 
   const handlePrevious = () => {
@@ -108,7 +115,7 @@ export function MonthView({
               isSameDay(event.startTime, day)
             )
             const isCurrentMonth = isSameMonth(day, currentDate)
-            const isTodayDate = isToday(day)
+            const isTodayDate = clientDate ? isToday(day) : false
             
             return (
               <div 
@@ -206,11 +213,10 @@ export function MonthViewSkeleton() {
             <div 
               key={i} 
               className="min-h-[100px] md:min-h-[140px] p-2 border-r border-b last:border-r-0"
-            >
-              <Skeleton className="h-7 w-7 rounded-full mb-2" />
+            >              <Skeleton className="h-7 w-7 rounded-full mb-2" />
               <div className="space-y-1">
-                {Math.random() > 0.7 && <Skeleton className="h-4 w-full" />}
-                {Math.random() > 0.8 && <Skeleton className="h-4 w-3/4" />}
+                {i % 3 === 0 && <Skeleton className="h-4 w-full" />}
+                {i % 5 === 0 && <Skeleton className="h-4 w-3/4" />}
               </div>
             </div>
           ))}

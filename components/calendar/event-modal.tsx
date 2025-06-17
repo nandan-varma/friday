@@ -123,10 +123,10 @@ export function EventModal({
       title: "",
       description: "",
       location: "",
-      startDate: defaultDate || new Date(),
-      startTime: defaultHour ? `${defaultHour.toString().padStart(2, "0")}:00` : "09:00",
-      endDate: defaultDate || new Date(),
-      endTime: defaultHour ? `${(defaultHour + 1).toString().padStart(2, "0")}:00` : "10:00",
+      startDate: selectedDate || defaultDate || new Date(),
+      startTime: (selectedHour ?? defaultHour) !== undefined ? `${(selectedHour ?? defaultHour).toString().padStart(2, "0")}:00` : "09:00",
+      endDate: selectedDate || defaultDate || new Date(),
+      endTime: (selectedHour ?? defaultHour) !== undefined ? `${((selectedHour ?? defaultHour) + 1).toString().padStart(2, "0")}:00` : "10:00",
       isAllDay: false,
       recurrence: "none",
     },
@@ -155,19 +155,23 @@ export function EventModal({
   // Reset form when modal opens for creation
   useEffect(() => {
     if (open && mode === "create") {
+      const hour = selectedHour ?? defaultHour
+      const startDate = selectedDate || defaultDate || new Date()
+      const endDate = selectedDate || defaultDate || new Date()
+      
       form.reset({
         title: "",
         description: "",
         location: "",
-        startDate: defaultDate || new Date(),
-        startTime: defaultHour ? `${defaultHour.toString().padStart(2, "0")}:00` : "09:00",
-        endDate: defaultDate || new Date(),
-        endTime: defaultHour ? `${(defaultHour + 1).toString().padStart(2, "0")}:00` : "10:00",
+        startDate,
+        startTime: hour !== undefined ? `${hour.toString().padStart(2, "0")}:00` : "09:00",
+        endDate,
+        endTime: hour !== undefined ? `${(hour + 1).toString().padStart(2, "0")}:00` : "10:00",
         isAllDay: false,
         recurrence: "none",
       })
     }
-  }, [open, mode, defaultDate, defaultHour, form])
+  }, [open, mode, selectedDate, defaultDate, selectedHour, defaultHour, form])
 
   const onSubmit = async (data: EventFormData) => {
     startTransition(async () => {

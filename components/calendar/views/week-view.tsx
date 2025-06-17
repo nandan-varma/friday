@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { 
-  format, 
-  startOfWeek, 
-  endOfWeek, 
+import {
+  format,
+  startOfWeek,
+  endOfWeek,
   eachDayOfInterval,
   isSameDay,
   parseISO,
@@ -18,20 +18,22 @@ import { CalendarHeader } from "./calendar-header"
 import { EventCard } from "./event-card"
 import { EventModal } from "../event-modal"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useClientDate } from "@/hooks/use-client-date"
 import { type UnifiedEvent } from "@/services/eventService"
 
-export function WeekView({ 
-  events, 
-  currentDate, 
-  onDateChange, 
+export function WeekView({
+  events,
+  currentDate,
+  onDateChange,
   onEventClick,
   onCreateEvent,
-  timezone 
+  timezone
 }: CalendarViewProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined)
+  const clientDate = useClientDate()
 
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const weekEnd = endOfWeek(currentDate, { weekStartsOn: 0 })
@@ -64,14 +66,23 @@ export function WeekView({
     setModalOpen(true)
     onEventClick?.(event)
   }
+
   const handleEventSaved = (event: UnifiedEvent) => {
     // Event saved successfully, views will be updated via revalidation
     console.log("Event saved:", event)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
   }
 
   const handleEventDeleted = (eventId: string) => {
     // Event deleted successfully, views will be updated via revalidation  
     console.log("Event deleted:", eventId)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -95,19 +106,19 @@ export function WeekView({
                   All Day
                 </div>
                 {days.map((day, i) => {
-                  const allDayEvents = events.filter(event => 
+                  const allDayEvents = events.filter(event =>
                     event.isAllDay && isSameDay(event.startTime, day)
                   )
-                  
+
                   return (
                     <div key={i} className="border-r last:border-r-0 p-2 space-y-1">
-                      {allDayEvents.map((event) => (                        <EventCard
-                          key={event.id}
-                          event={event}
-                          variant="compact"
-                          showTime={false}
-                          onClick={handleEventClick}
-                        />
+                      {allDayEvents.map((event) => (<EventCard
+                        key={event.id}
+                        event={event}
+                        variant="compact"
+                        showTime={false}
+                        onClick={handleEventClick}
+                      />
                       ))}
                     </div>
                   )
@@ -123,14 +134,13 @@ export function WeekView({
               <div key={i} className="p-3 text-center border-r last:border-r-0">
                 <div className="text-sm text-muted-foreground font-medium">
                   {format(day, "EEE")}
-                </div>
-                <div className={cn(
+                </div>                <div className={cn(
                   "text-lg font-semibold mt-1",
-                  isToday(day) && "text-primary"
+                  clientDate && isToday(day) && "text-primary"
                 )}>
                   <span className={cn(
                     "inline-flex items-center justify-center w-8 h-8 rounded-full transition-colors",
-                    isToday(day) && "bg-primary text-primary-foreground shadow-sm"
+                    clientDate && isToday(day) && "bg-primary text-primary-foreground shadow-sm"
                   )}>
                     {format(day, "d")}
                   </span>
@@ -142,51 +152,61 @@ export function WeekView({
           {/* Time grid */}
           <div className="relative">
             {hours.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 border-b min-h-[60px] group hover:bg-accent/20 transition-colors">
-                <div className="w-20 p-2 text-right text-sm text-muted-foreground bg-muted/30 border-r flex items-start justify-end">
-                  <span className="mt-1">
-                    {format(new Date().setHours(hour, 0, 0, 0), "h a")}
-                  </span>
-                </div>
-                {days.map((day, dayIndex) => {
-                  const hourEvents = events.filter((event) => {
-                    const startHour = new Date(event.startTime).getHours()
-                    return isSameDay(event.startTime, day) && 
-                           !event.isAllDay && 
-                           startHour === hour
-                  })
+              <div key={hour} className="grid grid-cols-8 border-b min-h-[60px] group hover:bg-accent/20 transition-colors">                <div className="w-20 p-2 text-right text-sm text-muted-foreground bg-muted/30 border-r flex items-start justify-end">
+                <span className="mt-1">
+                  {format(new Date(2000, 0, 1, hour, 0, 0, 0), "h a")}
+                </span>
+              </div>                {days.map((day, dayIndex) => {
+                const hourEvents = events.filter((event) => {
+                  if (!isSameDay(event.startTime, day) || event.isAllDay) {
+                    return false
+                  }
 
-                  return (
-                    <div 
-                      key={dayIndex} 
-                      className="border-r last:border-r-0 p-1 space-y-1 relative cursor-pointer group/cell"
-                      onClick={() => handleTimeSlotClick(day, hour)}
-                    >
-                      {hourEvents.map((event) => (                        <EventCard
-                          key={event.id}
-                          event={event}
-                          variant="compact"
-                          showLocation={false}
-                          onClick={handleEventClick}
-                        />
-                      ))}
-                      
-                      {/* Create event hint */}
-                      {hourEvents.length === 0 && (
-                        <div className="absolute inset-0 opacity-0 group-hover/cell:opacity-100 transition-opacity flex items-center justify-center">
-                          <div className="text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded shadow-sm">
-                            Click to create
-                          </div>
+                  const startHour = new Date(event.startTime).getHours()
+                  const endHour = new Date(event.endTime).getHours()
+                  const endMinutes = new Date(event.endTime).getMinutes()
+
+                  // Event spans this hour if:
+                  // - It starts in this hour, OR
+                  // - It started before this hour and ends after this hour starts, OR
+                  // - It started before this hour and ends exactly at this hour (with minutes > 0)
+                  return (startHour === hour) ||
+                    (startHour < hour && (endHour > hour || (endHour === hour && endMinutes > 0)))
+                })
+
+                return (
+                  <div
+                    key={dayIndex}
+                    className="border-r last:border-r-0 p-1 space-y-1 relative cursor-pointer group/cell"
+                    onClick={() => handleTimeSlotClick(day, hour)}
+                  >
+                    {hourEvents.map((event) =>
+                    (<EventCard
+                      key={`${event.id}-${hour}`}
+                      event={event}
+                      variant="compact"
+                      showLocation={false}
+                      onClick={handleEventClick}
+                      currentHour={hour}
+                    />
+                    ))}
+
+                    {/* Create event hint */}
+                    {hourEvents.length === 0 && (
+                      <div className="absolute inset-0 opacity-0 group-hover/cell:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="text-xs text-muted-foreground bg-background/80 px-2 py-1 rounded shadow-sm">
+                          Click to create
                         </div>
-                      )}
-                    </div>
-                  )
-                })}              </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+              </div>
             ))}
           </div>
         </div>
       </div>
-
       <EventModal
         open={modalOpen}
         onOpenChange={setModalOpen}
@@ -196,6 +216,7 @@ export function WeekView({
         timezone={timezone}
         onEventSaved={handleEventSaved}
         onEventDeleted={handleEventDeleted}
+        mode={selectedEvent ? "edit" : "create"}
       />
     </div>
   )
@@ -233,10 +254,9 @@ export function WeekViewSkeleton() {
               <div key={hour} className="grid grid-cols-8 border-b min-h-[60px]">
                 <div className="w-20 p-2 text-right bg-muted/30 border-r">
                   <Skeleton className="h-4 w-8 ml-auto" />
-                </div>
-                {Array.from({ length: 7 }).map((_, dayIndex) => (
+                </div>                {Array.from({ length: 7 }).map((_, dayIndex) => (
                   <div key={dayIndex} className="border-r last:border-r-0 p-1">
-                    {Math.random() > 0.8 && (
+                    {(hour + dayIndex) % 5 === 0 && (
                       <Skeleton className="h-12 w-full rounded" />
                     )}
                   </div>

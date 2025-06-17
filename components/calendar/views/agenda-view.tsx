@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useClientDate } from "@/hooks/use-client-date"
 import { type UnifiedEvent } from "@/services/eventService"
 
 export function AgendaView({ 
@@ -22,6 +23,7 @@ export function AgendaView({
 }: CalendarViewProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
+  const clientDate = useClientDate()
 
   const handleToday = () => {
     onDateChange(new Date())
@@ -41,11 +43,10 @@ export function AgendaView({
     // Event deleted successfully, views will be updated via revalidation
     console.log("Event deleted:", eventId)
   }
-
-  // Group events by date
-  const groupedEvents = events
-    .filter(event => isAfter(event.startTime, new Date()) || 
-                    format(event.startTime, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd'))
+  // Group events by date - only process if we have client date to prevent hydration issues
+  const groupedEvents = clientDate ? events
+    .filter(event => isAfter(event.startTime, clientDate) || 
+                    format(event.startTime, 'yyyy-MM-dd') === format(clientDate, 'yyyy-MM-dd'))
     .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
     .slice(0, 50) // Limit to 50 upcoming events
     .reduce((groups, event) => {
@@ -55,7 +56,7 @@ export function AgendaView({
       }
       groups[date].push(event)
       return groups
-    }, {} as Record<string, typeof events>)
+    }, {} as Record<string, typeof events>) : {}
 
   const groupedEventEntries = Object.entries(groupedEvents)
 
@@ -64,10 +65,9 @@ export function AgendaView({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg md:text-xl lg:text-2xl font-semibold">Upcoming Events</h2>
-          <p className="text-muted-foreground text-sm mt-1">
+          <h2 className="text-lg md:text-xl lg:text-2xl font-semibold">Upcoming Events</h2>          <p className="text-muted-foreground text-sm mt-1">
             {groupedEventEntries.length > 0 
-              ? `${events.filter(e => isAfter(e.startTime, new Date())).length} upcoming events`
+              ? `${clientDate ? events.filter(e => isAfter(e.startTime, clientDate)).length : 0} upcoming events`
               : "No upcoming events"
             }
           </p>
@@ -82,11 +82,10 @@ export function AgendaView({
       <div className="space-y-6">
         {groupedEventEntries.length > 0 ? (
           <ScrollArea className="h-[calc(100vh-200px)]">
-            <div className="space-y-6 pr-4">
-              {groupedEventEntries.map(([dateStr, dayEvents]) => {
+            <div className="space-y-6 pr-4">              {groupedEventEntries.map(([dateStr, dayEvents]) => {
                 const date = new Date(dateStr)
-                const isToday = format(date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-                const isTomorrow = format(date, 'yyyy-MM-dd') === format(addDays(new Date(), 1), 'yyyy-MM-dd')
+                const isToday = clientDate ? format(date, 'yyyy-MM-dd') === format(clientDate, 'yyyy-MM-dd') : false
+                const isTomorrow = clientDate ? format(date, 'yyyy-MM-dd') === format(addDays(clientDate, 1), 'yyyy-MM-dd') : false
                 
                 return (
                   <div key={dateStr} className="space-y-3">
@@ -158,8 +157,7 @@ export function AgendaView({
                 <p className="text-sm">
                   Your calendar is clear. Time to plan something exciting!
                 </p>
-              </div>
-              <Button 
+              </div>              <Button 
                 variant="outline" 
                 onClick={() => onDateChange(new Date())}
                 className="mt-4"
@@ -217,10 +215,9 @@ export function AgendaViewSkeleton() {
                     </div>
                   </div>
                 </div>
-                
-                {/* Events for this date skeleton */}
+                  {/* Events for this date skeleton */}
                 <div className="ml-[92px] space-y-3">
-                  {Array.from({ length: Math.floor(Math.random() * 3) + 1 }).map((_, eventIndex) => (
+                  {Array.from({ length: 2 }).map((_, eventIndex) => (
                     <Card key={eventIndex} className="p-4">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <Skeleton className="h-5 w-48" />
@@ -228,11 +225,9 @@ export function AgendaViewSkeleton() {
                       </div>
                       <div className="space-y-1">
                         <Skeleton className="h-4 w-32" />
-                        {Math.random() > 0.5 && <Skeleton className="h-4 w-24" />}
+                        <Skeleton className="h-4 w-24" />
                       </div>
-                      {Math.random() > 0.6 && (
-                        <Skeleton className="h-8 w-full mt-2" />
-                      )}
+                      <Skeleton className="h-8 w-full mt-2" />
                     </Card>
                   ))}
                 </div>

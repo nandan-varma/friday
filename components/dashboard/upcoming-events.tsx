@@ -2,20 +2,35 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { EventService } from "@/services/eventService"
 import { UpcomingEventsClient } from "./upcoming-events-client"
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
 
 export async function UpcomingEvents() {
   const session = await auth.api.getSession({
     headers: await headers()
   })
+  
 
   if (!session?.user) {
     return null
   }
 
-  // Fetch data directly in server component
-  const upcomingEvents = await EventService.getAllUpcomingEvents(session.user.id, 5)
+  const queryClient = new QueryClient()
 
-  return <UpcomingEventsClient initialEvents={upcomingEvents} userId={session.user.id} />
+  // Prefetch the data on the server using the service directly
+  await queryClient.prefetchQuery({
+    queryKey: ['upcomingEvents', session.user.id],
+    queryFn: () => EventService.getAllUpcomingEvents(session.user.id, 5),
+  })
+
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <UpcomingEventsClient userId={session.user.id} />
+    </HydrationBoundary>
+  )
 }
 
 export function UpcomingEventsSkeleton() {

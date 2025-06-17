@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useClientDate } from "@/hooks/use-client-date"
 import { type UnifiedEvent } from "@/services/eventService"
 
 export function DayView({ 
@@ -30,6 +31,7 @@ export function DayView({
   const [selectedEvent, setSelectedEvent] = useState<UnifiedEvent | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [selectedHour, setSelectedHour] = useState<number | undefined>(undefined)
+  const clientDate = useClientDate()
 
   const dayEvents = events.filter(event => 
     isSameDay(event.startTime, currentDate)
@@ -62,16 +64,24 @@ export function DayView({
     setSelectedDate(null)
     setSelectedHour(undefined)
     setModalOpen(true)
-    onEventClick?.(event)
-  }
+    onEventClick?.(event)  }
+  
   const handleEventSaved = (event: UnifiedEvent) => {
     // Event saved successfully, views will be updated via revalidation
     console.log("Event saved:", event)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
   }
 
   const handleEventDeleted = (eventId: string) => {
     // Event deleted successfully, views will be updated via revalidation
     console.log("Event deleted:", eventId)
+    setModalOpen(false)
+    setSelectedEvent(null)
+    setSelectedDate(null)
+    setSelectedHour(undefined)
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -149,10 +159,9 @@ export function DayView({
               })
 
               return (
-                <div key={hour} className="flex min-h-[70px] group hover:bg-accent/30 transition-colors">
-                  <div className="w-20 md:w-24 p-4 text-right text-sm text-muted-foreground bg-muted/30 flex-shrink-0 border-r">
+                <div key={hour} className="flex min-h-[70px] group hover:bg-accent/30 transition-colors">                  <div className="w-20 md:w-24 p-4 text-right text-sm text-muted-foreground bg-muted/30 flex-shrink-0 border-r">
                     <div className="sticky top-4">
-                      {format(new Date().setHours(hour, 0, 0, 0), "h a")}
+                      {format(new Date(2000, 0, 1, hour, 0, 0, 0), "h a")}
                     </div>
                   </div>
                   
@@ -169,10 +178,9 @@ export function DayView({
                         />
                       ))
                     ) : (
-                      <div className="min-h-[40px] flex items-center">
-                        <div className="w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="min-h-[40px] flex items-center">                        <div className="w-full opacity-0 group-hover:opacity-100 transition-opacity">
                           <div className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed border-muted-foreground/20 rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-colors">
-                            Click to create an event at {format(new Date().setHours(hour, 0, 0, 0), "h a")}
+                            Click to create an event at {format(new Date(2000, 0, 1, hour, 0, 0, 0), "h a")}
                           </div>
                         </div>
                       </div>
@@ -182,9 +190,7 @@ export function DayView({
               )            })}
           </div>
         </Card>
-      </div>
-
-      <EventModal
+      </div>      <EventModal
         open={modalOpen}
         onOpenChange={setModalOpen}
         event={selectedEvent}
@@ -193,6 +199,7 @@ export function DayView({
         timezone={timezone}
         onEventSaved={handleEventSaved}
         onEventDeleted={handleEventDeleted}
+        mode={selectedEvent ? "edit" : "create"}
       />
     </div>
   )
@@ -231,15 +238,14 @@ export function DayViewSkeleton() {
           <div className="p-4 bg-muted/20 border-b">
             <Skeleton className="h-4 w-20" />
           </div>
-          
-          <div className="divide-y">
+            <div className="divide-y">
             {Array.from({ length: 12 }).map((_, hour) => (
               <div key={hour} className="flex min-h-[70px]">
                 <div className="w-20 md:w-24 p-4 bg-muted/30 border-r">
                   <Skeleton className="h-4 w-8 ml-auto" />
                 </div>
                 <div className="flex-1 p-4">
-                  {Math.random() > 0.7 && (
+                  {hour % 3 === 0 && (
                     <Skeleton className="h-16 w-full rounded-lg" />
                   )}
                 </div>

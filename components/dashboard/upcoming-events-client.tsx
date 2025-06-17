@@ -3,24 +3,35 @@
 import { CalendarView } from "@/components/calendar/calendar-view"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UnifiedEvent } from "@/services/eventService"
+import { useQuery } from '@tanstack/react-query'
 
 interface UpcomingEventsClientProps {
-  initialEvents: UnifiedEvent[]
   userId: string
 }
 
-export function UpcomingEventsClient({ initialEvents }: UpcomingEventsClientProps) {
-  // You can still use TanStack Query for future updates if needed
-  // const { data: upcomingEvents } = useQuery({
-  //   queryKey: ['upcoming-events', userId],
-  //   initialData: initialEvents,
-  //   staleTime: 5 * 60 * 1000,
-  // })
+export function UpcomingEventsClient({ userId }: UpcomingEventsClientProps) {
+  const { data: events = [], isLoading, error } = useQuery({
+    queryKey: ['upcomingEvents', userId],
+    queryFn: () => fetchUpcomingEvents(5),
+  })
 
-  return <CalendarView events={initialEvents} view="agenda" />
+  if (isLoading) {
+    return <UpcomingEventsSkeleton />
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center text-muted-foreground">
+        Failed to load upcoming events
+      </div>
+    )
+  }
+
+  return <CalendarView events={events} view="agenda" />
 }
 
 export function UpcomingEventsSkeleton() {
+  
   return (
     <div className="space-y-4">
       {Array.from({ length: 5 }).map((_, i) => (
