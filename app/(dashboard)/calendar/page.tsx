@@ -3,9 +3,23 @@ import { headers } from "next/headers"
 import EventService from "@/services/eventService"
 import { getuserSettings } from "@/services/profileService"
 import { CalendarClientPage } from "./calendar"
+import {
+  dehydrate,
+  HydrationBoundary,
+  QueryClient,
+} from '@tanstack/react-query'
+import { getSession } from "@/lib/auth"
 
 
 export default async function CalendarPage() {
+
+  const queryClient = new QueryClient()
+
+  await queryClient.prefetchQuery({
+    queryKey: ['session'],
+    queryFn: getSession,
+  })
+
   const session = await auth.api.getSession({
     headers: await headers()
   })

@@ -10,12 +10,12 @@ interface UpcomingEventsClientProps {
 }
 
 export function UpcomingEventsClient({ userId }: UpcomingEventsClientProps) {
-  const { data: events = [], isLoading, error } = useQuery({
+  const { data: events, isLoading, isPending, error } = useQuery({
     queryKey: ['upcomingEvents', userId],
     queryFn: () => fetchUpcomingEvents(5),
   })
 
-  if (isLoading) {
+  if (isLoading || isPending) {
     return <UpcomingEventsSkeleton />
   }
 
