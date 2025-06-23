@@ -28,6 +28,11 @@ async function SettingsContent() {
   
   return (
     <Tabs defaultValue="profile" className="space-y-6">
+      <TabsList>
+        <TabsTrigger value="profile">Profile</TabsTrigger>
+        <TabsTrigger value="preferences">Preferences</TabsTrigger>
+        <TabsTrigger value="security">Security</TabsTrigger>
+      </TabsList>
       <TabsContent value="profile" className="space-y-6">
         <ProfileForm initialProfile={profile} />
       </TabsContent>

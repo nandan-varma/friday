@@ -149,10 +149,6 @@ export class LocalIntegrationService {    /**
      */
     static async deleteEvent(eventId: number, userId: string): Promise<LocalEvent> {
         try {
-
-            const user = await db.query.user.findFirst({
-                where: eq(events.userId, userId),
-            })
             const [deletedEvent] = await db
                 .delete(events)
                 .where(and(eq(events.id, eventId), eq(events.userId, userId)))
