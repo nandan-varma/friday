@@ -7,7 +7,7 @@ import { MonthView } from "./month-view";
 import { WeekView } from "./week-view";
 import { DayView } from "./day-view";
 import { AgendaView } from "./agenda-view";
-import { UnifiedEvent } from "@/lib/eventService";
+import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface CalendarViewProps {
   events: UnifiedEvent[];

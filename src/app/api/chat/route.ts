@@ -3,7 +3,7 @@ import { streamText, convertToModelMessages, stepCountIs } from "ai";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import EventService from "@/lib/eventService";
+import EventService from "@/lib/services/eventService";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;

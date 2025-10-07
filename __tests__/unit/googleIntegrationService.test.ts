@@ -1,4 +1,5 @@
-import { GoogleIntegrationService } from "../../src/lib/googleIntegrationService";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { GoogleIntegrationService } from "../../src/lib/services/googleIntegrationService";
 
 // Mock googleapis
 jest.mock("googleapis", () => ({
@@ -61,21 +62,8 @@ jest.mock("drizzle-orm", () => ({
   relations: jest.fn(),
 }));
 
-// Mock env
-jest.mock("../../src/lib/env", () => ({
-  GOOGLE_CREDENTIALS: JSON.stringify({
-    web: {
-      client_id: "test-client-id",
-      client_secret: "test-client-secret",
-    },
-  }),
-  GOOGLE_REDIRECT_URI: "http://localhost:3000/api/auth/google/callback",
-}));
-
 import { google } from "googleapis";
-import { OAuth2Client } from "google-auth-library";
 import { db } from "../../src/lib/db";
-import { eq, and } from "drizzle-orm";
 
 describe("GoogleIntegrationService", () => {
   beforeEach(() => {
@@ -430,8 +418,7 @@ describe("GoogleIntegrationService", () => {
       (db.update as any).mockImplementation(mockUpdate);
       (google.auth.OAuth2 as any).mockImplementation(() => mockOAuth2Client);
 
-      const result =
-        await GoogleIntegrationService.createAuthenticatedClient("user1");
+      await GoogleIntegrationService.createAuthenticatedClient("user1");
 
       expect(mockOAuth2Client.refreshAccessToken).toHaveBeenCalled();
       expect(db.update).toHaveBeenCalled();

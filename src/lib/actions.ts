@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { EventService } from "@/lib/eventService";
-import { getUserProfile, updateUserProfile } from "@/lib/profileService";
-import { getUserSettings, updateUserSettings } from "@/lib/profileService";
-import { GoogleIntegrationService } from "@/lib/googleIntegrationService";
+import { EventService } from "@/lib/services/eventService";
+import { getUserProfile, updateUserProfile } from "@/lib/services/profileService";
+import { getUserSettings, updateUserSettings } from "@/lib/services/profileService";
+import { GoogleIntegrationService } from "@/lib/services/googleIntegrationService";
 import { auth } from "@/lib/auth";
 import {
   validateEventData,

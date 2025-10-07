@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { POST } from "../../src/app/api/chat/route";
 
 // Mock Response
@@ -54,7 +55,7 @@ jest.mock("../../src/lib/auth", () => ({
   },
 }));
 
-jest.mock("../../src/lib/eventService", () => ({
+jest.mock("../../src/lib/services/eventService", () => ({
   default: {
     getAllUpcomingEvents: jest.fn(),
     getAllTodayEvents: jest.fn(),
@@ -68,10 +69,9 @@ jest.mock("next/headers", () => ({
   headers: jest.fn(),
 }));
 
-const mockAuth = require("../../src/lib/auth");
-const mockEventService = require("../../src/lib/eventService").default;
-const mockStreamText = require("ai").streamText;
-const mockHeaders = require("next/headers").headers;
+const mockAuth = require("../../src/lib/auth") as any;
+const mockStreamText = require("ai").streamText as jest.Mock;
+const mockHeaders = require("next/headers").headers as jest.Mock;
 
 describe("/api/chat", () => {
   beforeEach(() => {
@@ -176,7 +176,7 @@ describe("/api/chat", () => {
     });
 
     it("should return 401 when user is not authenticated", async () => {
-      mockAuth.auth.api.getSession.mockResolvedValue(null);
+      mockAuth.api.getSession.mockResolvedValue(null);
 
       const request = {
         json: () =>

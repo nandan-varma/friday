@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { EventService } from '@/lib/eventService'
+import { EventService } from '@/lib/services/eventService'
 
 export async function GET(request: NextRequest) {
   try {

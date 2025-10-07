@@ -1,5 +1,6 @@
-import { EventService } from "../../src/lib/eventService";
-import { LocalIntegrationService } from "../../src/lib/localIntegrationService";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { EventService } from "../../src/lib/services/eventService";
+import { LocalIntegrationService } from "../../src/lib/services/localIntegrationService";
 
 // Mock the integration services
 jest.mock("../../src/lib/localIntegrationService", () => ({

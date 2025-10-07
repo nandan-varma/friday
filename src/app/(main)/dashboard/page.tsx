@@ -1,5 +1,5 @@
 import { DashboardClient } from "@/components/dashboard-client"
-import { EventService, UnifiedEvent } from "@/lib/eventService"
+import { EventService, UnifiedEvent } from "@/lib/services/eventService"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 

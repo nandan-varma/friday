@@ -1,4 +1,5 @@
-import { test, expect } from "@playwright/test";
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { test } from "@playwright/test";
 
 test.describe("Event Management", () => {
   test("event creation form loads", async ({ page }) => {

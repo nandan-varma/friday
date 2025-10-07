@@ -22,7 +22,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UnifiedEvent } from "@/lib/eventService";
+import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface DayViewProps {
   currentDate: Date;

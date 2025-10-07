@@ -216,6 +216,9 @@ importers:
         specifier: ^4.1.12
         version: 4.1.12
     devDependencies:
+      '@eslint/eslintrc':
+        specifier: ^3.3.1
+        version: 3.3.1
       '@playwright/test':
         specifier: ^1.56.0
         version: 1.56.0
@@ -252,6 +255,9 @@ importers:
       drizzle-kit:
         specifier: ^0.31.5
         version: 0.31.5
+      eslint:
+        specifier: ^9.28.0
+        version: 9.28.0(jiti@2.6.1)
       eslint-config-prettier:
         specifier: ^10.1.8
         version: 10.1.8(eslint@9.28.0(jiti@2.6.1))

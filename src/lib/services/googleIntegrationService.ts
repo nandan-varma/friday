@@ -46,7 +46,7 @@ export class GoogleIntegrationService {
    * Get Google API credentials from environment variables
    */
   private static async getCredentials() {
-    const { GOOGLE_CREDENTIALS } = await import("./env");
+    const { GOOGLE_CREDENTIALS } = await import("../env");
     let credentials;
     try {
       credentials = JSON.parse(GOOGLE_CREDENTIALS);
@@ -68,7 +68,7 @@ export class GoogleIntegrationService {
   private static async createOAuth2Client(): Promise<OAuth2Client> {
     try {
       const { client_id, client_secret } = await this.getCredentials();
-      const { GOOGLE_REDIRECT_URI } = await import("./env");
+      const { GOOGLE_REDIRECT_URI } = await import("../env");
 
       const oAuth2Client = new google.auth.OAuth2(
         client_id,

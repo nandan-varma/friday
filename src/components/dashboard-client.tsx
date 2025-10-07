@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarView } from "@/components/calendar/calendar-view";
 import { EventForm } from "@/components/event/event-form";
-import { UnifiedEvent } from "@/lib/eventService";
+import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface DashboardClientProps {
   initialEvents: UnifiedEvent[];

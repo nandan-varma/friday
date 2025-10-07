@@ -3,7 +3,7 @@ import {
   CreateEventData,
   UpdateEventData,
   EventFilters,
-} from "../../src/lib/localIntegrationService";
+} from "../../src/lib/services/localIntegrationService";
 
 // Mock drizzle-orm functions first
 jest.mock("drizzle-orm", () => ({

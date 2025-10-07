@@ -6,9 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "lint:fix": "next lint --fix",
+    "lint:fix": "eslint --fix .",
     "build:check": "npm run typecheck && npm run lint && npm run build",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
@@ -91,6 +91,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.1",
     "@playwright/test": "^1.56.0",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/postcss": "^4.1.14",
@@ -103,6 +104,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.0",
     "@typescript-eslint/parser": "^8.46.0",
     "drizzle-kit": "^0.31.5",
+    "eslint": "^9.28.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "identity-obj-proxy": "^3.0.0",

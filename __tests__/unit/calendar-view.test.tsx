@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CalendarView } from "../../src/components/calendar/calendar-view";
-import { UnifiedEvent } from "../../src/lib/eventService";
+import { UnifiedEvent } from "../../src/lib/services/eventService";
 
 // Mock the child view components
 jest.mock("../../src/components/calendar/month-view", () => ({

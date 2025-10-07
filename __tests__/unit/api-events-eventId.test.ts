@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { NextRequest } from "next/server";
 import { PUT, DELETE } from "../../src/app/api/events/[eventId]/route";
-import { EventService } from "../../src/lib/eventService";
+import { EventService } from "../../src/lib/services/eventService";
 
 // Mock NextRequest cookies
 jest.mock("next/server", () => ({

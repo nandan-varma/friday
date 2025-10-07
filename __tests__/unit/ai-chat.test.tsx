@@ -1,4 +1,5 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { render, screen, fireEvent } from "@testing-library/react";
 import { AIChat } from "../../src/components/ai-chat";
 
 // Mock the useChat hook

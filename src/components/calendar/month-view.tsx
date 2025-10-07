@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UnifiedEvent } from "@/lib/eventService";
+import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface MonthViewProps {
   currentDate: Date;

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { GoogleIntegrationService } from "@/lib/googleIntegrationService";
+import { GoogleIntegrationService } from "@/lib/services/googleIntegrationService";
 
 export default async function GoogleAuthPage({
   searchParams,

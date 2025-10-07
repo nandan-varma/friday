@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChevronLeft, ChevronRight, Plus, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UnifiedEvent } from "@/lib/eventService";
+import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface WeekViewProps {
   currentDate: Date;

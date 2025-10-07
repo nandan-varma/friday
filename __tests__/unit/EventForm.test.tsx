@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { EventForm } from "../../src/components/event/event-form";
 
 // Mock the actions
@@ -11,9 +11,6 @@ jest.mock("../../src/lib/actions", () => ({
 jest.mock("../../src/hooks/use-toast", () => ({
   toast: jest.fn(),
 }));
-
-import { createEvent, updateEvent } from "../../src/lib/actions";
-import { toast } from "../../src/hooks/use-toast";
 
 describe("EventForm", () => {
   const mockOnClose = jest.fn();

@@ -1,19 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { NextRequest } from "next/server";
 import { GET, POST } from "../../src/app/api/events/route";
-import { EventService } from "../../src/lib/eventService";
-
-// Use native Request for testing
-const createMockRequest = (
-  url: string,
-  options?: { method?: string; body?: any; headers?: Record<string, string> },
-) => {
-  const request = new Request(url, {
-    method: options?.method || "GET",
-    headers: options?.headers || {},
-    body: options?.body ? JSON.stringify(options.body) : undefined,
-  });
-  return request;
-};
+import { EventService } from "../../src/lib/services/eventService";
 
 // Mock NextRequest cookies
 jest.mock("next/server", () => ({
