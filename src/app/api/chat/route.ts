@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import EventService from "@/lib/services/eventService";
+import logger from "@/lib/logger";
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
   }
 
   const result = streamText({
-    model: openai("gpt-4o"),
+    model: openai("gpt-4o-mini"),
     system: `You are a helpful AI calendar assistant for Friday, a smart calendar application.
 
     Your role is to help users manage their calendar, schedule events, find available time slots, and provide calendar-related assistance.
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
               origin: event.origin,
             }));
           } catch (error) {
-            console.error("Error getting upcoming events:", error);
+            logger.error({ err: error }, "Error getting upcoming events");
             throw new Error("Failed to fetch upcoming events");
           }
         },
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
               origin: event.origin,
             }));
           } catch (error) {
-            console.error("Error getting today's events:", error);
+            logger.error({ err: error }, "Error getting today's events");
             throw new Error("Failed to fetch today's events");
           }
         },
@@ -186,7 +187,7 @@ export async function POST(request: Request) {
               origin: "local",
             };
           } catch (error) {
-            console.error("Error creating event:", error);
+            logger.error({ err: error }, "Error creating event");
             throw new Error("Failed to create event");
           }
         },
@@ -228,7 +229,7 @@ export async function POST(request: Request) {
               origin: event.origin,
             }));
           } catch (error) {
-            console.error("Error searching events:", error);
+            logger.error({ err: error }, "Error searching events");
             throw new Error("Failed to search events");
           }
         },
@@ -242,7 +243,7 @@ export async function POST(request: Request) {
             const stats = await EventService.getEventStatistics(user.id);
             return stats;
           } catch (error) {
-            console.error("Error getting event statistics:", error);
+            logger.error({ err: error }, "Error getting event statistics");
             throw new Error("Failed to get event statistics");
           }
         },

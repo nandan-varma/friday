@@ -3,6 +3,7 @@ import { OAuth2Client } from "google-auth-library";
 import { db } from "@/lib/db";
 import { integrations } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import logger from "../logger";
 
 // In-memory mutex for token refresh operations per user
 const refreshMutexes = new Map<string, Promise<unknown>>();
@@ -87,7 +88,7 @@ export class GoogleIntegrationService {
 
       return oAuth2Client;
     } catch (error) {
-      console.error("Error creating OAuth2 client:", error);
+      logger.error({ err: error }, "Error creating OAuth2 client");
       throw new Error("Failed to create OAuth2 client");
     }
   }
@@ -181,7 +182,7 @@ export class GoogleIntegrationService {
 
       return integration;
     } catch (error) {
-      console.error("Error exchanging code for tokens:", error);
+      logger.error({ err: error }, "Error exchanging code for tokens");
       throw new Error("Failed to exchange authorization code for tokens");
     }
   }
@@ -291,7 +292,7 @@ export class GoogleIntegrationService {
 
       oAuth2Client.setCredentials(credentials);
     } catch (error) {
-      console.error("Error refreshing token:", error);
+      logger.error({ err: error }, "Error refreshing token");
       throw error;
     }
   }
@@ -315,7 +316,7 @@ export class GoogleIntegrationService {
 
       return true;
     } catch (error) {
-      console.error("Error checking integration validity:", error);
+      logger.error({ err: error }, "Error checking integration validity");
       return false;
     }
   }
@@ -365,7 +366,7 @@ export class GoogleIntegrationService {
 
       return (response.data.items || []) as GoogleCalendarEvent[];
     } catch (error) {
-      console.error("Error fetching Google Calendar events:", error);
+      logger.error({ err: error }, "Error fetching Google Calendar events");
       throw new Error("Failed to fetch Google Calendar events");
     }
   }
@@ -401,7 +402,7 @@ export class GoogleIntegrationService {
 
       return response.data as GoogleCalendarEvent;
     } catch (error) {
-      console.error("Error creating Google Calendar event:", error);
+      logger.error({ err: error }, "Error creating Google Calendar event");
       throw new Error("Failed to create Google Calendar event");
     }
   }
@@ -441,14 +442,17 @@ export class GoogleIntegrationService {
       return response.data as GoogleCalendarEvent;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.error("Error updating Google Calendar event:", error);
-      console.error("Event data:", event);
-      console.error("Event ID:", eventId);
-      console.error("Calendar ID:", calendarId);
+      logger.error(
+        { err: error, event, eventId, calendarId },
+        "Error updating Google Calendar event",
+      );
 
       // Provide more specific error information
       if (error.response) {
-        console.error("Google API Error Response:", error.response.data);
+        logger.error(
+          { responseData: error.response.data },
+          "Google API Error Response",
+        );
         throw new Error(
           `Google Calendar API error: ${error.response.data.error?.message || "Unknown error"}`,
         );
@@ -490,7 +494,7 @@ export class GoogleIntegrationService {
         eventId,
       });
     } catch (error) {
-      console.error("Error deleting Google Calendar event:", error);
+      logger.error({ err: error }, "Error deleting Google Calendar event");
       throw new Error("Failed to delete Google Calendar event");
     }
   }
@@ -516,7 +520,7 @@ export class GoogleIntegrationService {
       const response = await calendar.calendarList.list();
       return response.data.items || [];
     } catch (error) {
-      console.error("Error fetching calendar list:", error);
+      logger.error({ err: error }, "Error fetching calendar list");
       throw new Error("Failed to fetch calendar list");
     }
   }

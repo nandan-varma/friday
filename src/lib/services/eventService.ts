@@ -14,6 +14,7 @@ import {
   EventFilters,
   LocalEvent,
 } from "./localIntegrationService";
+import logger from "../logger";
 
 export type EventOrigin = "local" | "google";
 
@@ -80,7 +81,7 @@ export class EventService {
   static async createEventFromNaturalLanguage(userId: string, input: string) {
     try {
       const { object } = await generateObject({
-        model: openai("gpt-4-turbo"),
+        model: openai("gpt-4o-mini"),
         schema: z.object({
           title: z.string().describe("The title of the event"),
           description: z
@@ -111,7 +112,10 @@ export class EventService {
         isAllDay: object.isAllDay,
       });
     } catch (error) {
-      console.error("Error creating event from natural language:", error);
+      logger.error(
+        { err: error },
+        "Error creating event from natural language",
+      );
       throw new Error("Failed to create event from natural language");
     }
   }
@@ -237,7 +241,10 @@ export class EventService {
             allEvents.push(...formattedGoogleEvents);
           }
         } catch (googleError) {
-          console.warn("Error fetching Google Calendar events:", googleError);
+          logger.warn(
+            { err: googleError },
+            "Error fetching Google Calendar events",
+          );
           // Continue without Google events instead of failing entirely
         }
       }
@@ -247,7 +254,7 @@ export class EventService {
 
       return allEvents;
     } catch (error) {
-      console.error("Error fetching all events:", error);
+      logger.error({ err: error }, "Error fetching all events");
       throw new Error("Failed to fetch events");
     }
   }
@@ -273,7 +280,7 @@ export class EventService {
         endDate: endOfDay,
       });
     } catch (error) {
-      console.error("Error fetching today's events:", error);
+      logger.error({ err: error }, "Error fetching today's events");
       throw new Error("Failed to fetch today's events");
     }
   }
@@ -312,7 +319,7 @@ export class EventService {
       }
       return result;
     } catch (error) {
-      console.error("Error fetching upcoming events:", error);
+      logger.error({ err: error }, "Error fetching upcoming events");
       throw new Error("Failed to fetch upcoming events");
     }
   }
@@ -336,7 +343,7 @@ export class EventService {
         endDate,
       });
     } catch (error) {
-      console.error("Error fetching events in range:", error);
+      logger.error({ err: error }, "Error fetching events in range");
       throw new Error("Failed to fetch events in date range");
     }
   }
@@ -386,7 +393,7 @@ export class EventService {
 
       return [];
     } catch (error) {
-      console.error(`Error fetching ${origin} events:`, error);
+      logger.error({ err: error }, `Error fetching ${origin} events`);
       throw new Error(`Failed to fetch ${origin} events`);
     }
   }
@@ -413,7 +420,7 @@ export class EventService {
             event.location.toLowerCase().includes(searchLower)),
       );
     } catch (error) {
-      console.error("Error searching events:", error);
+      logger.error({ err: error }, "Error searching events");
       throw new Error("Failed to search events");
     }
   }
@@ -456,7 +463,7 @@ export class EventService {
         ).length,
       };
     } catch (error) {
-      console.error("Error getting event statistics:", error);
+      logger.error({ err: error }, "Error getting event statistics");
       throw new Error("Failed to get event statistics");
     }
   }
@@ -493,7 +500,7 @@ export class EventService {
           (hasLocalEvents ? 1 : 0) + (hasGoogleIntegration ? 1 : 0),
       };
     } catch (error) {
-      console.error("Error getting integration status:", error);
+      logger.error({ err: error }, "Error getting integration status");
       throw new Error("Failed to get integration status");
     }
   }
@@ -578,11 +585,10 @@ export class EventService {
             googleEventData.location = eventData.location;
           }
 
-          console.log("Updating Google event:", {
-            googleId,
-            googleEventData,
-            calendarId,
-          });
+          logger.info(
+            { googleId, googleEventData, calendarId },
+            "Updating Google event",
+          );
 
           const updatedEvent =
             await GoogleIntegrationService.updateCalendarEvent(
@@ -650,10 +656,7 @@ export class EventService {
             googleEventData.location = eventData.location;
           }
 
-          console.log("Creating Google event:", {
-            googleEventData,
-            calendarId,
-          });
+          logger.info({ googleEventData, calendarId }, "Creating Google event");
 
           const createdEvent =
             await GoogleIntegrationService.createCalendarEvent(
@@ -671,9 +674,7 @@ export class EventService {
         }
       }
     } catch (error) {
-      console.error("Error saving event:", error);
-      console.error("Event data:", eventData);
-      console.error("Options:", options);
+      logger.error({ err: error, eventData, options }, "Error saving event");
       throw new Error(
         `Failed to save event: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
@@ -701,7 +702,7 @@ export class EventService {
         );
       }
     } catch (error) {
-      console.error("Error deleting event:", error);
+      logger.error({ err: error }, "Error deleting event");
       throw new Error("Failed to delete event");
     }
   }

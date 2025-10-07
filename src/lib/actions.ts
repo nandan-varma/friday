@@ -3,10 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { EventService } from "@/lib/services/eventService";
-import { getUserProfile, updateUserProfile } from "@/lib/services/profileService";
-import { getUserSettings, updateUserSettings } from "@/lib/services/profileService";
+import {
+  getUserProfile,
+  updateUserProfile,
+} from "@/lib/services/profileService";
+import {
+  getUserSettings,
+  updateUserSettings,
+} from "@/lib/services/profileService";
 import { GoogleIntegrationService } from "@/lib/services/googleIntegrationService";
 import { auth } from "@/lib/auth";
+import logger from "@/lib/logger";
 import {
   validateEventData,
   handleValidationError,
@@ -74,7 +81,7 @@ export async function createEvent(formData: FormData) {
 
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error creating event:", error);
+    logger.error({ err: error }, "Error creating event");
     throw error instanceof Error ? error : new Error("Failed to create event");
   }
 }
@@ -166,7 +173,7 @@ export async function updateEvent(formData: FormData) {
 
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error updating event:", error);
+    logger.error({ err: error }, "Error updating event");
     throw error instanceof Error ? error : new Error("Failed to update event");
   }
 }
@@ -194,7 +201,7 @@ export async function deleteEvent(formData: FormData) {
 
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error deleting event:", error);
+    logger.error({ err: error }, "Error deleting event");
     throw new Error("Failed to delete event");
   }
 }
@@ -235,7 +242,7 @@ export async function updateProfile(formData: FormData) {
 
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error updating profile:", error);
+    logger.error({ err: error }, "Error updating profile");
     throw error instanceof Error
       ? error
       : new Error("Failed to update profile");
@@ -291,7 +298,7 @@ export async function updateSettings(formData: FormData) {
 
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error updating settings:", error);
+    logger.error({ err: error }, "Error updating settings");
     throw error instanceof Error
       ? error
       : new Error("Failed to update settings");
@@ -320,7 +327,7 @@ export async function getProfileData() {
 
     return { profile, settings, googleIntegration };
   } catch (error) {
-    console.error("Error fetching profile data:", error);
+    logger.error({ err: error }, "Error fetching profile data");
     throw new Error("Failed to fetch profile data");
   }
 }
@@ -340,7 +347,7 @@ export async function getUserProfileData() {
 
     return await getUserProfile(session.user.id);
   } catch (error) {
-    console.error("Error fetching user profile:", error);
+    logger.error({ err: error }, "Error fetching user profile");
     return null;
   }
 }
@@ -360,7 +367,7 @@ export async function getUserSettingsData() {
 
     return await getUserSettings(session.user.id);
   } catch (error) {
-    console.error("Error fetching user settings:", error);
+    logger.error({ err: error }, "Error fetching user settings");
     return null;
   }
 }
@@ -380,7 +387,7 @@ export async function getGoogleIntegration() {
 
     return await GoogleIntegrationService.getUserIntegration(session.user.id);
   } catch (error) {
-    console.error("Error fetching Google integration:", error);
+    logger.error({ err: error }, "Error fetching Google integration");
     return null;
   }
 }
@@ -409,7 +416,7 @@ export async function disconnectGoogleCalendar() {
     await GoogleIntegrationService.disconnectIntegration(session.user.id);
     revalidatePath("/dashboard");
   } catch (error) {
-    console.error("Error disconnecting Google Calendar:", error);
+    logger.error({ err: error }, "Error disconnecting Google Calendar");
     throw new Error("Failed to disconnect Google Calendar");
   }
 }
@@ -423,7 +430,7 @@ export async function logout() {
       headers: await import("next/headers").then((m) => m.headers()),
     });
   } catch (error) {
-    console.error("Error during logout:", error);
+    logger.error({ err: error }, "Error during logout");
     throw new Error("Failed to logout");
   }
 }

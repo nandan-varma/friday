@@ -3,6 +3,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import { events, user } from "@/lib/db/schema";
 import { eq, and, gte, lte } from "drizzle-orm";
+import logger from "@/lib/logger";
 
 export interface CreateEventData {
   title: string;
@@ -81,7 +82,7 @@ export class LocalIntegrationService {
 
       return userEvents as unknown as LocalEvent[];
     } catch (error) {
-      console.error("Error fetching local events:", error);
+      logger.error({ err: error }, "Error fetching local events");
       throw new Error("Failed to fetch local events");
     }
   }
@@ -104,7 +105,7 @@ export class LocalIntegrationService {
 
       return event as unknown as LocalEvent;
     } catch (error) {
-      console.error("Error fetching local event:", error);
+      logger.error({ err: error }, "Error fetching local event");
       throw new Error("Failed to fetch local event");
     }
   } /**
@@ -142,7 +143,7 @@ export class LocalIntegrationService {
 
       return newEvent as unknown as LocalEvent;
     } catch (error) {
-      console.error("Error creating local event:", error);
+      logger.error({ err: error }, "Error creating local event");
       throw new Error("Failed to create local event");
     }
   } /**
@@ -179,7 +180,7 @@ export class LocalIntegrationService {
 
       return updatedEvent as unknown as LocalEvent;
     } catch (error) {
-      console.error("Error updating local event:", error);
+      logger.error({ err: error }, "Error updating local event");
       throw new Error("Failed to update local event");
     }
   }
@@ -202,7 +203,7 @@ export class LocalIntegrationService {
 
       return deletedEvent as LocalEvent;
     } catch (error) {
-      console.error("Error deleting local event:", error);
+      logger.error({ err: error }, "Error deleting local event");
       throw new Error("Failed to delete local event");
     }
   }
@@ -218,7 +219,7 @@ export class LocalIntegrationService {
     try {
       return await this.getEvents(userId, { startDate, endDate });
     } catch (error) {
-      console.error("Error fetching local events in range:", error);
+      logger.error({ err: error }, "Error fetching local events in range");
       throw new Error("Failed to fetch local events in date range");
     }
   }
@@ -234,7 +235,7 @@ export class LocalIntegrationService {
 
       return await this.getEventsInRange(userId, startOfDay, endOfDay);
     } catch (error) {
-      console.error("Error fetching today's local events:", error);
+      logger.error({ err: error }, "Error fetching today's local events");
       throw new Error("Failed to fetch today's local events");
     }
   }
@@ -272,7 +273,7 @@ export class LocalIntegrationService {
       const result = await query;
       return result as LocalEvent[];
     } catch (error) {
-      console.error("Error fetching upcoming local events:", error);
+      logger.error({ err: error }, "Error fetching upcoming local events");
       throw new Error("Failed to fetch upcoming local events");
     }
   }
@@ -300,7 +301,7 @@ export class LocalIntegrationService {
             event.location.toLowerCase().includes(searchLower)),
       );
     } catch (error) {
-      console.error("Error searching local events:", error);
+      logger.error({ err: error }, "Error searching local events");
       throw new Error("Failed to search local events");
     }
   }
@@ -333,7 +334,7 @@ export class LocalIntegrationService {
         ).length,
       };
     } catch (error) {
-      console.error("Error getting local event statistics:", error);
+      logger.error({ err: error }, "Error getting local event statistics");
       throw new Error("Failed to get local event statistics");
     }
   }
@@ -346,7 +347,7 @@ export class LocalIntegrationService {
       const userEvents = await this.getEvents(userId);
       return userEvents.length > 0;
     } catch (error) {
-      console.error("Error checking if user has local events:", error);
+      logger.error({ err: error }, "Error checking if user has local events");
       return false;
     }
   }
@@ -362,7 +363,7 @@ export class LocalIntegrationService {
       const userEvents = await this.getEvents(userId, filters);
       return userEvents.length;
     } catch (error) {
-      console.error("Error getting local event count:", error);
+      logger.error({ err: error }, "Error getting local event count");
       throw new Error("Failed to get local event count");
     }
   }

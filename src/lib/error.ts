@@ -2,6 +2,8 @@
  * Error handling utilities for consistent error responses
  */
 
+import logger from "@/lib/logger";
+
 export interface SafeError {
   message: string;
   code?: string;
@@ -118,7 +120,7 @@ export function createErrorResponse(
 
   // Don't log sensitive errors in production
   if (process.env.NODE_ENV !== "production") {
-    console.error("Error details:", error);
+    logger.error({ err: error }, "Error details");
   }
 
   return new Response(JSON.stringify(safeError), {
