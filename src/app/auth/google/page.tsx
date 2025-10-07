@@ -1,27 +1,28 @@
-import { redirect } from 'next/navigation'
-import { GoogleIntegrationService } from '@/lib/googleIntegrationService'
+import { redirect } from "next/navigation";
+import { GoogleIntegrationService } from "@/lib/googleIntegrationService";
 
 export default async function GoogleAuthPage({
   searchParams,
 }: {
-  searchParams: { state?: string }
+  searchParams: Promise<{ state?: string }>;
 }) {
-  const state = searchParams.state
+  const resolvedSearchParams = await searchParams;
+  const state = resolvedSearchParams.state;
 
   if (!state) {
-    redirect('/settings?error=missing_state')
+    redirect("/settings?error=missing_state");
   }
 
   try {
-    const { url } = await GoogleIntegrationService.getAuthUrl()
+    const { url } = await GoogleIntegrationService.getAuthUrl();
 
     // Add the state parameter to the URL
-    const authUrl = new URL(url)
-    authUrl.searchParams.set('state', state)
+    const authUrl = new URL(url);
+    authUrl.searchParams.set("state", state);
 
-    redirect(authUrl.toString())
+    redirect(authUrl.toString());
   } catch (error) {
-    console.error('Error generating Google auth URL:', error)
-    redirect('/settings?error=auth_url_generation_failed')
+    console.error("Error generating Google auth URL:", error);
+    redirect("/settings?error=auth_url_generation_failed");
   }
 }

@@ -1,45 +1,51 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, List, Grid3X3, Clock } from "lucide-react"
-import { MonthView } from "./month-view"
-import { WeekView } from "./week-view"
-import { DayView } from "./day-view"
-import { AgendaView } from "./agenda-view"
-import { UnifiedEvent } from "@/lib/eventService"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Calendar, List, Grid3X3, Clock } from "lucide-react";
+import { MonthView } from "./month-view";
+import { WeekView } from "./week-view";
+import { DayView } from "./day-view";
+import { AgendaView } from "./agenda-view";
+import { UnifiedEvent } from "@/lib/eventService";
 
 interface CalendarViewProps {
-  events: UnifiedEvent[]
-  onEventClick: (event: UnifiedEvent) => void
-  onCreateEvent: (date: Date, time?: Date) => void
+  events: UnifiedEvent[];
+  onEventClick: (event: UnifiedEvent) => void;
+  onCreateEvent: (date: Date, time?: Date) => void;
 }
 
-export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState<Date | undefined>(undefined)
-  const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month')
+export function CalendarView({
+  events,
+  onEventClick,
+  onCreateEvent,
+}: CalendarViewProps) {
+  const [currentDate, setCurrentDate] = useState<Date | undefined>(undefined);
+  const [view, setView] = useState<"month" | "week" | "day" | "agenda">(
+    "month",
+  );
 
   // Initialize currentDate on client side to avoid hydration mismatch
   useEffect(() => {
     if (!currentDate) {
-      setCurrentDate(new Date())
+      setCurrentDate(new Date());
     }
-  }, [currentDate])
+  }, [currentDate]);
 
   const handleDateChange = (date: Date) => {
-    setCurrentDate(date)
-  }
+    setCurrentDate(date);
+  };
 
   if (!currentDate) {
-    return <div className="space-y-4">Loading calendar...</div>
+    return <div className="space-y-4">Loading calendar...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Calendar</h2>
-        <Tabs value={view} onValueChange={(value) => setView(value as any)}>
+      <Tabs value={view} onValueChange={(value) => setView(value as any)}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Calendar</h2>
           <TabsList>
             <TabsTrigger value="month">
               <Calendar className="w-4 h-4 mr-2" />
@@ -58,11 +64,9 @@ export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarVi
               Agenda
             </TabsTrigger>
           </TabsList>
-        </Tabs>
-      </div>
+        </div>
 
-      <Tabs value={view} onValueChange={(value) => setView(value as any)}>
-        <TabsContent value="month" className="mt-6">
+        <TabsContent value="month" className="mt-6" forceMount>
           <MonthView
             currentDate={currentDate}
             events={events}
@@ -72,7 +76,7 @@ export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarVi
           />
         </TabsContent>
 
-        <TabsContent value="week" className="mt-6">
+        <TabsContent value="week" className="mt-6" forceMount>
           <WeekView
             currentDate={currentDate}
             events={events}
@@ -82,7 +86,7 @@ export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarVi
           />
         </TabsContent>
 
-        <TabsContent value="day" className="mt-6">
+        <TabsContent value="day" className="mt-6" forceMount>
           <DayView
             currentDate={currentDate}
             events={events}
@@ -92,7 +96,7 @@ export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarVi
           />
         </TabsContent>
 
-        <TabsContent value="agenda" className="mt-6">
+        <TabsContent value="agenda" className="mt-6" forceMount>
           <AgendaView
             currentDate={currentDate}
             events={events}
@@ -103,5 +107,5 @@ export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarVi
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
