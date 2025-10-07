@@ -28,7 +28,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, Clock, MapPin, Users } from "lucide-react";
+import { CalendarIcon, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { createEvent, updateEvent } from "@/lib/actions";
@@ -36,7 +36,7 @@ import { createEvent, updateEvent } from "@/lib/actions";
 interface EventFormProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (event: any) => void;
+  onSave: () => void;
   initialData?: {
     id?: string;
     title?: string;
@@ -186,7 +186,7 @@ export function EventForm({
         });
       }
 
-      onSave({});
+      onSave();
       onClose();
     } catch (error) {
       console.error("Error saving event:", error);

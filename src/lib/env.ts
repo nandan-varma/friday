@@ -47,7 +47,7 @@ function validateEnvironment(): EnvConfig {
     if (!credentials.web?.client_id || !credentials.web?.client_secret) {
       throw new Error("Invalid GOOGLE_CREDENTIALS format");
     }
-  } catch (error) {
+  } catch {
     throw new Error(
       "GOOGLE_CREDENTIALS must be valid JSON with web.client_id and web.client_secret",
     );

@@ -1,18 +1,18 @@
-import { db } from "@/lib/db"
-import { user, userSettings } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { db } from "@/lib/db";
+import { user, userSettings } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 
 export interface UserProfile {
-   id: string
-   name: string
-   email: string
+  id: string;
+  name: string;
+  email: string;
 }
 
 export interface UserSettingsData {
-  timezone: string | null
-  notificationsEnabled: boolean | null
-  aiSuggestionsEnabled: boolean | null
-  reminderTime: number | null
+  timezone: string | null;
+  notificationsEnabled: boolean | null;
+  aiSuggestionsEnabled: boolean | null;
+  reminderTime: number | null;
 }
 
 /**
@@ -20,7 +20,9 @@ export interface UserSettingsData {
  * @param userId - The user ID to fetch profile for
  * @returns User profile data or null if not found
  */
-export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+export async function getUserProfile(
+  userId: string,
+): Promise<UserProfile | null> {
   try {
     const [currentUser] = await db
       .select({
@@ -29,12 +31,12 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         email: user.email,
       })
       .from(user)
-      .where(eq(user.id, userId))
+      .where(eq(user.id, userId));
 
-    return currentUser || null
+    return currentUser || null;
   } catch (error) {
-    console.error("Error fetching user profile:", error)
-    throw new Error("Failed to fetch user profile")
+    console.error("Error fetching user profile:", error);
+    throw new Error("Failed to fetch user profile");
   }
 }
 
@@ -45,29 +47,29 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
  * @returns Updated user profile
  */
 export async function updateUserProfile(
-   userId: string,
-   data: { name?: string; email?: string }
+  userId: string,
+  data: { name?: string; email?: string },
 ): Promise<UserProfile> {
-   try {
-      const updateData: any = { updatedAt: new Date() }
-      if (data.name !== undefined) updateData.name = data.name
-      if (data.email !== undefined) updateData.email = data.email
+  try {
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
+    if (data.name !== undefined) updateData.name = data.name;
+    if (data.email !== undefined) updateData.email = data.email;
 
-      const [updatedUser] = await db
-         .update(user)
-         .set(updateData)
-         .where(eq(user.id, userId))
-         .returning({
-            id: user.id,
-            name: user.name,
-            email: user.email,
-         })
+    const [updatedUser] = await db
+      .update(user)
+      .set(updateData)
+      .where(eq(user.id, userId))
+      .returning({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      });
 
-      return updatedUser
-   } catch (error) {
-      console.error("Error updating user profile:", error)
-      throw new Error("Failed to update user profile")
-   }
+    return updatedUser;
+  } catch (error) {
+    console.error("Error updating user profile:", error);
+    throw new Error("Failed to update user profile");
+  }
 }
 
 /**
@@ -75,7 +77,9 @@ export async function updateUserProfile(
  * @param userId - The user ID to fetch settings for
  * @returns User settings data or null if not found
  */
-export async function getUserSettings(userId: string): Promise<UserSettingsData | null> {
+export async function getUserSettings(
+  userId: string,
+): Promise<UserSettingsData | null> {
   try {
     const [settings] = await db
       .select({
@@ -85,12 +89,12 @@ export async function getUserSettings(userId: string): Promise<UserSettingsData 
         reminderTime: userSettings.reminderTime,
       })
       .from(userSettings)
-      .where(eq(userSettings.userId, userId))
+      .where(eq(userSettings.userId, userId));
 
-    return settings || null
+    return settings || null;
   } catch (error) {
-    console.error("Error fetching user settings:", error)
-    throw new Error("Failed to fetch user settings")
+    console.error("Error fetching user settings:", error);
+    throw new Error("Failed to fetch user settings");
   }
 }
 
@@ -102,7 +106,7 @@ export async function getUserSettings(userId: string): Promise<UserSettingsData 
  */
 export async function updateUserSettings(
   userId: string,
-  data: Partial<UserSettingsData>
+  data: Partial<UserSettingsData>,
 ): Promise<UserSettingsData> {
   try {
     // Use transaction for atomicity
@@ -112,7 +116,7 @@ export async function updateUserSettings(
         .select()
         .from(userSettings)
         .where(eq(userSettings.userId, userId))
-        .limit(1)
+        .limit(1);
 
       if (existingSettings.length > 0) {
         // Update existing settings
@@ -128,9 +132,9 @@ export async function updateUserSettings(
             notificationsEnabled: userSettings.notificationsEnabled,
             aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
             reminderTime: userSettings.reminderTime,
-          })
+          });
 
-        return updatedSettings
+        return updatedSettings;
       } else {
         // Create new settings
         const [newSettings] = await tx
@@ -147,14 +151,14 @@ export async function updateUserSettings(
             notificationsEnabled: userSettings.notificationsEnabled,
             aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
             reminderTime: userSettings.reminderTime,
-          })
+          });
 
-        return newSettings
+        return newSettings;
       }
-    })
+    });
   } catch (error) {
-    console.error("Error updating user settings:", error)
-    throw new Error("Failed to update user settings")
+    console.error("Error updating user settings:", error);
+    throw new Error("Failed to update user settings");
   }
 }
 
@@ -170,9 +174,9 @@ export async function createDefaultUserSettings(userId: string): Promise<void> {
       notificationsEnabled: true,
       aiSuggestionsEnabled: true,
       reminderTime: 30,
-    })
+    });
   } catch (error) {
-    console.error("Error creating default user settings:", error)
-    throw new Error("Failed to create default user settings")
+    console.error("Error creating default user settings:", error);
+    throw new Error("Failed to create default user settings");
   }
 }

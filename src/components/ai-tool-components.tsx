@@ -1,38 +1,53 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Calendar, Clock, MapPin, CheckCircle, XCircle, Loader2, Plus } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Plus,
+} from "lucide-react";
 
-interface EventData {
-  id: string
-  title: string
-  description?: string
-  location?: string
-  startTime: string
-  endTime: string
-  isAllDay?: boolean
+export interface EventData {
+  id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  startTime: string;
+  endTime: string;
+  isAllDay?: boolean;
 }
 
 interface UpcomingEventsProps {
-  events: EventData[]
-  count: number
-  onEventClick?: (event: EventData) => void
+  events: EventData[];
+  count: number;
+  onEventClick?: (event: EventData) => void;
 }
 
-export function UpcomingEvents({ events, count, onEventClick }: UpcomingEventsProps) {
+export function UpcomingEvents({
+  events,
+  count,
+  onEventClick,
+}: UpcomingEventsProps) {
   if (count === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-8">
           <Calendar className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium text-muted-foreground">No upcoming events</p>
-          <p className="text-sm text-muted-foreground">Your calendar is free!</p>
+          <p className="text-lg font-medium text-muted-foreground">
+            No upcoming events
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Your calendar is free!
+          </p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -55,7 +70,9 @@ export function UpcomingEvents({ events, count, onEventClick }: UpcomingEventsPr
                 <div className="flex-1">
                   <h4 className="font-medium text-sm mb-2">{event.title}</h4>
                   {event.description && (
-                    <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {event.description}
+                    </p>
                   )}
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
@@ -65,17 +82,22 @@ export function UpcomingEvents({ events, count, onEventClick }: UpcomingEventsPr
                     <div className="flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       {event.isAllDay
-                        ? 'All day'
-                        : `${new Date(event.startTime).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          })} - ${new Date(event.endTime).toLocaleTimeString('en-US', {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                            hour12: true
-                          })}`
-                      }
+                        ? "All day"
+                        : `${new Date(event.startTime).toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            },
+                          )} - ${new Date(event.endTime).toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "numeric",
+                              minute: "2-digit",
+                              hour12: true,
+                            },
+                          )}`}
                     </div>
                     {event.location && (
                       <div className="flex items-center gap-1">
@@ -86,7 +108,7 @@ export function UpcomingEvents({ events, count, onEventClick }: UpcomingEventsPr
                   </div>
                 </div>
                 <Badge variant="secondary" className="text-xs">
-                  {event.isAllDay ? 'All Day' : 'Event'}
+                  {event.isAllDay ? "All Day" : "Event"}
                 </Badge>
               </div>
             </div>
@@ -94,12 +116,12 @@ export function UpcomingEvents({ events, count, onEventClick }: UpcomingEventsPr
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface EventCreatedProps {
-  event: EventData
-  onEventClick?: (event: EventData) => void
+  event: EventData;
+  onEventClick?: (event: EventData) => void;
 }
 
 export function EventCreated({ event, onEventClick }: EventCreatedProps) {
@@ -120,7 +142,9 @@ export function EventCreated({ event, onEventClick }: EventCreatedProps) {
             <div className="flex-1">
               <h4 className="font-medium text-sm mb-2">{event.title}</h4>
               {event.description && (
-                <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {event.description}
+                </p>
               )}
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
@@ -130,17 +154,19 @@ export function EventCreated({ event, onEventClick }: EventCreatedProps) {
                 <div className="flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {event.isAllDay
-                    ? 'All day'
-                    : `${new Date(event.startTime).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })} - ${new Date(event.endTime).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })}`
-                  }
+                    ? "All day"
+                    : `${new Date(event.startTime).toLocaleTimeString("en-US", {
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })} - ${new Date(event.endTime).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      )}`}
                 </div>
                 {event.location && (
                   <div className="flex items-center gap-1">
@@ -150,40 +176,52 @@ export function EventCreated({ event, onEventClick }: EventCreatedProps) {
                 )}
               </div>
             </div>
-            <Badge variant="secondary" className="text-xs bg-green-100 text-green-700">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-green-100 text-green-700"
+            >
               Created
             </Badge>
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface TimeSuggestion {
-  startTime: string
-  endTime: string
-  score: number
+  startTime: string;
+  endTime: string;
+  score: number;
 }
 
 interface TimeSuggestionsProps {
-  suggestions: TimeSuggestion[]
-  preferredDate: string
-  duration: number
-  onSuggestionClick?: (suggestion: TimeSuggestion) => void
+  suggestions: TimeSuggestion[];
+  preferredDate: string;
+  duration: number;
+  onSuggestionClick?: (suggestion: TimeSuggestion) => void;
 }
 
-export function TimeSuggestions({ suggestions, preferredDate, duration, onSuggestionClick }: TimeSuggestionsProps) {
+export function TimeSuggestions({
+  suggestions,
+  preferredDate,
+  duration,
+  onSuggestionClick,
+}: TimeSuggestionsProps) {
   if (suggestions.length === 0) {
     return (
       <Card className="border-dashed">
         <CardContent className="flex flex-col items-center justify-center py-8">
           <Clock className="w-12 h-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium text-muted-foreground">No time suggestions available</p>
-          <p className="text-sm text-muted-foreground">Try a different date or duration</p>
+          <p className="text-lg font-medium text-muted-foreground">
+            No time suggestions available
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Try a different date or duration
+          </p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -212,18 +250,27 @@ export function TimeSuggestions({ suggestions, preferredDate, duration, onSugges
                   </div>
                   <div>
                     <p className="font-medium text-sm">
-                      {new Date(suggestion.startTime).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })} - {new Date(suggestion.endTime).toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                      })}
+                      {new Date(suggestion.startTime).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      )}{" "}
+                      -{" "}
+                      {new Date(suggestion.endTime).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "numeric",
+                          minute: "2-digit",
+                          hour12: true,
+                        },
+                      )}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {duration} minutes • Score: {Math.round(suggestion.score * 100)}%
+                      {duration} minutes • Score:{" "}
+                      {Math.round(suggestion.score * 100)}%
                     </p>
                   </div>
                 </div>
@@ -237,15 +284,18 @@ export function TimeSuggestions({ suggestions, preferredDate, duration, onSugges
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface ToolLoadingProps {
-  toolName: string
+  toolName: string;
 }
 
 export function ToolLoading({ toolName }: ToolLoadingProps) {
-  const displayName = toolName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()
+  const displayName = toolName
+    .replace(/([A-Z])/g, " $1")
+    .toLowerCase()
+    .trim();
 
   return (
     <Card className="border-blue-200 bg-blue-50/50">
@@ -259,16 +309,19 @@ export function ToolLoading({ toolName }: ToolLoadingProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface ToolErrorProps {
-  toolName: string
-  error: string
+  toolName: string;
+  error: string;
 }
 
 export function ToolError({ toolName, error }: ToolErrorProps) {
-  const displayName = toolName.replace(/([A-Z])/g, ' $1').toLowerCase().trim()
+  const displayName = toolName
+    .replace(/([A-Z])/g, " $1")
+    .toLowerCase()
+    .trim();
 
   return (
     <Card className="border-red-200 bg-red-50/50">
@@ -282,5 +335,5 @@ export function ToolError({ toolName, error }: ToolErrorProps) {
         <p className="text-sm text-red-700">{error}</p>
       </CardContent>
     </Card>
-  )
+  );
 }

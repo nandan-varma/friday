@@ -1,16 +1,16 @@
-import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
-import { db } from '@/lib/db';
+import { google } from "googleapis";
+import { OAuth2Client } from "google-auth-library";
+import { db } from "@/lib/db";
 import { integrations } from "@/lib/db/schema";
-import { eq, and } from 'drizzle-orm';
+import { eq, and } from "drizzle-orm";
 
 // In-memory mutex for token refresh operations per user
-const refreshMutexes = new Map<string, Promise<any>>();
+const refreshMutexes = new Map<string, Promise<unknown>>();
 
 // Google Calendar scopes
 const SCOPES = [
-  'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/calendar.events'
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
 ];
 
 export interface GoogleCalendarEvent {
@@ -46,17 +46,17 @@ export class GoogleIntegrationService {
    * Get Google API credentials from environment variables
    */
   private static async getCredentials() {
-    const { GOOGLE_CREDENTIALS } = await import('./env');
+    const { GOOGLE_CREDENTIALS } = await import("./env");
     let credentials;
     try {
       credentials = JSON.parse(GOOGLE_CREDENTIALS);
-    } catch (error) {
-      throw new Error('Invalid GOOGLE_CREDENTIALS: must be valid JSON');
+    } catch {
+      throw new Error("Invalid GOOGLE_CREDENTIALS: must be valid JSON");
     }
     const key = credentials.installed || credentials.web;
 
     if (!key || !key.client_id || !key.client_secret) {
-      throw new Error('Invalid Google credentials format');
+      throw new Error("Invalid Google credentials format");
     }
 
     return key;
@@ -68,19 +68,27 @@ export class GoogleIntegrationService {
   private static async createOAuth2Client(): Promise<OAuth2Client> {
     try {
       const { client_id, client_secret } = await this.getCredentials();
-      const { GOOGLE_REDIRECT_URI } = await import('./env');
+      const { GOOGLE_REDIRECT_URI } = await import("./env");
 
-      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, GOOGLE_REDIRECT_URI);
+      const oAuth2Client = new google.auth.OAuth2(
+        client_id,
+        client_secret,
+        GOOGLE_REDIRECT_URI,
+      );
 
       // Configure timeout for API requests (30 seconds)
-      if (oAuth2Client.transporter && typeof oAuth2Client.transporter === 'object') {
-        (oAuth2Client.transporter as any).timeout = 30000;
+      if (
+        oAuth2Client.transporter &&
+        typeof oAuth2Client.transporter === "object"
+      ) {
+        (oAuth2Client.transporter as unknown as { timeout: number }).timeout =
+          30000;
       }
 
       return oAuth2Client;
     } catch (error) {
-      console.error('Error creating OAuth2 client:', error);
-      throw new Error('Failed to create OAuth2 client');
+      console.error("Error creating OAuth2 client:", error);
+      throw new Error("Failed to create OAuth2 client");
     }
   }
 
@@ -94,9 +102,9 @@ export class GoogleIntegrationService {
     const state = crypto.randomUUID();
 
     const url = oAuth2Client.generateAuthUrl({
-      access_type: 'offline',
+      access_type: "offline",
       scope: SCOPES,
-      prompt: 'consent', // Force consent to get refresh token
+      prompt: "consent", // Force consent to get refresh token
       state: state,
     });
 
@@ -109,18 +117,23 @@ export class GoogleIntegrationService {
    * @param userId - The user ID to associate the integration with
    * @returns The saved integration record
    */
-  static async exchangeCodeForTokens(code: string, userId: string): Promise<GoogleIntegration> {
+  static async exchangeCodeForTokens(
+    code: string,
+    userId: string,
+  ): Promise<GoogleIntegration> {
     const oAuth2Client = await this.createOAuth2Client();
 
     try {
       const { tokens } = await oAuth2Client.getToken(code);
 
       if (!tokens.access_token) {
-        throw new Error('No access token received from Google');
+        throw new Error("No access token received from Google");
       }
 
       // Calculate expiration date
-      const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
+      const expiresAt = tokens.expiry_date
+        ? new Date(tokens.expiry_date)
+        : null;
 
       // Save or update integration in database using transaction
       const integration = await db.transaction(async (tx) => {
@@ -130,8 +143,8 @@ export class GoogleIntegrationService {
           .where(
             and(
               eq(integrations.userId, userId),
-              eq(integrations.type, 'google_calendar')
-            )
+              eq(integrations.type, "google_calendar"),
+            ),
           )
           .limit(1);
 
@@ -155,7 +168,7 @@ export class GoogleIntegrationService {
             .insert(integrations)
             .values({
               userId,
-              type: 'google_calendar',
+              type: "google_calendar",
               accessToken: tokens.access_token,
               refreshToken: tokens.refresh_token || null,
               expiresAt,
@@ -164,12 +177,12 @@ export class GoogleIntegrationService {
 
           return created as unknown as GoogleIntegration;
         }
-      })
+      });
 
       return integration;
     } catch (error) {
-      console.error('Error exchanging code for tokens:', error);
-      throw new Error('Failed to exchange authorization code for tokens');
+      console.error("Error exchanging code for tokens:", error);
+      throw new Error("Failed to exchange authorization code for tokens");
     }
   }
   /**
@@ -177,23 +190,29 @@ export class GoogleIntegrationService {
    * @param userId - The user ID to look up
    * @returns The integration record or null if not found
    */
-  static async getUserIntegration(userId: string): Promise<GoogleIntegration | null> {
+  static async getUserIntegration(
+    userId: string,
+  ): Promise<GoogleIntegration | null> {
     const result = await db
       .select()
       .from(integrations)
       .where(
         and(
           eq(integrations.userId, userId),
-          eq(integrations.type, 'google_calendar')
-        )
+          eq(integrations.type, "google_calendar"),
+        ),
       )
       .limit(1);
 
-    return result.length > 0 ? (result[0] as unknown as GoogleIntegration) : null;
-  }  /**
+    return result.length > 0
+      ? (result[0] as unknown as GoogleIntegration)
+      : null;
+  } /**
    * Create authenticated OAuth2 client for a user
    */
-  static async createAuthenticatedClient(userId: string): Promise<OAuth2Client | null> {
+  static async createAuthenticatedClient(
+    userId: string,
+  ): Promise<OAuth2Client | null> {
     const integration = await this.getUserIntegration(userId);
 
     if (!integration || !integration.accessToken) {
@@ -220,7 +239,11 @@ export class GoogleIntegrationService {
         await existingRefresh;
         // Re-check integration after refresh
         const updatedIntegration = await this.getUserIntegration(userId);
-        if (updatedIntegration && updatedIntegration.expiresAt && new Date() < updatedIntegration.expiresAt) {
+        if (
+          updatedIntegration &&
+          updatedIntegration.expiresAt &&
+          new Date() < updatedIntegration.expiresAt
+        ) {
           oAuth2Client.setCredentials({
             access_token: updatedIntegration.accessToken,
             refresh_token: updatedIntegration.refreshToken,
@@ -229,7 +252,10 @@ export class GoogleIntegrationService {
         }
       } else {
         // Start refresh operation
-        const refreshPromise = this.performTokenRefresh(integration, oAuth2Client);
+        const refreshPromise = this.performTokenRefresh(
+          integration,
+          oAuth2Client,
+        );
         refreshMutexes.set(mutexKey, refreshPromise);
 
         try {
@@ -243,7 +269,10 @@ export class GoogleIntegrationService {
     return oAuth2Client;
   }
 
-  private static async performTokenRefresh(integration: GoogleIntegration, oAuth2Client: OAuth2Client): Promise<void> {
+  private static async performTokenRefresh(
+    integration: GoogleIntegration,
+    oAuth2Client: OAuth2Client,
+  ): Promise<void> {
     try {
       const { credentials } = await oAuth2Client.refreshAccessToken();
 
@@ -253,14 +282,16 @@ export class GoogleIntegrationService {
         .set({
           accessToken: credentials.access_token || integration.accessToken,
           refreshToken: credentials.refresh_token || integration.refreshToken,
-          expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : integration.expiresAt,
+          expiresAt: credentials.expiry_date
+            ? new Date(credentials.expiry_date)
+            : integration.expiresAt,
           updatedAt: new Date(),
         })
         .where(eq(integrations.id, integration.id));
 
       oAuth2Client.setCredentials(credentials);
     } catch (error) {
-      console.error('Error refreshing token:', error);
+      console.error("Error refreshing token:", error);
       throw error;
     }
   }
@@ -276,15 +307,15 @@ export class GoogleIntegrationService {
 
       // Try to make a simple API call to verify credentials
       const calendar = google.calendar({
-      version: 'v3',
-      auth: client,
-      timeout: 30000 // 30 second timeout
-    });
+        version: "v3",
+        auth: client,
+        timeout: 30000, // 30 second timeout
+      });
       await calendar.calendarList.list({ maxResults: 1 });
 
       return true;
     } catch (error) {
-      console.error('Error checking integration validity:', error);
+      console.error("Error checking integration validity:", error);
       return false;
     }
   }
@@ -301,25 +332,25 @@ export class GoogleIntegrationService {
       timeMin?: Date;
       timeMax?: Date;
       calendarId?: string;
-    } = {}
+    } = {},
   ): Promise<GoogleCalendarEvent[]> {
     const client = await this.createAuthenticatedClient(userId);
 
     if (!client) {
-      throw new Error('Google Calendar not connected or invalid credentials');
+      throw new Error("Google Calendar not connected or invalid credentials");
     }
 
     const calendar = google.calendar({
-      version: 'v3',
+      version: "v3",
       auth: client,
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     });
 
     const {
       maxResults = 50,
       timeMin = new Date(),
       timeMax,
-      calendarId = 'primary'
+      calendarId = "primary",
     } = options;
 
     try {
@@ -329,13 +360,13 @@ export class GoogleIntegrationService {
         timeMax: timeMax?.toISOString(),
         maxResults,
         singleEvents: true,
-        orderBy: 'startTime',
+        orderBy: "startTime",
       });
 
       return (response.data.items || []) as GoogleCalendarEvent[];
     } catch (error) {
-      console.error('Error fetching Google Calendar events:', error);
-      throw new Error('Failed to fetch Google Calendar events');
+      console.error("Error fetching Google Calendar events:", error);
+      throw new Error("Failed to fetch Google Calendar events");
     }
   }
   /**
@@ -348,18 +379,18 @@ export class GoogleIntegrationService {
   static async createCalendarEvent(
     userId: string,
     event: Partial<GoogleCalendarEvent>,
-    calendarId: string = 'primary'
+    calendarId: string = "primary",
   ): Promise<GoogleCalendarEvent> {
     const client = await this.createAuthenticatedClient(userId);
 
     if (!client) {
-      throw new Error('Google Calendar not connected or invalid credentials');
+      throw new Error("Google Calendar not connected or invalid credentials");
     }
 
     const calendar = google.calendar({
-      version: 'v3',
+      version: "v3",
       auth: client,
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     });
 
     try {
@@ -370,8 +401,8 @@ export class GoogleIntegrationService {
 
       return response.data as GoogleCalendarEvent;
     } catch (error) {
-      console.error('Error creating Google Calendar event:', error);
-      throw new Error('Failed to create Google Calendar event');
+      console.error("Error creating Google Calendar event:", error);
+      throw new Error("Failed to create Google Calendar event");
     }
   }
   /**
@@ -386,18 +417,18 @@ export class GoogleIntegrationService {
     userId: string,
     eventId: string,
     event: Partial<GoogleCalendarEvent>,
-    calendarId: string = 'primary'
+    calendarId: string = "primary",
   ): Promise<GoogleCalendarEvent> {
     const client = await this.createAuthenticatedClient(userId);
 
     if (!client) {
-      throw new Error('Google Calendar not connected or invalid credentials');
+      throw new Error("Google Calendar not connected or invalid credentials");
     }
 
     const calendar = google.calendar({
-      version: 'v3',
+      version: "v3",
       auth: client,
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     });
 
     try {
@@ -408,20 +439,25 @@ export class GoogleIntegrationService {
       });
 
       return response.data as GoogleCalendarEvent;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
-      console.error('Error updating Google Calendar event:', error);
-      console.error('Event data:', event);
-      console.error('Event ID:', eventId);
-      console.error('Calendar ID:', calendarId);
+      console.error("Error updating Google Calendar event:", error);
+      console.error("Event data:", event);
+      console.error("Event ID:", eventId);
+      console.error("Calendar ID:", calendarId);
 
       // Provide more specific error information
       if (error.response) {
-        console.error('Google API Error Response:', error.response.data);
-        throw new Error(`Google Calendar API error: ${error.response.data.error?.message || 'Unknown error'}`);
+        console.error("Google API Error Response:", error.response.data);
+        throw new Error(
+          `Google Calendar API error: ${error.response.data.error?.message || "Unknown error"}`,
+        );
       } else if (error.message) {
-        throw new Error(`Failed to update Google Calendar event: ${error.message}`);
+        throw new Error(
+          `Failed to update Google Calendar event: ${error.message}`,
+        );
       } else {
-        throw new Error('Failed to update Google Calendar event');
+        throw new Error("Failed to update Google Calendar event");
       }
     }
   }
@@ -434,18 +470,18 @@ export class GoogleIntegrationService {
   static async deleteCalendarEvent(
     userId: string,
     eventId: string,
-    calendarId: string = 'primary'
+    calendarId: string = "primary",
   ): Promise<void> {
     const client = await this.createAuthenticatedClient(userId);
 
     if (!client) {
-      throw new Error('Google Calendar not connected or invalid credentials');
+      throw new Error("Google Calendar not connected or invalid credentials");
     }
 
     const calendar = google.calendar({
-      version: 'v3',
+      version: "v3",
       auth: client,
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     });
 
     try {
@@ -454,8 +490,8 @@ export class GoogleIntegrationService {
         eventId,
       });
     } catch (error) {
-      console.error('Error deleting Google Calendar event:', error);
-      throw new Error('Failed to delete Google Calendar event');
+      console.error("Error deleting Google Calendar event:", error);
+      throw new Error("Failed to delete Google Calendar event");
     }
   }
   /**
@@ -467,21 +503,21 @@ export class GoogleIntegrationService {
     const client = await this.createAuthenticatedClient(userId);
 
     if (!client) {
-      throw new Error('Google Calendar not connected or invalid credentials');
+      throw new Error("Google Calendar not connected or invalid credentials");
     }
 
     const calendar = google.calendar({
-      version: 'v3',
+      version: "v3",
       auth: client,
-      timeout: 30000 // 30 second timeout
+      timeout: 30000, // 30 second timeout
     });
 
     try {
       const response = await calendar.calendarList.list();
       return response.data.items || [];
     } catch (error) {
-      console.error('Error fetching calendar list:', error);
-      throw new Error('Failed to fetch calendar list');
+      console.error("Error fetching calendar list:", error);
+      throw new Error("Failed to fetch calendar list");
     }
   }
   /**
@@ -494,8 +530,8 @@ export class GoogleIntegrationService {
       .where(
         and(
           eq(integrations.userId, userId),
-          eq(integrations.type, 'google_calendar')
-        )
+          eq(integrations.type, "google_calendar"),
+        ),
       );
   }
 }

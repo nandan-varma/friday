@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,26 +12,29 @@ import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
 import {
   DefaultChatTransport,
-  lastAssistantMessageIsCompleteWithToolCalls,
+  type UIMessage,
+  type ToolCallPart,
+  type ToolResultPart,
+  type TextPart,
 } from "ai";
 import {
   UpcomingEvents,
   EventCreated,
-  TimeSuggestions,
   ToolLoading,
   ToolError,
+  EventData,
 } from "./ai-tool-components";
 
 interface AIChatProps {
-  onEventCreate?: (eventData: any) => void;
-  onEventClick?: (event: any) => void;
+  onEventClick?: (event: EventData) => void;
+  onEventCreate?: () => void;
 }
 
-export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
+export function AIChat({ onEventClick }: AIChatProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const { messages, sendMessage, addToolResult, status } = useChat({
+  const { messages, sendMessage, status } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
     }),
@@ -71,207 +74,128 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
     });
   };
 
-  const renderToolPart = (part: any, messageId: string) => {
-    const callId = part.toolCallId;
-
-    switch (part.type) {
-      case "tool-getUpcomingEvents": {
-        switch (part.state) {
-          case "input-streaming":
-            return <ToolLoading key={callId} toolName="getUpcomingEvents" />;
-          case "input-available":
-            return <ToolLoading key={callId} toolName="getUpcomingEvents" />;
-          case "output-available":
-            return (
-              <UpcomingEvents
-                key={callId}
-                events={part.output.map((event: any) => ({
-                  id: event.id,
-                  title: event.title,
-                  description: event.description,
-                  location: event.location,
-                  startTime: event.startTime,
-                  endTime: event.endTime,
-                  isAllDay: event.isAllDay,
-                }))}
-                count={part.output.length}
-                onEventClick={onEventClick}
-              />
-            );
-          case "output-error":
-            return (
-              <ToolError
-                key={callId}
-                toolName="getUpcomingEvents"
-                error={part.errorText}
-              />
-            );
+  const renderToolPart = (part: any) => {
+    if (part.type === "tool-call") {
+      return <ToolLoading key={part.toolCallId} toolName={part.toolName} />;
+    } else if (part.type === "tool-result") {
+      switch (part.toolName) {
+        case "getUpcomingEvents": {
+          return (
+            <UpcomingEvents
+              key={part.toolCallId}
+              events={(part.result as any[]).map((event: any) => ({
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
+              }))}
+              count={(part.result as any[]).length}
+              onEventClick={onEventClick}
+            />
+          );
         }
-        break;
-      }
 
-      case "tool-getTodayEvents": {
-        switch (part.state) {
-          case "input-streaming":
-            return <ToolLoading key={callId} toolName="getTodayEvents" />;
-          case "input-available":
-            return <ToolLoading key={callId} toolName="getTodayEvents" />;
-          case "output-available":
-            return (
-              <UpcomingEvents
-                key={callId}
-                events={part.output.map((event: any) => ({
-                  id: event.id,
-                  title: event.title,
-                  description: event.description,
-                  location: event.location,
-                  startTime: event.startTime,
-                  endTime: event.endTime,
-                  isAllDay: event.isAllDay,
-                }))}
-                count={part.output.length}
-                onEventClick={onEventClick}
-              />
-            );
-          case "output-error":
-            return (
-              <ToolError
-                key={callId}
-                toolName="getTodayEvents"
-                error={part.errorText}
-              />
-            );
+        case "getTodayEvents": {
+          return (
+            <UpcomingEvents
+              key={part.toolCallId}
+              events={(part.result as any[]).map((event: any) => ({
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
+              }))}
+              count={(part.result as any[]).length}
+              onEventClick={onEventClick}
+            />
+          );
         }
-        break;
-      }
 
-      case "tool-createEvent": {
-        switch (part.state) {
-          case "input-streaming":
-            return <ToolLoading key={callId} toolName="createEvent" />;
-          case "input-available":
-            return <ToolLoading key={callId} toolName="createEvent" />;
-          case "output-available":
-            return (
-              <EventCreated
-                key={callId}
-                event={{
-                  id: part.output.id,
-                  title: part.output.title,
-                  description: part.output.description,
-                  location: part.output.location,
-                  startTime: part.output.startTime,
-                  endTime: part.output.endTime,
-                  isAllDay: part.output.isAllDay,
-                }}
-                onEventClick={onEventClick}
-              />
-            );
-          case "output-error":
-            return (
-              <ToolError
-                key={callId}
-                toolName="createEvent"
-                error={part.errorText}
-              />
-            );
+        case "createEvent": {
+          return (
+            <EventCreated
+              key={part.toolCallId}
+              event={{
+                id: (part.result as any).id,
+                title: (part.result as any).title,
+                description: (part.result as any).description,
+                location: (part.result as any).location,
+                startTime: (part.result as any).startTime,
+                endTime: (part.result as any).endTime,
+                isAllDay: (part.result as any).isAllDay,
+              }}
+              onEventClick={onEventClick}
+            />
+          );
         }
-        break;
-      }
 
-      case "tool-searchEvents": {
-        switch (part.state) {
-          case "input-streaming":
-            return <ToolLoading key={callId} toolName="searchEvents" />;
-          case "input-available":
-            return <ToolLoading key={callId} toolName="searchEvents" />;
-          case "output-available":
-            return (
-              <UpcomingEvents
-                key={callId}
-                events={part.output.map((event: any) => ({
-                  id: event.id,
-                  title: event.title,
-                  description: event.description,
-                  location: event.location,
-                  startTime: event.startTime,
-                  endTime: event.endTime,
-                  isAllDay: event.isAllDay,
-                }))}
-                count={part.output.length}
-                onEventClick={onEventClick}
-              />
-            );
-          case "output-error":
-            return (
-              <ToolError
-                key={callId}
-                toolName="searchEvents"
-                error={part.errorText}
-              />
-            );
+        case "searchEvents": {
+          return (
+            <UpcomingEvents
+              key={part.toolCallId}
+              events={(part.result as any[]).map((event: any) => ({
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
+              }))}
+              count={(part.result as any[]).length}
+              onEventClick={onEventClick}
+            />
+          );
         }
-        break;
-      }
 
-      case "tool-getEventStats": {
-        switch (part.state) {
-          case "input-streaming":
-            return <ToolLoading key={callId} toolName="getEventStats" />;
-          case "input-available":
-            return <ToolLoading key={callId} toolName="getEventStats" />;
-          case "output-available":
-            return (
-              <Card key={callId}>
-                <CardHeader>
-                  <CardTitle>Calendar Statistics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {part.output.totalEvents}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Total Events
-                      </div>
+        case "getEventStats": {
+          return (
+            <Card key={part.toolCallId}>
+              <CardHeader>
+                <CardTitle>Calendar Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {(part.result as any).totalEvents}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {part.output.todayEvents}
-                      </div>
-                      <div className="text-sm text-muted-foreground">Today</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {part.output.upcomingEvents}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Upcoming (7 days)
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold">
-                        {part.output.localEvents + part.output.googleEvents}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        Sources
-                      </div>
+                    <div className="text-sm text-muted-foreground">
+                      Total Events
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            );
-          case "output-error":
-            return (
-              <ToolError
-                key={callId}
-                toolName="getEventStats"
-                error={part.errorText}
-              />
-            );
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {(part.result as any).todayEvents}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Today</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {(part.result as any).upcomingEvents}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Upcoming (7 days)
+                    </div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">
+                      {(part.result as any).localEvents +
+                        (part.result as any).googleEvents}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Sources</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
         }
-        break;
       }
     }
 
@@ -311,9 +235,9 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
             <div className="max-w-[80%] space-y-2 order-2">
               <div className="rounded-lg px-4 py-3 bg-muted">
                 <p className="text-sm whitespace-pre-wrap">
-                  Hello! I'm your AI calendar assistant. I can help you create
-                  events, find available time slots, check your schedule, and
-                  manage your calendar. What would you like to do?
+                  Hello! I&apos;m your AI calendar assistant. I can help you
+                  create events, find available time slots, check your schedule,
+                  and manage your calendar. What would you like to do?
                 </p>
               </div>
               {/* Suggestions for initial message */}
@@ -367,7 +291,7 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
                 >
                   {/* Render text parts */}
                   {message.parts
-                    .filter((part) => part.type === "text")
+                    .filter((part): part is TextPart => part.type === "text")
                     .map((part, index) => (
                       <div
                         key={index}
@@ -386,8 +310,12 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
 
                   {/* Render tool parts */}
                   {message.parts
-                    .filter((part) => part.type !== "text")
-                    .map((part, index) => renderToolPart(part, message.id))}
+                    .filter(
+                      (part) =>
+                        part.type === "tool-call" ||
+                        part.type === "tool-result",
+                    )
+                    .map((part) => renderToolPart(part))}
 
                   <div className="text-xs text-muted-foreground">
                     {formatTime(new Date())}
@@ -460,8 +388,8 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
           </Button>
         </div>
         <div className="text-xs text-muted-foreground mt-2">
-          Try: "Create a meeting tomorrow at 2pm" or "Show me my events this
-          week"
+          Try: &quot;Create a meeting tomorrow at 2pm&quot; or &quot;Show me my
+          events this week&quot;
         </div>
       </div>
     </div>

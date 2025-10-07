@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { streamText, convertToModelMessages, UIMessage, stepCountIs } from "ai";
+import { streamText, convertToModelMessages, stepCountIs } from "ai";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   let body;
   try {
     body = await request.json();
-  } catch (error) {
+  } catch {
     return new Response("Invalid JSON", { status: 400 });
   }
 

@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useRef } from "react";
 
 /**
  * Custom hook for throttling function calls
@@ -6,35 +6,39 @@ import { useCallback, useRef } from 'react'
  * @param delay The throttle delay in milliseconds
  * @returns The throttled function
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useThrottle<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
-  const lastCallTime = useRef<number>(0)
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastCallTime = useRef<number>(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   return useCallback(
     (...args: Parameters<T>) => {
-      const now = Date.now()
-      
+      const now = Date.now();
+
       if (now - lastCallTime.current >= delay) {
         // Execute immediately if enough time has passed
-        lastCallTime.current = now
-        callback(...args)
+        lastCallTime.current = now;
+        callback(...args);
       } else {
         // Clear any pending timeout and set a new one
         if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current)
+          clearTimeout(timeoutRef.current);
         }
-        
-        timeoutRef.current = setTimeout(() => {
-          lastCallTime.current = Date.now()
-          callback(...args)
-        }, delay - (now - lastCallTime.current))
+
+        timeoutRef.current = setTimeout(
+          () => {
+            lastCallTime.current = Date.now();
+            callback(...args);
+          },
+          delay - (now - lastCallTime.current),
+        );
       }
     },
-    [callback, delay]
-  ) as T
+    [callback, delay],
+  ) as T;
 }
 
 /**
@@ -43,22 +47,23 @@ export function useThrottle<T extends (...args: any[]) => any>(
  * @param delay The debounce delay in milliseconds
  * @returns The debounced function
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   return useCallback(
     (...args: Parameters<T>) => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
+        clearTimeout(timeoutRef.current);
       }
-      
+
       timeoutRef.current = setTimeout(() => {
-        callback(...args)
-      }, delay)
+        callback(...args);
+      }, delay);
     },
-    [callback, delay]
-  ) as T
+    [callback, delay],
+  ) as T;
 }

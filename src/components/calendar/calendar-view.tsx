@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, List, Grid3X3, Clock } from "lucide-react";
 import { MonthView } from "./month-view";
@@ -43,7 +42,12 @@ export function CalendarView({
 
   return (
     <div className="space-y-4">
-      <Tabs value={view} onValueChange={(value) => setView(value as any)}>
+      <Tabs
+        value={view}
+        onValueChange={(value) =>
+          setView(value as "month" | "week" | "day" | "agenda")
+        }
+      >
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold">Calendar</h2>
           <TabsList>

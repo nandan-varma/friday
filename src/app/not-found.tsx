@@ -1,5 +1,5 @@
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function NotFound() {
   return (
@@ -9,7 +9,8 @@ export default function NotFound() {
           <h1 className="text-6xl font-bold text-primary">404</h1>
           <h2 className="text-2xl font-semibold">Page Not Found</h2>
           <p className="text-muted-foreground max-w-md">
-            The page you're looking for doesn't exist or has been moved.
+            The page you&apos;re looking for doesn&apos;t exist or has been
+            moved.
           </p>
         </div>
         <div className="space-y-4">
@@ -24,5 +25,5 @@ export default function NotFound() {
         </div>
       </div>
     </div>
-  )
+  );
 }
