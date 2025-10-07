@@ -1,7 +1,7 @@
 import 'server-only'
 
 import { db } from "@/lib/db"
-import { events } from "@/lib/db/schema"
+import { events, user } from "@/lib/db/schema"
 import { eq, and, gte, lte } from "drizzle-orm"
 
 export interface CreateEventData {
@@ -27,20 +27,22 @@ export interface UpdateEventData {
 export interface EventFilters {
     startDate?: string | Date
     endDate?: string | Date
+    limit?: number
+    offset?: number
 }
 
 export interface LocalEvent {
-    id: number
-    userId: string
-    title: string
-    description?: string | null
-    location?: string | null
-    startTime: Date
-    endTime: Date
-    isAllDay: boolean
-    recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly"
-    createdAt?: Date
-    updatedAt?: Date
+  id: number
+  userId: string
+  title: string
+  description?: string | null
+  location?: string | null
+  startTime: Date
+  endTime: Date
+  isAllDay: boolean
+  recurrence?: "none" | "daily" | "weekly" | "monthly" | "yearly"
+  createdAt?: Date
+  updatedAt?: Date
 }
 
 export class LocalIntegrationService {    /**
@@ -58,18 +60,25 @@ export class LocalIntegrationService {    /**
                 conditions.push(lte(events.endTime, new Date(filters.endDate)))
             }
 
-            const userEvents = await db
+            const baseQuery = db
                 .select()
                 .from(events)
                 .where(and(...conditions))
                 .orderBy(events.startTime)
+
+            const queryWithOffset = filters?.offset ? baseQuery.offset(filters.offset) : baseQuery
+            const finalQuery = filters?.limit ? queryWithOffset.limit(filters.limit) : queryWithOffset
+
+            const userEvents = await finalQuery
 
             return userEvents as unknown as LocalEvent[]
         } catch (error) {
             console.error("Error fetching local events:", error)
             throw new Error("Failed to fetch local events")
         }
-    }    /**
+    }
+
+    /**
      * Get a single local event by ID for a specific user
      */
     static async getEventById(eventId: number, userId: string): Promise<LocalEvent> {
@@ -92,6 +101,17 @@ export class LocalIntegrationService {    /**
      */
     static async createEvent(userId: string, eventData: CreateEventData): Promise<LocalEvent> {
         try {
+            // Validate that user exists
+            const userExists = await db
+                .select({ id: user.id })
+                .from(user)
+                .where(eq(user.id, userId))
+                .limit(1)
+
+            if (userExists.length === 0) {
+                throw new Error("User not found")
+            }
+
             const [newEvent] = await db
                 .insert(events)
                 .values({
@@ -144,7 +164,8 @@ export class LocalIntegrationService {    /**
             console.error("Error updating local event:", error)
             throw new Error("Failed to update local event")
         }
-    }    /**
+    }
+   /**
      * Delete a local event
      */
     static async deleteEvent(eventId: number, userId: string): Promise<LocalEvent> {
@@ -281,8 +302,8 @@ export class LocalIntegrationService {    /**
      */
     static async hasEvents(userId: string): Promise<boolean> {
         try {
-            const events = await this.getEvents(userId)
-            return events.length > 0
+            const userEvents = await this.getEvents(userId)
+            return userEvents.length > 0
         } catch (error) {
             console.error("Error checking if user has local events:", error)
             return false
@@ -294,8 +315,8 @@ export class LocalIntegrationService {    /**
      */
     static async getEventCount(userId: string, filters?: EventFilters): Promise<number> {
         try {
-            const events = await this.getEvents(userId, filters)
-            return events.length
+            const userEvents = await this.getEvents(userId, filters)
+            return userEvents.length
         } catch (error) {
             console.error("Error getting local event count:", error)
             throw new Error("Failed to get local event count")

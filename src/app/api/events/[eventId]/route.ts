@@ -17,11 +17,8 @@ export async function PUT(
 
     const { eventId } = await params
     const body = await request.json()
-    const { userId, title, description, location, startTime, endTime, isAllDay, recurrence } = body
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-    }
+    const { title, description, location, startTime, endTime, isAllDay, recurrence } = body
+    const userId = session.user.id
 
     const eventData = {
       ...(title !== undefined && { title }),
@@ -56,12 +53,7 @@ export async function DELETE(
     }
 
     const { eventId } = await params
-    const body = await request.json()
-    const { userId } = body
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-    }
+    const userId = session.user.id
 
     await EventService.deleteEvent(userId, eventId)
 

@@ -1,4 +1,4 @@
-import { SettingsPage } from "@/app/(main)/_components/settings/settings-page"
+import { SettingsPage } from "@/components/settings/settings-page"
 
 export default function Settings() {
   return <SettingsPage />

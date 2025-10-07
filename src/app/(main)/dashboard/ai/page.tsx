@@ -1,6 +1,6 @@
 "use client"
 
-import { AIChat } from "@/app/(main)/_components/ai-chat"
+import { AIChat } from "@/components/ai-chat"
 
 export default function AIAssistantPage() {
   return (

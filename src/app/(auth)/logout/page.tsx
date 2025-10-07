@@ -1,14 +1,9 @@
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
+import { logout } from "@/lib/actions";
+import { redirect } from "next/navigation";
+
+export const dynamic = 'force-dynamic';
+
 export default async function LogOutPage() {
-    auth.api.signOut(
-        {
-            headers: await headers()
-        }
-    );
-    return (
-        <div className="w-full flex items-center justify-center h-screen">
-            Logging out... This shouldnt take long.
-        </div>
-    );
+    await logout();
+    redirect('/login');
 }

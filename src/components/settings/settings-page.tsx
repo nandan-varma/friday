@@ -63,22 +63,6 @@ export function SettingsPage() {
     loadData()
   }, [])
 
-  // Update hidden inputs when settingsForm changes
-  useEffect(() => {
-    const forms = document.querySelectorAll('form[action*="handleSettingsSubmit"]')
-    forms.forEach(form => {
-      const timezoneInput = form.querySelector('input[name="timezone"]') as HTMLInputElement
-      const notificationsInput = form.querySelector('input[name="notificationsEnabled"]') as HTMLInputElement
-      const aiInput = form.querySelector('input[name="aiSuggestionsEnabled"]') as HTMLInputElement
-      const reminderInput = form.querySelector('input[name="reminderTime"]') as HTMLInputElement
-
-      if (timezoneInput) timezoneInput.value = settingsForm.timezone || 'UTC'
-      if (notificationsInput) notificationsInput.value = (settingsForm.notificationsEnabled ?? true).toString()
-      if (aiInput) aiInput.value = (settingsForm.aiSuggestionsEnabled ?? true).toString()
-      if (reminderInput) reminderInput.value = (settingsForm.reminderTime ?? 30).toString()
-    })
-  }, [settingsForm])
-
   const loadData = async () => {
     try {
       setLoading(true)
@@ -160,7 +144,43 @@ export function SettingsPage() {
   }
 
   const handleGoogleConnect = async () => {
-    await connectGoogleCalendar()
+    // Generate state parameter for CSRF protection
+    const state = crypto.randomUUID()
+    sessionStorage.setItem('google_oauth_state', state)
+
+    // Open popup window for OAuth flow
+    const width = 600
+    const height = 700
+    const left = (window.innerWidth - width) / 2
+    const top = (window.innerHeight - height) / 2
+
+    const popup = window.open(
+      `/auth/google?state=${state}`,
+      'google-oauth',
+      `width=${width},height=${height},left=${left},top=${top}`
+    )
+
+    // Listen for messages from the popup
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+
+      if (event.data.type === 'GOOGLE_AUTH_SUCCESS') {
+        popup?.close()
+        window.removeEventListener('message', handleMessage)
+        // Refresh the page to show updated integration status
+        window.location.reload()
+      } else if (event.data.type === 'GOOGLE_AUTH_ERROR') {
+        popup?.close()
+        window.removeEventListener('message', handleMessage)
+        toast({
+          title: "Error",
+          description: event.data.error || "Failed to connect Google Calendar",
+          variant: "destructive",
+        })
+      }
+    }
+
+    window.addEventListener('message', handleMessage)
   }
 
   const handleGoogleDisconnect = async () => {

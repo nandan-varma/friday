@@ -44,6 +44,28 @@ export interface CombinedEventFilters extends EventFilters {
 
 export class EventService {
 
+    /**
+     * Validate event ID format
+     */
+    private static validateEventId(eventId: string): { type: 'local' | 'google'; id: string | number } {
+        if (eventId.startsWith("local_")) {
+            const localIdStr = eventId.replace("local_", "")
+            const localId = parseInt(localIdStr, 10)
+            if (isNaN(localId) || localId <= 0) {
+                throw new Error("Invalid local event ID format")
+            }
+            return { type: 'local', id: localId }
+        } else if (eventId.startsWith("google_")) {
+            const googleId = eventId.replace("google_", "")
+            if (!googleId || googleId.trim() === '') {
+                throw new Error("Invalid Google event ID format")
+            }
+            return { type: 'google', id: googleId }
+        } else {
+            throw new Error("Invalid event ID format")
+        }
+    }
+
     // ============================================
     // AI-POWERED EVENT CREATION
     // ============================================
@@ -229,6 +251,7 @@ export class EventService {
         userId: string,
         days: number = 7,
         limit?: number,
+        offset?: number,
         filters?: Pick<CombinedEventFilters, 'includeLocal' | 'includeGoogle' | 'calendarId'>
     ): Promise<UnifiedEvent[]> {
         try {
@@ -242,8 +265,15 @@ export class EventService {
                 endDate: futureDate,
             })
 
-            // Apply limit if specified
-            return limit ? events.slice(0, limit) : events
+            // Apply offset and limit if specified
+            let result = events
+            if (offset) {
+                result = result.slice(offset)
+            }
+            if (limit) {
+                result = result.slice(0, limit)
+            }
+            return result
         } catch (error) {
             console.error("Error fetching upcoming events:", error)
             throw new Error("Failed to fetch upcoming events")
@@ -351,7 +381,7 @@ export class EventService {
         try {
             const allEvents = await this.getAllEvents(userId, filters)
             const todayEvents = await this.getAllTodayEvents(userId, filters)
-            const upcomingEvents = await this.getAllUpcomingEvents(userId, 7, undefined, filters)
+            const upcomingEvents = await this.getAllUpcomingEvents(userId, 7, undefined, undefined, filters)
 
             return {
                 totalEvents: allEvents.length,
@@ -413,7 +443,7 @@ export class EventService {
      */
     static async saveEvent(
         userId: string,
-        eventData: CreateEventData,
+        eventData: CreateEventData | UpdateEventData,
         options?: {
             eventId?: string
             preferredOrigin?: EventOrigin
@@ -423,58 +453,71 @@ export class EventService {
         try {
             const { eventId, preferredOrigin = "local", calendarId } = options || {}
 
-            if (eventId && eventId.startsWith("local_")) {
-                // Update existing local event
-                const localId = parseInt(eventId.replace("local_", ""))
-                const updatedEvent = await LocalIntegrationService.updateEvent(localId, userId, eventData)
-                return this.formatLocalEvent(updatedEvent)
-            } else if (eventId && eventId.startsWith("google_")) {
-                // Update existing Google event
-                const googleId = eventId.replace("google_", "")
+            if (eventId) {
+                // Update existing event
+                if (eventId.startsWith("local_")) {
+                    // Update existing local event
+                    const localId = parseInt(eventId.replace("local_", ""))
+                    const updatedEvent = await LocalIntegrationService.updateEvent(localId, userId, eventData as UpdateEventData)
+                    return this.formatLocalEvent(updatedEvent)
+                } else if (eventId.startsWith("google_")) {
+                    // Update existing Google event
+                    const googleId = eventId.replace("google_", "")
 
-                // Validate that we have a valid Google event ID
-                if (!googleId || googleId.trim() === '') {
-                    throw new Error("Invalid Google event ID")
+                    // Validate that we have a valid Google event ID
+                    if (!googleId || googleId.trim() === '') {
+                        throw new Error("Invalid Google event ID")
+                    }
+
+                    const googleEventData: any = {}
+
+                    if (eventData.title !== undefined) {
+                        googleEventData.summary = eventData.title
+                    }
+                    if (eventData.startTime !== undefined) {
+                        const isAllDay = (eventData as any).isAllDay || false
+                        googleEventData.start = isAllDay
+                            ? { date: eventData.startTime.toISOString().split('T')[0] }
+                            : { dateTime: eventData.startTime.toISOString() }
+                    }
+                    if (eventData.endTime !== undefined) {
+                        const isAllDay = (eventData as any).isAllDay || false
+                        googleEventData.end = isAllDay
+                            ? { date: eventData.endTime.toISOString().split('T')[0] }
+                            : { dateTime: eventData.endTime.toISOString() }
+                    }
+
+                    // Handle recurrence - Google Calendar expects RRULE format
+                    if (eventData.recurrence && eventData.recurrence !== 'none') {
+                        googleEventData.recurrence = [`RRULE:FREQ=${eventData.recurrence.toUpperCase()}`]
+                    }
+
+                    // Only include optional fields if they have values
+                    if (eventData.description !== null && eventData.description !== undefined && eventData.description.trim() !== '') {
+                        googleEventData.description = eventData.description
+                    }
+                    if (eventData.location !== null && eventData.location !== undefined && eventData.location.trim() !== '') {
+                        googleEventData.location = eventData.location
+                    }
+
+                    console.log('Updating Google event:', { googleId, googleEventData, calendarId })
+
+                    const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(userId, googleId, googleEventData, calendarId)
+                    return this.formatGoogleEvent(updatedEvent)
+                } else {
+                    throw new Error("Invalid event ID format")
                 }
-
-                const googleEventData: any = {
-                    summary: eventData.title,
-                    start: eventData.isAllDay
-                        ? { date: eventData.startTime.toISOString().split('T')[0] }
-                        : { dateTime: eventData.startTime.toISOString() },
-                    end: eventData.isAllDay
-                        ? { date: eventData.endTime.toISOString().split('T')[0] }
-                        : { dateTime: eventData.endTime.toISOString() }
-                }
-
-                // Handle recurrence - Google Calendar expects RRULE format
-                if (eventData.recurrence && eventData.recurrence !== 'none') {
-                    googleEventData.recurrence = [`RRULE:FREQ=${eventData.recurrence.toUpperCase()}`]
-                }
-
-                // Only include optional fields if they have values
-                if (eventData.description !== null && eventData.description !== undefined && eventData.description.trim() !== '') {
-                    googleEventData.description = eventData.description
-                }
-                if (eventData.location !== null && eventData.location !== undefined && eventData.location.trim() !== '') {
-                    googleEventData.location = eventData.location
-                }
-
-                console.log('Updating Google event:', { googleId, googleEventData, calendarId })
-
-                const updatedEvent = await GoogleIntegrationService.updateCalendarEvent(userId, googleId, googleEventData, calendarId)
-                return this.formatGoogleEvent(updatedEvent)
-            } else if (!eventId) {
+            } else {
                 // Create new event
                 if (preferredOrigin === "google" && await this.hasGoogleIntegration(userId)) {
                     const googleEventData: any = {
-                        summary: eventData.title,
-                        start: eventData.isAllDay
-                            ? { date: eventData.startTime.toISOString().split('T')[0] }
-                            : { dateTime: eventData.startTime.toISOString() },
-                        end: eventData.isAllDay
-                            ? { date: eventData.endTime.toISOString().split('T')[0] }
-                            : { dateTime: eventData.endTime.toISOString() }
+                        summary: (eventData as CreateEventData).title,
+                        start: (eventData as CreateEventData).isAllDay
+                            ? { date: (eventData as CreateEventData).startTime.toISOString().split('T')[0] }
+                            : { dateTime: (eventData as CreateEventData).startTime.toISOString() },
+                        end: (eventData as CreateEventData).isAllDay
+                            ? { date: (eventData as CreateEventData).endTime.toISOString().split('T')[0] }
+                            : { dateTime: (eventData as CreateEventData).endTime.toISOString() }
                     }
 
                     // Handle recurrence - Google Calendar expects RRULE format
@@ -495,11 +538,9 @@ export class EventService {
                     const createdEvent = await GoogleIntegrationService.createCalendarEvent(userId, googleEventData, calendarId)
                     return this.formatGoogleEvent(createdEvent)
                 } else {
-                    const createdEvent = await LocalIntegrationService.createEvent(userId, eventData)
+                    const createdEvent = await LocalIntegrationService.createEvent(userId, eventData as CreateEventData)
                     return this.formatLocalEvent(createdEvent)
                 }
-            } else {
-                throw new Error("Invalid event ID format")
             }
         } catch (error) {
             console.error("Error saving event:", error)
@@ -518,14 +559,12 @@ export class EventService {
         calendarId?: string
     ): Promise<void> {
         try {
-            if (eventId.startsWith("local_")) {
-                const localId = parseInt(eventId.replace("local_", ""))
-                await LocalIntegrationService.deleteEvent(localId, userId)
-            } else if (eventId.startsWith("google_")) {
-                const googleId = eventId.replace("google_", "")
-                await GoogleIntegrationService.deleteCalendarEvent(userId, googleId, calendarId)
-            } else {
-                throw new Error("Invalid event ID format")
+            const { type, id } = this.validateEventId(eventId)
+
+            if (type === 'local') {
+                await LocalIntegrationService.deleteEvent(id as number, userId)
+            } else if (type === 'google') {
+                await GoogleIntegrationService.deleteCalendarEvent(userId, id as string, calendarId)
             }
         } catch (error) {
             console.error("Error deleting event:", error)

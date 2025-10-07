@@ -1,4 +1,4 @@
-import { DashboardClient } from "@/app/(main)/_components/dashboard-client"
+import { DashboardClient } from "@/components/dashboard-client"
 import { EventService, UnifiedEvent } from "@/lib/eventService"
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"

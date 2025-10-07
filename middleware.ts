@@ -4,27 +4,31 @@ import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 
 export async function middleware(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: await headers()
-  })
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
 
-  const isAuthPage = request.nextUrl.pathname.startsWith("/login") ||
-                     request.nextUrl.pathname.startsWith("/signup")
-  const isPublicPage = request.nextUrl.pathname === "/" || 
-                       request.nextUrl.pathname.startsWith("/privacy") ||
-                       request.nextUrl.pathname.startsWith("/service")
+    const isAuthPage = request.nextUrl.pathname.startsWith("/login") ||
+                       request.nextUrl.pathname.startsWith("/signup");
+    const isPublicPage = request.nextUrl.pathname === "/" ||
+                         request.nextUrl.pathname.startsWith("/privacy") ||
+                         request.nextUrl.pathname.startsWith("/service");
 
-  // If user is not authenticated and trying to access protected routes
-  if (!session && !isAuthPage && !isPublicPage) {
-    return NextResponse.redirect(new URL("/login", request.url))
+    // Prevent redirect loops and add API route exclusion
+    if (!session && !isAuthPage && !isPublicPage && !request.nextUrl.pathname.startsWith("/api")) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (session && isAuthPage) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    }
+
+    return NextResponse.next();
+  } catch (error) {
+    console.error('Auth middleware error:', error);
+    return NextResponse.redirect(new URL("/login", request.url));
   }
-
-  // If user is authenticated and trying to access auth pages
-  if (session && isAuthPage) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
-  }
-
-  return NextResponse.next()
 }
 
 export const config = {

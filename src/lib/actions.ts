@@ -7,78 +7,65 @@ import { getUserProfile, updateUserProfile } from '@/lib/profileService'
 import { getUserSettings, updateUserSettings } from '@/lib/profileService'
 import { GoogleIntegrationService } from '@/lib/googleIntegrationService'
 import { auth } from '@/lib/auth'
+import { validateEventData, validateEventUpdate, validateProfileUpdate, validateSettingsUpdate, handleValidationError, sanitizeString } from '@/lib/validation'
 
 // Event Actions
 export async function createEvent(formData: FormData) {
-   'use server'
+    'use server'
 
-   try {
-      // Get the current user session
-      const session = await auth.api.getSession({
-         headers: await import('next/headers').then(m => m.headers())
-      })
+    try {
+       // Get the current user session
+       const session = await auth.api.getSession({
+          headers: await import('next/headers').then(m => m.headers())
+       })
 
-      if (!session?.user) {
-         throw new Error('Unauthorized')
-      }
+       if (!session?.user) {
+          throw new Error('Unauthorized')
+       }
 
-      const title = formData.get('title') as string
-      const description = formData.get('description') as string
-      const location = formData.get('location') as string
-      const startTimeStr = formData.get('startTime') as string
-      const endTimeStr = formData.get('endTime') as string
-      const isAllDay = formData.get('isAllDay') === 'true'
-      const recurrenceInput = formData.get('recurrence') as string
+        // Extract and sanitize form data
+        const title = formData.get('title')
+        const description = formData.get('description')
+        const location = formData.get('location')
+        const startTime = formData.get('startTime')
+        const endTime = formData.get('endTime')
+        const isAllDay = formData.get('isAllDay')
+        const recurrence = formData.get('recurrence')
 
-      // Validate recurrence
-      const validRecurrences = ["none", "daily", "weekly", "monthly", "yearly"] as const
-      if (recurrenceInput && !validRecurrences.includes(recurrenceInput as any)) {
-         throw new Error('Invalid recurrence value')
-      }
-      const recurrence = recurrenceInput as "none" | "daily" | "weekly" | "monthly" | "yearly" | undefined
+        if (!title || typeof title !== 'string') {
+           throw new Error('Title is required')
+        }
+        if (!startTime || typeof startTime !== 'string') {
+           throw new Error('Start time is required')
+        }
+        if (!endTime || typeof endTime !== 'string') {
+           throw new Error('End time is required')
+        }
 
-      // Validation
-      if (!title?.trim()) {
-         throw new Error('Title is required')
-      }
-      if (!startTimeStr) {
-         throw new Error('Start time is required')
-      }
-      if (!endTimeStr) {
-         throw new Error('End time is required')
-      }
+        const rawData = {
+           title: sanitizeString(title),
+           description: description && typeof description === 'string' ? description : undefined,
+           location: location && typeof location === 'string' ? location : undefined,
+           startTime,
+           endTime,
+           isAllDay: isAllDay === 'true',
+           recurrence: (recurrence && typeof recurrence === 'string') ? recurrence : 'none'
+        }
 
-      const startTime = new Date(startTimeStr)
-      const endTime = new Date(endTimeStr)
+       // Validate the data
+       const validation = validateEventData(rawData)
+       if (!validation.success) {
+          throw handleValidationError(validation.error)
+       }
 
-      if (isNaN(startTime.getTime())) {
-         throw new Error('Invalid start time')
-      }
-      if (isNaN(endTime.getTime())) {
-         throw new Error('Invalid end time')
-      }
-      if (startTime >= endTime) {
-         throw new Error('End time must be after start time')
-      }
+       await EventService.saveEvent(session.user.id, validation.data)
 
-      const eventData = {
-         title: title.trim(),
-         description: description?.trim() || null,
-         location: location?.trim() || null,
-         startTime,
-         endTime,
-         isAllDay,
-         recurrence
-      }
-
-      await EventService.saveEvent(session.user.id, eventData)
-
-      revalidatePath('/dashboard')
-   } catch (error) {
-      console.error('Error creating event:', error)
-      throw error instanceof Error ? error : new Error('Failed to create event')
-   }
-}
+       revalidatePath('/dashboard')
+    } catch (error) {
+       console.error('Error creating event:', error)
+       throw error instanceof Error ? error : new Error('Failed to create event')
+    }
+ }
 
 export async function updateEvent(formData: FormData) {
    'use server'
@@ -93,22 +80,44 @@ export async function updateEvent(formData: FormData) {
          throw new Error('Unauthorized')
       }
 
-      const eventId = formData.get('eventId') as string
-      const title = formData.get('title') as string
-      const description = formData.get('description') as string
-      const location = formData.get('location') as string
-      const startTimeStr = formData.get('startTime') as string
-      const endTimeStr = formData.get('endTime') as string
-      const isAllDay = formData.get('isAllDay') === 'true'
-      const recurrence = formData.get('recurrence') as "none" | "daily" | "weekly" | "monthly" | "yearly"
+       const eventIdRaw = formData.get('eventId')
+       const titleRaw = formData.get('title')
+       const description = formData.get('description')
+       const location = formData.get('location')
+       const startTimeStrRaw = formData.get('startTime')
+       const endTimeStrRaw = formData.get('endTime')
+       const isAllDay = formData.get('isAllDay') === 'true'
+       const recurrenceRaw = formData.get('recurrence')
 
-      // Validation
-      if (!eventId?.trim()) {
-         throw new Error('Event ID is required')
-      }
-      if (!title?.trim()) {
-         throw new Error('Title is required')
-      }
+       if (!eventIdRaw || typeof eventIdRaw !== 'string') {
+          throw new Error('Event ID is required')
+       }
+       if (!titleRaw || typeof titleRaw !== 'string') {
+          throw new Error('Title is required')
+       }
+       if (!startTimeStrRaw || typeof startTimeStrRaw !== 'string') {
+          throw new Error('Start time is required')
+       }
+       if (!endTimeStrRaw || typeof endTimeStrRaw !== 'string') {
+          throw new Error('End time is required')
+       }
+
+       const eventId = eventIdRaw as string
+       const title = titleRaw as string
+       const startTimeStr = startTimeStrRaw as string
+       const endTimeStr = endTimeStrRaw as string
+       const recurrence = (recurrenceRaw && typeof recurrenceRaw === 'string' &&
+                          ['none', 'daily', 'weekly', 'monthly', 'yearly'].includes(recurrenceRaw))
+                         ? recurrenceRaw as "none" | "daily" | "weekly" | "monthly" | "yearly"
+                         : 'none'
+
+       // Additional validation
+       if (!(eventIdRaw as string).trim()) {
+          throw new Error('Event ID is required')
+       }
+       if (!(titleRaw as string).trim()) {
+          throw new Error('Title is required')
+       }
       if (!startTimeStr) {
          throw new Error('Start time is required')
       }
@@ -129,15 +138,15 @@ export async function updateEvent(formData: FormData) {
          throw new Error('End time must be after start time')
       }
 
-      const eventData = {
-         title: title.trim(),
-         description: description?.trim() || null,
-         location: location?.trim() || null,
-         startTime,
-         endTime,
-         isAllDay,
-         recurrence
-      }
+       const eventData = {
+          title: title.trim(),
+          description: (description as string)?.trim() || null,
+          location: (location as string)?.trim() || null,
+          startTime,
+          endTime,
+          isAllDay,
+          recurrence
+       }
 
       await EventService.saveEvent(session.user.id, eventData, { eventId })
 
@@ -161,9 +170,13 @@ export async function deleteEvent(formData: FormData) {
       throw new Error('Unauthorized')
     }
 
-    const eventId = formData.get('eventId') as string
+     const eventIdRaw = formData.get('eventId')
 
-    await EventService.deleteEvent(session.user.id, eventId)
+     if (!eventIdRaw || typeof eventIdRaw !== 'string') {
+       throw new Error('Event ID is required')
+     }
+
+     await EventService.deleteEvent(session.user.id, eventIdRaw)
 
     revalidatePath('/dashboard')
   } catch (error) {
@@ -186,21 +199,24 @@ export async function updateProfile(formData: FormData) {
          throw new Error('Unauthorized')
       }
 
-      const name = formData.get('name') as string
-      const email = formData.get('email') as string
+       const nameRaw = formData.get('name')
+       const emailRaw = formData.get('email')
 
-      // Validation
-      if (name && name.trim().length < 2) {
-         throw new Error('Name must be at least 2 characters long')
-      }
-      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-         throw new Error('Invalid email format')
-      }
+       const name = nameRaw && typeof nameRaw === 'string' ? nameRaw : undefined
+       const email = emailRaw && typeof emailRaw === 'string' ? emailRaw : undefined
 
-      await updateUserProfile(session.user.id, {
-         name: name?.trim() || undefined,
-         email: email?.trim() || undefined
-      })
+       // Validation
+       if (name && name.trim().length < 2) {
+          throw new Error('Name must be at least 2 characters long')
+       }
+       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          throw new Error('Invalid email format')
+       }
+
+       await updateUserProfile(session.user.id, {
+          name: name?.trim() || undefined,
+          email: email?.trim() || undefined
+       })
 
       revalidatePath('/dashboard')
    } catch (error) {
@@ -223,17 +239,20 @@ export async function updateSettings(formData: FormData) {
          throw new Error('Unauthorized')
       }
 
-      const timezone = formData.get('timezone') as string
-      const notificationsEnabled = formData.get('notificationsEnabled') === 'true'
-      const aiSuggestionsEnabled = formData.get('aiSuggestionsEnabled') === 'true'
-      const reminderTimeStr = formData.get('reminderTime') as string
+       const timezoneRaw = formData.get('timezone')
+       const notificationsEnabled = formData.get('notificationsEnabled') === 'true'
+       const aiSuggestionsEnabled = formData.get('aiSuggestionsEnabled') === 'true'
+       const reminderTimeStrRaw = formData.get('reminderTime')
 
-      // Validation
-      if (reminderTimeStr && (isNaN(parseInt(reminderTimeStr)) || parseInt(reminderTimeStr) < 0)) {
-         throw new Error('Reminder time must be a non-negative number')
-      }
+       const timezone = timezoneRaw && typeof timezoneRaw === 'string' ? timezoneRaw : undefined
+       const reminderTimeStr = reminderTimeStrRaw && typeof reminderTimeStrRaw === 'string' ? reminderTimeStrRaw : undefined
 
-      const reminderTime = parseInt(reminderTimeStr)
+       // Validation
+       if (reminderTimeStr && (isNaN(parseInt(reminderTimeStr)) || parseInt(reminderTimeStr) < 0)) {
+          throw new Error('Reminder time must be a non-negative number')
+       }
+
+       const reminderTime = reminderTimeStr ? parseInt(reminderTimeStr) : undefined
 
       await updateUserSettings(session.user.id, {
          timezone: timezone?.trim(),
@@ -338,7 +357,7 @@ export async function getGoogleIntegration() {
 export async function connectGoogleCalendar() {
   'use server'
 
-  const authUrl = await GoogleIntegrationService.getAuthUrl()
+  const { url: authUrl, state } = await GoogleIntegrationService.getAuthUrl()
   redirect(authUrl)
 }
 
@@ -360,5 +379,19 @@ export async function disconnectGoogleCalendar() {
   } catch (error) {
     console.error('Error disconnecting Google Calendar:', error)
     throw new Error('Failed to disconnect Google Calendar')
+  }
+}
+
+// Auth Actions
+export async function logout() {
+  'use server'
+
+  try {
+    await auth.api.signOut({
+      headers: await import('next/headers').then(m => m.headers())
+    })
+  } catch (error) {
+    console.error('Error during logout:', error)
+    throw new Error('Failed to logout')
   }
 }

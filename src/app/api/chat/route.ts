@@ -1,25 +1,79 @@
- import { openai } from '@ai-sdk/openai';
- import { streamText, convertToModelMessages, UIMessage } from 'ai';
- import { z } from 'zod';
- import { auth } from '@/lib/auth';
- import { headers } from 'next/headers';
- import EventService from '@/lib/eventService';
+  import { openai } from '@ai-sdk/openai';
+  import { streamText, convertToModelMessages, UIMessage, stepCountIs } from 'ai';
+  import { z } from 'zod';
+  import { auth } from '@/lib/auth';
+  import { headers } from 'next/headers';
+  import EventService from '@/lib/eventService';
 
- // Allow streaming responses up to 30 seconds
- export const maxDuration = 30;
+  // Allow streaming responses up to 30 seconds
+  export const maxDuration = 30;
 
- export async function POST(request: Request) {
-   const { messages }: { messages: UIMessage[] } = await request.json();
+  export async function POST(request: Request) {
+    let body;
+    try {
+      body = await request.json();
+    } catch (error) {
+      return new Response('Invalid JSON', { status: 400 });
+    }
 
-   // Get user for context
-   const session = await auth.api.getSession({
-     headers: await headers()
-   });
-   const user = session?.user;
+    const { messages } = body;
 
-   if (!user?.id) {
-     return new Response('User not authenticated', { status: 401 });
-   }
+    // Validate messages
+    if (!Array.isArray(messages)) {
+      return new Response('Messages must be an array', { status: 400 });
+    }
+
+    if (messages.length === 0) {
+      return new Response('Messages array cannot be empty', { status: 400 });
+    }
+
+    if (messages.length > 50) {
+      return new Response('Too many messages', { status: 400 });
+    }
+
+    // Convert UIMessage format to simple format if needed
+    const processedMessages = messages.map(message => {
+      if (message.parts) {
+        // UIMessage format
+        const content = message.parts
+          .filter(part => part.type === 'text')
+          .map(part => part.text)
+          .join('\n');
+        return {
+          role: message.role,
+          content
+        };
+      } else {
+        // Already in simple format
+        return message;
+      }
+    });
+
+    // Validate each message
+    for (const message of processedMessages) {
+      if (!message || typeof message !== 'object') {
+        return new Response('Invalid message format', { status: 400 });
+      }
+      if (!message.role || !['user', 'assistant', 'system'].includes(message.role)) {
+        return new Response('Invalid message role', { status: 400 });
+      }
+      if (!message.content || typeof message.content !== 'string') {
+        return new Response('Invalid message content', { status: 400 });
+      }
+      if (message.content.length > 10000) {
+        return new Response('Message content too long', { status: 400 });
+      }
+    }
+
+    // Get user for context
+    const session = await auth.api.getSession({
+      headers: await headers()
+    });
+    const user = session?.user;
+
+    if (!user?.id) {
+      return new Response('User not authenticated', { status: 401 });
+    }
 
   const result = streamText({
     model: openai('gpt-4o'),
@@ -154,25 +208,12 @@
              throw new Error('Failed to get event statistics');
            }
          },
-       },
-     },
-   });
+        },
+      },
+      stopWhen: stepCountIs(3),
+    });
 
-   return result.toUIMessageStreamResponse({
-    onError: (error) => {
-      console.error('AI SDK error:', error);
-      if (error == null) {
-        return 'An unknown error occurred';
-      }
-      if (typeof error === 'string') {
-        return error;
-      }
-      if (error instanceof Error) {
-        return error.message;
-      }
-      return JSON.stringify(error);
-    },
-  });
+    return result.toUIMessageStreamResponse();
  }
 
 

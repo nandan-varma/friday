@@ -22,11 +22,7 @@ export default function HomePage() {
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
+      y: 0
     }
   }
 
@@ -35,19 +31,11 @@ export default function HomePage() {
     visible: {
       opacity: 1,
       y: 0,
-      scale: 1,
-      transition: {
-        duration: 0.5,
-        ease: "easeOut"
-      }
+      scale: 1
     },
     hover: {
       y: -8,
-      scale: 1.02,
-      transition: {
-        duration: 0.2,
-        ease: "easeOut"
-      }
+      scale: 1.02
     }
   }
 
@@ -58,7 +46,7 @@ export default function HomePage() {
         className="container mx-auto px-4 py-6"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        transition={{ duration: 0.6 }}
       >
         <div className="flex items-center justify-between">
           <motion.div 

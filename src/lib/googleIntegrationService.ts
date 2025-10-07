@@ -4,6 +4,9 @@ import { db } from '@/lib/db';
 import { integrations } from "@/lib/db/schema";
 import { eq, and } from 'drizzle-orm';
 
+// In-memory mutex for token refresh operations per user
+const refreshMutexes = new Map<string, Promise<any>>();
+
 // Google Calendar scopes
 const SCOPES = [
   'https://www.googleapis.com/auth/calendar.readonly',
@@ -43,11 +46,12 @@ export class GoogleIntegrationService {
    * Get Google API credentials from environment variables
    */
   private static async getCredentials() {
-    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS || '{}');
+    const { GOOGLE_CREDENTIALS } = await import('./env');
+    const credentials = JSON.parse(GOOGLE_CREDENTIALS);
     const key = credentials.installed || credentials.web;
 
     if (!key || !key.client_id || !key.client_secret) {
-      throw new Error('Invalid Google credentials in environment variable GOOGLE_CREDENTIALS');
+      throw new Error('Invalid Google credentials format');
     }
 
     return key;
@@ -59,9 +63,16 @@ export class GoogleIntegrationService {
   private static async createOAuth2Client(): Promise<OAuth2Client> {
     try {
       const { client_id, client_secret } = await this.getCredentials();
-      const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/auth/google/callback';
+      const { GOOGLE_REDIRECT_URI } = await import('./env');
 
-      return new google.auth.OAuth2(client_id, client_secret, redirectUri);
+      const oAuth2Client = new google.auth.OAuth2(client_id, client_secret, GOOGLE_REDIRECT_URI);
+
+      // Configure timeout for API requests (30 seconds)
+      if (oAuth2Client.transporter && typeof oAuth2Client.transporter === 'object') {
+        (oAuth2Client.transporter as any).timeout = 30000;
+      }
+
+      return oAuth2Client;
     } catch (error) {
       console.error('Error creating OAuth2 client:', error);
       throw new Error('Failed to create OAuth2 client');
@@ -69,16 +80,22 @@ export class GoogleIntegrationService {
   }
 
   /**
-   * Generate authorization URL for OAuth flow
+   * Generate authorization URL for OAuth flow with CSRF protection
    */
-  static async getAuthUrl(): Promise<string> {
+  static async getAuthUrl(): Promise<{ url: string; state: string }> {
     const oAuth2Client = await this.createOAuth2Client();
 
-    return oAuth2Client.generateAuthUrl({
+    // Generate random state parameter for CSRF protection
+    const state = crypto.randomUUID();
+
+    const url = oAuth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: SCOPES,
       prompt: 'consent', // Force consent to get refresh token
+      state: state,
     });
+
+    return { url, state };
   }
 
   /**
@@ -100,49 +117,49 @@ export class GoogleIntegrationService {
       // Calculate expiration date
       const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
 
-      // Save or update integration in database
-      const existingIntegration = await db
-        .select()
-        .from(integrations)
-        .where(
-          and(
-            eq(integrations.userId, userId),
-            eq(integrations.type, 'google_calendar')
+      // Save or update integration in database using transaction
+      const integration = await db.transaction(async (tx) => {
+        const existingIntegration = await tx
+          .select()
+          .from(integrations)
+          .where(
+            and(
+              eq(integrations.userId, userId),
+              eq(integrations.type, 'google_calendar')
+            )
           )
-        )
-        .limit(1);
+          .limit(1);
 
-      let integration: GoogleIntegration;
+        if (existingIntegration.length > 0) {
+          // Update existing integration
+          const [updated] = await tx
+            .update(integrations)
+            .set({
+              accessToken: tokens.access_token,
+              refreshToken: tokens.refresh_token || null,
+              expiresAt,
+              updatedAt: new Date(),
+            })
+            .where(eq(integrations.id, existingIntegration[0].id))
+            .returning();
 
-      if (existingIntegration.length > 0) {
-        // Update existing integration
-        const [updated] = await db
-          .update(integrations)
-          .set({
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token || null,
-            expiresAt,
-            updatedAt: new Date(),
-          })
-          .where(eq(integrations.id, existingIntegration[0].id))
-          .returning();
+          return updated as unknown as GoogleIntegration;
+        } else {
+          // Create new integration
+          const [created] = await tx
+            .insert(integrations)
+            .values({
+              userId,
+              type: 'google_calendar',
+              accessToken: tokens.access_token,
+              refreshToken: tokens.refresh_token || null,
+              expiresAt,
+            })
+            .returning();
 
-        integration = updated as unknown as GoogleIntegration;
-      } else {
-        // Create new integration
-        const [created] = await db
-          .insert(integrations)
-          .values({
-            userId,
-            type: 'google_calendar',
-            accessToken: tokens.access_token,
-            refreshToken: tokens.refresh_token || null,
-            expiresAt,
-          })
-          .returning();
-
-        integration = created as unknown as GoogleIntegration;
-      }
+          return created as unknown as GoogleIntegration;
+        }
+      })
 
       return integration;
     } catch (error) {
@@ -189,28 +206,58 @@ export class GoogleIntegrationService {
 
     // Check if token needs refresh
     if (integration.expiresAt && new Date() >= integration.expiresAt) {
-      try {
-        const { credentials } = await oAuth2Client.refreshAccessToken();
+      // Use mutex to prevent concurrent refresh operations
+      const mutexKey = `refresh_${userId}`;
+      const existingRefresh = refreshMutexes.get(mutexKey);
 
-        // Update database with new tokens
-        await db
-          .update(integrations)
-          .set({
-            accessToken: credentials.access_token || integration.accessToken,
-            refreshToken: credentials.refresh_token || integration.refreshToken,
-            expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : integration.expiresAt,
-            updatedAt: new Date(),
-          })
-          .where(eq(integrations.id, integration.id));
+      if (existingRefresh) {
+        // Wait for existing refresh to complete
+        await existingRefresh;
+        // Re-check integration after refresh
+        const updatedIntegration = await this.getUserIntegration(userId);
+        if (updatedIntegration && updatedIntegration.expiresAt && new Date() < updatedIntegration.expiresAt) {
+          oAuth2Client.setCredentials({
+            access_token: updatedIntegration.accessToken,
+            refresh_token: updatedIntegration.refreshToken,
+            expiry_date: updatedIntegration.expiresAt?.getTime(),
+          });
+        }
+      } else {
+        // Start refresh operation
+        const refreshPromise = this.performTokenRefresh(integration, oAuth2Client);
+        refreshMutexes.set(mutexKey, refreshPromise);
 
-        oAuth2Client.setCredentials(credentials);
-      } catch (error) {
-        console.error('Error refreshing token:', error);
-        return null;
+        try {
+          await refreshPromise;
+        } finally {
+          refreshMutexes.delete(mutexKey);
+        }
       }
     }
 
     return oAuth2Client;
+  }
+
+  private static async performTokenRefresh(integration: GoogleIntegration, oAuth2Client: OAuth2Client): Promise<void> {
+    try {
+      const { credentials } = await oAuth2Client.refreshAccessToken();
+
+      // Update database with new tokens
+      await db
+        .update(integrations)
+        .set({
+          accessToken: credentials.access_token || integration.accessToken,
+          refreshToken: credentials.refresh_token || integration.refreshToken,
+          expiresAt: credentials.expiry_date ? new Date(credentials.expiry_date) : integration.expiresAt,
+          updatedAt: new Date(),
+        })
+        .where(eq(integrations.id, integration.id));
+
+      oAuth2Client.setCredentials(credentials);
+    } catch (error) {
+      console.error('Error refreshing token:', error);
+      throw error;
+    }
   }
   /**
    * Check if user has valid Google Calendar integration by testing API access
@@ -223,7 +270,11 @@ export class GoogleIntegrationService {
       if (!client) return false;
 
       // Try to make a simple API call to verify credentials
-      const calendar = google.calendar({ version: 'v3', auth: client });
+      const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
       await calendar.calendarList.list({ maxResults: 1 });
 
       return true;
@@ -253,7 +304,11 @@ export class GoogleIntegrationService {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
 
     const {
       maxResults = 50,
@@ -296,7 +351,11 @@ export class GoogleIntegrationService {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
 
     try {
       const response = await calendar.events.insert({
@@ -330,7 +389,11 @@ export class GoogleIntegrationService {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
 
     try {
       const response = await calendar.events.update({
@@ -374,7 +437,11 @@ export class GoogleIntegrationService {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
 
     try {
       await calendar.events.delete({
@@ -398,7 +465,11 @@ export class GoogleIntegrationService {
       throw new Error('Google Calendar not connected or invalid credentials');
     }
 
-    const calendar = google.calendar({ version: 'v3', auth: client });
+    const calendar = google.calendar({
+      version: 'v3',
+      auth: client,
+      timeout: 30000 // 30 second timeout
+    });
 
     try {
       const response = await calendar.calendarList.list();

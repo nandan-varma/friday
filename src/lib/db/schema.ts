@@ -1,6 +1,7 @@
 import { pgTable, text, timestamp, boolean, integer, serial, pgEnum } from "drizzle-orm/pg-core";
 
 import { relations } from "drizzle-orm"
+import { index } from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
     id: text('id').primaryKey(),
@@ -74,7 +75,13 @@ export const events = pgTable("events", {
   recurrence: recurrenceEnum("recurrence").default("none"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-})
+}, (table) => ({
+  userIdIdx: index("events_user_id_idx").on(table.userId),
+  startTimeIdx: index("events_start_time_idx").on(table.startTime),
+  endTimeIdx: index("events_end_time_idx").on(table.endTime),
+  userStartTimeIdx: index("events_user_start_time_idx").on(table.userId, table.startTime),
+  userEndTimeIdx: index("events_user_end_time_idx").on(table.userId, table.endTime),
+}))
 
 // Event relations
 export const eventsRelations = relations(events, ({ one }) => ({

@@ -9,6 +9,24 @@ function GoogleAuthCallbackContent() {
     useEffect(() => {
         const code = searchParams.get('code')
         const error = searchParams.get('error')
+        const state = searchParams.get('state')
+
+        // Validate state parameter for CSRF protection
+        const storedState = sessionStorage.getItem('google_oauth_state')
+        if (state && storedState && state !== storedState) {
+            console.error('CSRF attack detected: state parameter mismatch')
+            window.opener?.postMessage(
+                { type: 'GOOGLE_AUTH_ERROR', error: 'CSRF validation failed' },
+                window.location.origin
+            )
+            window.close()
+            return
+        }
+
+        // Clear the stored state
+        if (storedState) {
+            sessionStorage.removeItem('google_oauth_state')
+        }
 
         if (code) {
             // Send success message to parent window

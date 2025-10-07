@@ -13,27 +13,27 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const userId = session.user.id
     const type = searchParams.get('type')
     const days = searchParams.get('days')
     const limit = searchParams.get('limit')
+    const offset = searchParams.get('offset')
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
-
-    if (!userId) {
-      return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-    }
 
     let events
 
     if (type === 'upcoming') {
       const daysNum = days ? parseInt(days) : 7
       const limitNum = limit ? parseInt(limit) : undefined
-      events = await EventService.getAllUpcomingEvents(userId, daysNum, limitNum)
+      const offsetNum = offset ? parseInt(offset) : undefined
+      events = await EventService.getAllUpcomingEvents(userId, daysNum, limitNum, offsetNum, undefined)
     } else {
       const filters = {
         ...(startDate && { startDate: new Date(startDate) }),
-        ...(endDate && { endDate: new Date(endDate) })
+        ...(endDate && { endDate: new Date(endDate) }),
+        ...(limit && { limit: parseInt(limit) }),
+        ...(offset && { offset: parseInt(offset) })
       }
       events = await EventService.getAllEvents(userId, Object.keys(filters).length > 0 ? filters : undefined)
     }
@@ -56,9 +56,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { userId, title, description, location, startTime, endTime, isAllDay, recurrence } = body
+    const { title, description, location, startTime, endTime, isAllDay, recurrence } = body
+    const userId = session.user.id
 
-    if (!userId || !title || !startTime || !endTime) {
+    if (!title || !startTime || !endTime) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
     }
 

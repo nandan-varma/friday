@@ -26,19 +26,6 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
     transport: new DefaultChatTransport({
       api: '/api/chat',
     }),
-    sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    messages: [
-      {
-        id: '1',
-        role: 'assistant',
-        parts: [
-          {
-            type: 'text',
-            text: "Hello! I'm your AI calendar assistant. I can help you create events, find available time slots, check your schedule, and manage your calendar. What would you like to do?"
-          }
-        ]
-      }
-    ],
   })
 
   useEffect(() => {
@@ -261,6 +248,44 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
       {/* Messages */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
         <div className="space-y-4">
+          {/* Initial welcome message */}
+          <div className="flex gap-3 justify-start">
+            <Avatar className="w-8 h-8 mt-1">
+              <AvatarFallback className="bg-primary text-primary-foreground">
+                <Bot className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
+            <div className="max-w-[80%] space-y-2 order-2">
+              <div className="rounded-lg px-4 py-3 bg-muted">
+                <p className="text-sm whitespace-pre-wrap">
+                  Hello! I'm your AI calendar assistant. I can help you create events, find available time slots, check your schedule, and manage your calendar. What would you like to do?
+                </p>
+              </div>
+              {/* Suggestions for initial message */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Show me my upcoming events",
+                  "Create a new event",
+                  "Find a time for a meeting",
+                  "What's on my calendar today?"
+                ].map((suggestion, index) => (
+                  <Button
+                    key={index}
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => handleSuggestionClick(suggestion)}
+                  >
+                    {suggestion}
+                  </Button>
+                ))}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {formatTime(new Date())}
+              </div>
+            </div>
+          </div>
+
           {messages?.map((message) => {
             const isUser = message.role !== 'assistant'
             return (
@@ -305,27 +330,7 @@ export function AIChat({ onEventCreate, onEventClick }: AIChatProps) {
                     .filter(part => part.type !== 'text')
                     .map((part, index) => renderToolPart(part, message.id))}
 
-                  {/* Suggestions for initial message */}
-                  {message.id === '1' && !isUser && (
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        "Show me my upcoming events",
-                        "Create a new event",
-                        "Find a time for a meeting",
-                        "What's on my calendar today?"
-                      ].map((suggestion, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className="text-xs h-7"
-                          onClick={() => handleSuggestionClick(suggestion)}
-                        >
-                          {suggestion}
-                        </Button>
-                      ))}
-                    </div>
-                  )}
+
 
                   <div className="text-xs text-muted-foreground">
                     {formatTime(new Date())}

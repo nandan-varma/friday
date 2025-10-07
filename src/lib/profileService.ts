@@ -105,44 +105,53 @@ export async function updateUserSettings(
   data: Partial<UserSettingsData>
 ): Promise<UserSettingsData> {
   try {
-    // Check if settings exist
-    const existingSettings = await getUserSettings(userId)
-
-    if (existingSettings) {      // Update existing settings
-      const [updatedSettings] = await db
-        .update(userSettings)
-        .set({
-          ...data,
-          updatedAt: new Date(),
-        })
+    // Use transaction for atomicity
+    return await db.transaction(async (tx) => {
+      // Check if settings exist
+      const existingSettings = await tx
+        .select()
+        .from(userSettings)
         .where(eq(userSettings.userId, userId))
-        .returning({
-          timezone: userSettings.timezone,
-          notificationsEnabled: userSettings.notificationsEnabled,
-          aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
-          reminderTime: userSettings.reminderTime,
-        })
+        .limit(1)
 
-      return updatedSettings
-    } else {      // Create new settings
-      const [newSettings] = await db
-        .insert(userSettings)
-        .values({
-          userId,
-          timezone: data.timezone || "UTC",
-          notificationsEnabled: data.notificationsEnabled ?? true,
-          aiSuggestionsEnabled: data.aiSuggestionsEnabled ?? true,
-          reminderTime: data.reminderTime ?? 30,
-        })
-        .returning({
-          timezone: userSettings.timezone,
-          notificationsEnabled: userSettings.notificationsEnabled,
-          aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
-          reminderTime: userSettings.reminderTime,
-        })
+      if (existingSettings.length > 0) {
+        // Update existing settings
+        const [updatedSettings] = await tx
+          .update(userSettings)
+          .set({
+            ...data,
+            updatedAt: new Date(),
+          })
+          .where(eq(userSettings.userId, userId))
+          .returning({
+            timezone: userSettings.timezone,
+            notificationsEnabled: userSettings.notificationsEnabled,
+            aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
+            reminderTime: userSettings.reminderTime,
+          })
 
-      return newSettings
-    }
+        return updatedSettings
+      } else {
+        // Create new settings
+        const [newSettings] = await tx
+          .insert(userSettings)
+          .values({
+            userId,
+            timezone: data.timezone || "UTC",
+            notificationsEnabled: data.notificationsEnabled ?? true,
+            aiSuggestionsEnabled: data.aiSuggestionsEnabled ?? true,
+            reminderTime: data.reminderTime ?? 30,
+          })
+          .returning({
+            timezone: userSettings.timezone,
+            notificationsEnabled: userSettings.notificationsEnabled,
+            aiSuggestionsEnabled: userSettings.aiSuggestionsEnabled,
+            reminderTime: userSettings.reminderTime,
+          })
+
+        return newSettings
+      }
+    })
   } catch (error) {
     console.error("Error updating user settings:", error)
     throw new Error("Failed to update user settings")

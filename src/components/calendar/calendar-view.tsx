@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Calendar, List, Grid3X3, Clock } from "lucide-react"
@@ -17,36 +17,51 @@ interface CalendarViewProps {
 }
 
 export function CalendarView({ events, onEventClick, onCreateEvent }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentDate, setCurrentDate] = useState<Date | undefined>(undefined)
   const [view, setView] = useState<'month' | 'week' | 'day' | 'agenda'>('month')
+
+  // Initialize currentDate on client side to avoid hydration mismatch
+  useEffect(() => {
+    if (!currentDate) {
+      setCurrentDate(new Date())
+    }
+  }, [currentDate])
 
   const handleDateChange = (date: Date) => {
     setCurrentDate(date)
   }
 
-  return (
-    <div className="space-y-6">
-      {/* View Selector */}
-      <Tabs value={view} onValueChange={(value) => setView(value as typeof view)}>
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="month" className="flex items-center gap-2">
-            <Grid3X3 className="w-4 h-4" />
-            Month
-          </TabsTrigger>
-          <TabsTrigger value="week" className="flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            Week
-          </TabsTrigger>
-          <TabsTrigger value="day" className="flex items-center gap-2">
-            <Clock className="w-4 h-4" />
-            Day
-          </TabsTrigger>
-          <TabsTrigger value="agenda" className="flex items-center gap-2">
-            <List className="w-4 h-4" />
-            Agenda
-          </TabsTrigger>
-        </TabsList>
+  if (!currentDate) {
+    return <div className="space-y-4">Loading calendar...</div>
+  }
 
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Calendar</h2>
+        <Tabs value={view} onValueChange={(value) => setView(value as any)}>
+          <TabsList>
+            <TabsTrigger value="month">
+              <Calendar className="w-4 h-4 mr-2" />
+              Month
+            </TabsTrigger>
+            <TabsTrigger value="week">
+              <Grid3X3 className="w-4 h-4 mr-2" />
+              Week
+            </TabsTrigger>
+            <TabsTrigger value="day">
+              <Clock className="w-4 h-4 mr-2" />
+              Day
+            </TabsTrigger>
+            <TabsTrigger value="agenda">
+              <List className="w-4 h-4 mr-2" />
+              Agenda
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <Tabs value={view} onValueChange={(value) => setView(value as any)}>
         <TabsContent value="month" className="mt-6">
           <MonthView
             currentDate={currentDate}

@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarView } from "@/app/(main)/_components/calendar/calendar-view"
-import { EventForm } from "@/app/(main)/_components/event/event-form"
+import { CalendarView } from "@/components/calendar/calendar-view"
+import { EventForm } from "@/components/event/event-form"
 import { UnifiedEvent } from "@/lib/eventService"
 import { toast } from "@/hooks/use-toast"
 
