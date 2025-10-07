@@ -51,11 +51,11 @@ export function UpcomingEvents({
   }
 
   return (
-    <Card>
+    <Card data-testid="upcoming-events">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="w-5 h-5" />
-          Upcoming Events ({count})
+          Upcoming Events: {count}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -63,6 +63,7 @@ export function UpcomingEvents({
           {events.map((event) => (
             <div
               key={event.id}
+              data-testid={`event-${event.id}`}
               className="p-4 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
               onClick={() => onEventClick?.(event)}
             >
@@ -126,15 +127,19 @@ interface EventCreatedProps {
 
 export function EventCreated({ event, onEventClick }: EventCreatedProps) {
   return (
-    <Card className="border-green-200 bg-green-50/50">
+    <Card
+      data-testid="event-created"
+      className="border-green-200 bg-green-50/50"
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-green-700">
           <CheckCircle className="w-5 h-5" />
-          Event Created Successfully
+          Event Created: {event.title}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div
+          data-testid="created-event-click"
           className="p-4 border border-green-200 rounded-lg bg-white cursor-pointer hover:bg-green-50/50 transition-colors"
           onClick={() => onEventClick?.(event)}
         >
@@ -292,18 +297,16 @@ interface ToolLoadingProps {
 }
 
 export function ToolLoading({ toolName }: ToolLoadingProps) {
-  const displayName = toolName
-    .replace(/([A-Z])/g, " $1")
-    .toLowerCase()
-    .trim();
-
   return (
-    <Card className="border-blue-200 bg-blue-50/50">
+    <Card
+      data-testid={`tool-loading-${toolName}`}
+      className="border-blue-200 bg-blue-50/50"
+    >
       <CardContent className="flex items-center gap-3 py-6">
         <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
         <div>
           <p className="font-medium text-sm text-blue-900">
-            {displayName.charAt(0).toUpperCase() + displayName.slice(1)}...
+            Loading {toolName}...
           </p>
           <p className="text-xs text-blue-700">Processing your request</p>
         </div>
@@ -324,7 +327,10 @@ export function ToolError({ toolName, error }: ToolErrorProps) {
     .trim();
 
   return (
-    <Card className="border-red-200 bg-red-50/50">
+    <Card
+      data-testid={`tool-error-${toolName}`}
+      className="border-red-200 bg-red-50/50"
+    >
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-red-700">
           <XCircle className="w-5 h-5" />

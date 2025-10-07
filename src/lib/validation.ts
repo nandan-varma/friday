@@ -105,7 +105,7 @@ export const AIChatMessageSchema = z.object({
 // Sanitization functions
 export function sanitizeString(input: string): string {
   return input
-    .replace(/[<>]/g, "") // Remove potential HTML tags
+    .replace(/<[^>]*>/g, "") // Remove HTML tags
     .replace(/javascript:/gi, "") // Remove javascript: protocol
     .replace(/on\w+=/gi, "") // Remove event handlers
     .trim();

@@ -46,7 +46,7 @@ jest.mock("../../src/lib/auth", () => ({
   },
 }));
 
-jest.mock("../../src/lib/eventService", () => ({
+jest.mock("../../src/lib/services/eventService", () => ({
   EventService: {
     getAllUpcomingEvents: jest.fn(),
     getAllEvents: jest.fn(),

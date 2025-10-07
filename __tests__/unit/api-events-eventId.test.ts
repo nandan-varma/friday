@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-require-imports */
 import { NextRequest } from "next/server";
 import { PUT, DELETE } from "../../src/app/api/events/[eventId]/route";
-import { EventService } from "../../src/lib/services/eventService";
+import { EventService } from "@/lib/services/eventService";
 
 // Mock NextRequest cookies
 jest.mock("next/server", () => ({
@@ -46,7 +46,7 @@ jest.mock("../../src/lib/auth", () => ({
   },
 }));
 
-jest.mock("../../src/lib/eventService", () => ({
+jest.mock("@/lib/services/eventService", () => ({
   EventService: {
     saveEvent: jest.fn(),
     deleteEvent: jest.fn(),
@@ -54,7 +54,6 @@ jest.mock("../../src/lib/eventService", () => ({
 }));
 
 const mockAuth = require("../../src/lib/auth");
-const mockEventService = EventService as jest.Mocked<typeof EventService>;
 
 describe("/api/events/[eventId]", () => {
   beforeEach(() => {
@@ -97,7 +96,7 @@ describe("/api/events/[eventId]", () => {
       };
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockEventService.saveEvent.mockResolvedValue(mockEvent);
+      (EventService.saveEvent as jest.Mock).mockResolvedValue(mockEvent);
 
       const request = new NextRequest(
         "http://localhost:3000/api/events/event-1",
@@ -120,7 +119,7 @@ describe("/api/events/[eventId]", () => {
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ event: mockEvent });
-      expect(mockEventService.saveEvent).toHaveBeenCalledWith(
+      expect(EventService.saveEvent).toHaveBeenCalledWith(
         "user-123",
         {
           title: "Updated Event",
@@ -150,7 +149,7 @@ describe("/api/events/[eventId]", () => {
       };
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockEventService.saveEvent.mockResolvedValue(mockEvent);
+      (EventService.saveEvent as jest.Mock).mockResolvedValue(mockEvent);
 
       const request = new NextRequest(
         "http://localhost:3000/api/events/event-1",
@@ -166,7 +165,7 @@ describe("/api/events/[eventId]", () => {
       });
 
       expect(response.status).toBe(200);
-      expect(mockEventService.saveEvent).toHaveBeenCalledWith(
+      expect(EventService.saveEvent).toHaveBeenCalledWith(
         "user-123",
         {
           title: "Updated Title Only",
@@ -179,7 +178,9 @@ describe("/api/events/[eventId]", () => {
       const mockUser = { id: "user-123" };
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockEventService.saveEvent.mockRejectedValue(new Error("Database error"));
+      (EventService.saveEvent as jest.Mock).mockRejectedValue(
+        new Error("Database error"),
+      );
 
       const request = new NextRequest(
         "http://localhost:3000/api/events/event-1",
@@ -223,7 +224,7 @@ describe("/api/events/[eventId]", () => {
       const mockUser = { id: "user-123" };
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockEventService.deleteEvent.mockResolvedValue(undefined);
+      (EventService.deleteEvent as jest.Mock).mockResolvedValue(undefined);
 
       const request = new NextRequest(
         "http://localhost:3000/api/events/event-1",
@@ -237,7 +238,7 @@ describe("/api/events/[eventId]", () => {
 
       expect(response.status).toBe(200);
       expect(await response.json()).toEqual({ success: true });
-      expect(mockEventService.deleteEvent).toHaveBeenCalledWith(
+      expect(EventService.deleteEvent).toHaveBeenCalledWith(
         "user-123",
         "event-1",
       );
@@ -247,7 +248,7 @@ describe("/api/events/[eventId]", () => {
       const mockUser = { id: "user-123" };
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockEventService.deleteEvent.mockRejectedValue(
+      (EventService.deleteEvent as jest.Mock).mockRejectedValue(
         new Error("Database error"),
       );
 

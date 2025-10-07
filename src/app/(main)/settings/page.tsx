@@ -45,7 +45,7 @@ interface UserSettingsData {
   reminderTime: number | null;
 }
 
-export function SettingsPage() {
+export default function SettingsPage() {
   const [googleIntegration, setGoogleIntegration] = useState<unknown>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

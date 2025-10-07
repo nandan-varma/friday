@@ -18,6 +18,22 @@ const config: Config = {
     "<rootDir>/.next/",
     "<rootDir>/e2e/",
   ],
+  coverageProvider: "v8",
+  collectCoverageFrom: [
+    "src/**/*.{js,jsx,ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/*.stories.{js,jsx,ts,tsx}",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 70,
+      functions: 70,
+      lines: 70,
+      statements: 70,
+    },
+  },
 };
 
 export default createJestConfig(config);

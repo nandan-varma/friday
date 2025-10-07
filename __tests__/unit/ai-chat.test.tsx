@@ -307,17 +307,17 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-getUpcomingEvents",
+            type: "tool-result",
             toolCallId: "call1",
-            state: "output-available",
-            output: [
+            toolName: "getUpcomingEvents",
+            result: [
               {
                 id: "event1",
                 title: "Meeting",
                 description: "Team meeting",
                 location: "Office",
-                startTime: new Date(),
-                endTime: new Date(),
+                startTime: new Date().toISOString(),
+                endTime: new Date().toISOString(),
                 isAllDay: false,
               },
             ],
@@ -352,16 +352,16 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-createEvent",
+            type: "tool-result",
             toolCallId: "call2",
-            state: "output-available",
-            output: {
+            toolName: "createEvent",
+            result: {
               id: "event2",
               title: "New Meeting",
               description: "Project discussion",
               location: "Conference Room",
-              startTime: new Date(),
-              endTime: new Date(),
+              startTime: new Date().toISOString(),
+              endTime: new Date().toISOString(),
               isAllDay: false,
             },
           },
@@ -394,9 +394,9 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-getUpcomingEvents",
+            type: "tool-call",
             toolCallId: "call3",
-            state: "input-streaming",
+            toolName: "getUpcomingEvents",
           },
         ],
       },
@@ -431,10 +431,10 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-createEvent",
+            type: "tool-error",
             toolCallId: "call4",
-            state: "output-error",
-            errorText: "Failed to create event",
+            toolName: "createEvent",
+            error: "Failed to create event",
           },
         ],
       },
@@ -467,10 +467,10 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-getEventStats",
+            type: "tool-result",
             toolCallId: "call5",
-            state: "output-available",
-            output: {
+            toolName: "getEventStats",
+            result: {
               totalEvents: 10,
               todayEvents: 2,
               upcomingEvents: 5,
@@ -509,17 +509,17 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-getUpcomingEvents",
+            type: "tool-result",
             toolCallId: "call6",
-            state: "output-available",
-            output: [
+            toolName: "getUpcomingEvents",
+            result: [
               {
                 id: "event3",
                 title: "Test Event",
                 description: "Test Description",
                 location: "Test Location",
-                startTime: new Date(),
-                endTime: new Date(),
+                startTime: new Date().toISOString(),
+                endTime: new Date().toISOString(),
                 isAllDay: false,
               },
             ],
@@ -549,8 +549,8 @@ describe("AIChat", () => {
       title: "Test Event",
       description: "Test Description",
       location: "Test Location",
-      startTime: expect.any(Date),
-      endTime: expect.any(Date),
+      startTime: expect.any(String),
+      endTime: expect.any(String),
       isAllDay: false,
     });
   });
@@ -562,16 +562,16 @@ describe("AIChat", () => {
         role: "assistant",
         parts: [
           {
-            type: "tool-createEvent",
+            type: "tool-result",
             toolCallId: "call7",
-            state: "output-available",
-            output: {
+            toolName: "createEvent",
+            result: {
               id: "event4",
               title: "Created Event",
               description: "Created Description",
               location: "Created Location",
-              startTime: new Date(),
-              endTime: new Date(),
+              startTime: new Date().toISOString(),
+              endTime: new Date().toISOString(),
               isAllDay: false,
             },
           },
@@ -600,8 +600,8 @@ describe("AIChat", () => {
       title: "Created Event",
       description: "Created Description",
       location: "Created Location",
-      startTime: expect.any(Date),
-      endTime: expect.any(Date),
+      startTime: expect.any(String),
+      endTime: expect.any(String),
       isAllDay: false,
     });
   });

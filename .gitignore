@@ -30,3 +30,6 @@ next-env.d.ts
 # e2e tests
 playwright-report/
 test-results/
+
+# coverage
+coverage/

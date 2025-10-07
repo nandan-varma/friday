@@ -176,7 +176,7 @@ describe("/api/chat", () => {
     });
 
     it("should return 401 when user is not authenticated", async () => {
-      mockAuth.api.getSession.mockResolvedValue(null);
+      mockAuth.auth.api.getSession.mockResolvedValue(null);
 
       const request = {
         json: () =>

@@ -3,7 +3,7 @@ import { EventService } from "../../src/lib/services/eventService";
 import { LocalIntegrationService } from "../../src/lib/services/localIntegrationService";
 
 // Mock the integration services
-jest.mock("../../src/lib/localIntegrationService", () => ({
+jest.mock("../../src/lib/services/localIntegrationService", () => ({
   LocalIntegrationService: {
     createEvent: jest.fn(),
     getEvents: jest.fn(),
@@ -12,7 +12,7 @@ jest.mock("../../src/lib/localIntegrationService", () => ({
   },
 }));
 
-jest.mock("../../src/lib/googleIntegrationService", () => ({
+jest.mock("../../src/lib/services/googleIntegrationService", () => ({
   GoogleIntegrationService: {
     getCalendarEvents: jest.fn(),
   },

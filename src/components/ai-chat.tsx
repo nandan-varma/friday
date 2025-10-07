@@ -15,6 +15,7 @@ import {
   UpcomingEvents,
   EventCreated,
   ToolLoading,
+  ToolError,
   EventData,
 } from "./ai-tool-components";
 
@@ -73,11 +74,20 @@ export function AIChat({ onEventClick }: AIChatProps) {
       type: string;
       toolName: string;
       result: unknown;
+      error?: string;
     };
 
     if (toolPart.type === "tool-call") {
       return (
         <ToolLoading key={toolPart.toolCallId} toolName={toolPart.toolName} />
+      );
+    } else if (toolPart.type === "tool-error") {
+      return (
+        <ToolError
+          key={toolPart.toolCallId}
+          toolName={toolPart.toolName}
+          error={toolPart.error || "Unknown error"}
+        />
       );
     } else if (toolPart.type === "tool-result") {
       switch (toolPart.toolName) {
@@ -357,7 +367,8 @@ export function AIChat({ onEventClick }: AIChatProps) {
                     .filter(
                       (part) =>
                         part.type === "tool-call" ||
-                        part.type === "tool-result",
+                        part.type === "tool-result" ||
+                        part.type === "tool-error",
                     )
                     .map((part) => renderToolPart(part))}
 

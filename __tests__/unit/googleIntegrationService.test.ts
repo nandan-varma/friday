@@ -1,5 +1,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+const originalEnv = process.env;
+
+beforeAll(() => {
+  process.env = {
+    ...originalEnv,
+    DATABASE_URL: "postgresql://test:test@localhost:5432/test",
+    AUTH_SECRET: "test-secret-key-for-testing-at-least-32-characters-long",
+    GOOGLE_CREDENTIALS: JSON.stringify({
+      web: {
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      },
+    }),
+    GOOGLE_REDIRECT_URI: "http://localhost:3000/api/auth/google/callback",
+  };
+  jest.resetModules();
+});
+
+// Mock env module
+jest.doMock("@/lib/env", () => ({
+  GOOGLE_CREDENTIALS: JSON.stringify({
+    web: {
+      client_id: "test-client-id",
+      client_secret: "test-client-secret",
+    },
+  }),
+  GOOGLE_REDIRECT_URI: "http://localhost:3000/api/auth/google/callback",
+}));
+
 import { GoogleIntegrationService } from "../../src/lib/services/googleIntegrationService";
+
+afterAll(() => {
+  process.env = originalEnv;
+});
+
+afterAll(() => {
+  process.env = originalEnv;
+});
 
 // Mock googleapis
 jest.mock("googleapis", () => ({
@@ -32,7 +69,7 @@ jest.mock("google-auth-library", () => ({
 }));
 
 // Mock database
-jest.mock("../../src/lib/db", () => ({
+jest.mock("@/lib/db", () => ({
   db: {
     transaction: jest.fn(),
     select: jest.fn(() => ({
@@ -51,6 +88,11 @@ jest.mock("../../src/lib/db", () => ({
     })),
     delete: jest.fn(() => ({
       where: jest.fn(),
+    })),
+    insert: jest.fn(() => ({
+      values: jest.fn(() => ({
+        returning: jest.fn(),
+      })),
     })),
   },
 }));
@@ -104,19 +146,29 @@ describe("GoogleIntegrationService", () => {
     });
 
     it("should throw error when credentials are invalid", async () => {
-      // Mock env to return invalid credentials
-      jest.doMock("../../src/lib/env", () => ({
-        GOOGLE_CREDENTIALS: "invalid-json",
-      }));
+      // Spy on getCredentials and mock it to throw an error
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockRejectedValue(
+        new Error("Invalid GOOGLE_CREDENTIALS: must be valid JSON"),
+      );
 
       await expect(GoogleIntegrationService.getAuthUrl()).rejects.toThrow(
-        "Invalid GOOGLE_CREDENTIALS: must be valid JSON",
+        "Failed to create OAuth2 client",
       );
+
+      spy.mockRestore();
     });
   });
 
   describe("exchangeCodeForTokens", () => {
     it("should exchange authorization code for tokens and save to database", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
       const mockOAuth2Client = {
         getToken: jest.fn().mockResolvedValue({
           tokens: {
@@ -130,7 +182,7 @@ describe("GoogleIntegrationService", () => {
       (google.auth.OAuth2 as any).mockImplementation(() => mockOAuth2Client);
 
       // Mock database transaction
-      const mockTransaction = jest.fn().mockImplementation(async (callback) => {
+      const mockTransaction = jest.fn(async (callback) => {
         // Mock no existing integration
         const mockSelect = jest.fn(() => ({
           from: jest.fn(() => ({
@@ -176,14 +228,23 @@ describe("GoogleIntegrationService", () => {
         refreshToken: "test-refresh-token",
         expiresAt: expect.any(Date),
       });
+
+      spy.mockRestore();
     });
 
     it("should update existing integration when one exists", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
       const mockOAuth2Client = {
         getToken: jest.fn().mockResolvedValue({
           tokens: {
-            access_token: "new-access-token",
-            refresh_token: "new-refresh-token",
+            access_token: "test-access-token",
+            refresh_token: "test-refresh-token",
             expiry_date: Date.now() + 3600000,
           },
         }),
@@ -238,9 +299,18 @@ describe("GoogleIntegrationService", () => {
       );
 
       expect(result.accessToken).toBe("new-access-token");
+
+      spy.mockRestore();
     });
 
     it("should throw error when no access token received", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
       const mockOAuth2Client = {
         getToken: jest.fn().mockResolvedValue({
           tokens: {
@@ -254,7 +324,9 @@ describe("GoogleIntegrationService", () => {
 
       await expect(
         GoogleIntegrationService.exchangeCodeForTokens("auth-code", "user1"),
-      ).rejects.toThrow("No access token received from Google");
+      ).rejects.toThrow("Failed to exchange authorization code for tokens");
+
+      spy.mockRestore();
     });
   });
 
@@ -344,6 +416,13 @@ describe("GoogleIntegrationService", () => {
     });
 
     it("should create authenticated client with valid integration", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
       const mockIntegration = {
         id: 1,
         userId: "user1",
@@ -376,9 +455,18 @@ describe("GoogleIntegrationService", () => {
         refresh_token: "refresh-token",
         expiry_date: mockIntegration.expiresAt.getTime(),
       });
+
+      spy.mockRestore();
     });
 
     it("should refresh token when expired", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
       const mockIntegration = {
         id: 1,
         userId: "user1",
@@ -422,6 +510,8 @@ describe("GoogleIntegrationService", () => {
 
       expect(mockOAuth2Client.refreshAccessToken).toHaveBeenCalled();
       expect(db.update).toHaveBeenCalled();
+
+      spy.mockRestore();
     });
   });
 
@@ -695,16 +785,15 @@ describe("GoogleIntegrationService", () => {
 
   describe("disconnectIntegration", () => {
     it("should delete integration from database", async () => {
-      const mockDelete = jest.fn(() => ({
-        where: jest.fn(),
-      }));
-
-      (db.delete as any).mockImplementation(mockDelete);
+      const mockWhere = jest.fn();
+      (db.delete as jest.Mock).mockReturnValue({
+        where: mockWhere,
+      });
 
       await GoogleIntegrationService.disconnectIntegration("user1");
 
       expect(db.delete).toHaveBeenCalled();
-      expect(mockDelete().where).toHaveBeenCalled();
+      expect(mockWhere).toHaveBeenCalled();
     });
   });
 });
