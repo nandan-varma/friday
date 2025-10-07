@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { signupUser, loginUser, TEST_USER } from "./test-helpers";
 
 test.describe("Authentication", () => {
   test("login page loads correctly", async ({ page }) => {
@@ -102,17 +103,26 @@ test.describe("Authentication", () => {
     await expect(page.getByText("Sign up")).toBeVisible();
   });
 
-  test("redirect to dashboard after successful login", async ({ page }) => {
-    // This test assumes you have a way to authenticate
-    // In a real scenario, you might need to set up test users or mock authentication
+  test("user can sign up", async ({ page }) => {
+    await signupUser(page, TEST_USER.email, TEST_USER.password, TEST_USER.name);
 
-    await page.goto("/login");
+    // Should redirect to dashboard after signup
+    await expect(page.url()).toContain("/dashboard");
+    await expect(page.getByText("Welcome")).toBeVisible();
+  });
 
-    // For now, just check that the form exists
-    // In a full implementation, you'd fill credentials and submit
-    await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
+  test("user can login after signup", async ({ page }) => {
+    // First signup
+    await signupUser(page, TEST_USER.email, TEST_USER.password, TEST_USER.name);
+    await expect(page.url()).toContain("/dashboard");
 
-    // TODO: Add actual login test when authentication is set up
+    // Then logout
+    await page.goto("/logout");
+    await expect(page.url()).toContain("/login");
+
+    // Then login
+    await loginUser(page, TEST_USER.email, TEST_USER.password);
+    await expect(page.url()).toContain("/dashboard");
   });
 
   test("logout functionality", async ({ page }) => {

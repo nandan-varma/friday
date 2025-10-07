@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { test, expect } from "@playwright/test";
+import { loginUser, TEST_USER } from "./test-helpers";
 
 test.describe("Dashboard", () => {
   test("dashboard redirects to login when not authenticated", async ({
@@ -12,23 +12,28 @@ test.describe("Dashboard", () => {
   });
 
   test("dashboard loads when authenticated", async ({ page }) => {
-    // TODO: Add authentication setup
-    // For now, just test the structure assuming authentication works
-    // This test would need authentication to be properly implemented
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // await expect(page.getByRole("heading", { name: /dashboard/i })).toBeVisible();
+    await loginUser(page, TEST_USER.email, TEST_USER.password);
+
+    // Should be on dashboard
+    await expect(page.url()).toContain("/dashboard");
+    await expect(page.getByText("Calendar")).toBeVisible();
   });
 
   test("navigation between dashboard sections", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // Test navigation to different sections
-    // await page.goto("/dashboard");
+    await loginUser(page, TEST_USER.email, TEST_USER.password);
+
     // Check navigation elements exist
-    // await expect(page.getByRole("link", { name: /calendar/i })).toBeVisible();
-    // await expect(page.getByRole("link", { name: /ai chat/i })).toBeVisible();
-    // await expect(page.getByRole("link", { name: /settings/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /calendar/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /ai chat/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /settings/i })).toBeVisible();
+
+    // Navigate to AI chat
+    await page.getByRole("link", { name: /ai chat/i }).click();
+    await expect(page.url()).toContain("/dashboard/ai");
+
+    // Navigate back to dashboard
+    await page.getByRole("link", { name: /calendar/i }).click();
+    await expect(page.url()).toContain("/dashboard");
   });
 
   test("AI chat page loads", async ({ page }) => {
@@ -40,14 +45,15 @@ test.describe("Dashboard", () => {
   });
 
   test("AI chat interface elements", async ({ page }) => {
-    // TODO: Add authentication and test actual chat interface
-    // await loginUser(page);
-    // await page.goto("/dashboard/ai");
+    await loginUser(page, TEST_USER.email, TEST_USER.password);
+    await page.goto("/dashboard/ai");
+
     // Check for chat input
-    // const chatInput = page.locator('textarea[placeholder*="message"]');
-    // await expect(chatInput).toBeVisible();
+    const chatInput = page.locator('textarea[placeholder*="message"]');
+    await expect(chatInput).toBeVisible();
+
     // Check for send button
-    // await expect(page.getByRole("button", { name: /send/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /send/i })).toBeVisible();
   });
 
   test("settings page loads", async ({ page }) => {

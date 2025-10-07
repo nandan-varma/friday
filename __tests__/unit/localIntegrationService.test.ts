@@ -162,6 +162,41 @@ describe("LocalIntegrationService", () => {
       expect(mockOffset).toHaveBeenCalledWith(5);
     });
 
+    it("should apply multiple filters correctly", async () => {
+      const filters: EventFilters = {
+        startDate: "2023-10-01",
+        endDate: "2023-10-31",
+        limit: 20,
+        offset: 10,
+      };
+
+      // Mock the query chain
+      const mockLimit = jest.fn().mockResolvedValue([]);
+      const mockOffset = jest.fn().mockReturnValue({ limit: mockLimit });
+      const mockOrderBy = jest.fn().mockReturnValue({ offset: mockOffset });
+      const mockWhere = jest.fn().mockReturnValue({ orderBy: mockOrderBy });
+      const mockFrom = jest.fn().mockReturnValue({ where: mockWhere });
+      (db.select as jest.Mock).mockReturnValue({ from: mockFrom });
+
+      (eq as jest.Mock).mockReturnValue("user_condition");
+      (gte as jest.Mock).mockReturnValue("start_condition");
+      (lte as jest.Mock).mockReturnValue("end_condition");
+      (and as jest.Mock).mockReturnValue("where_condition");
+
+      await LocalIntegrationService.getEvents("user1", filters);
+
+      expect(gte).toHaveBeenCalledWith(
+        expect.any(Object),
+        new Date("2023-10-01"),
+      );
+      expect(lte).toHaveBeenCalledWith(
+        expect.any(Object),
+        new Date("2023-10-31"),
+      );
+      expect(mockOffset).toHaveBeenCalledWith(10);
+      expect(mockLimit).toHaveBeenCalledWith(20);
+    });
+
     it("should throw error on database failure", async () => {
       // Mock the query chain to throw error
       const mockOrderBy = jest
@@ -569,6 +604,50 @@ describe("LocalIntegrationService", () => {
       );
 
       expect(result).toHaveLength(2);
+    });
+
+    it("should handle empty search term", async () => {
+      const mockEvents = [
+        {
+          id: 1,
+          userId: "user1",
+          title: "Meeting",
+          startTime: new Date(),
+          endTime: new Date(),
+          isAllDay: false,
+          recurrence: "none" as const,
+        },
+      ];
+
+      jest
+        .spyOn(LocalIntegrationService, "getEvents")
+        .mockResolvedValue(mockEvents);
+
+      const result = await LocalIntegrationService.searchEvents("user1", "");
+
+      expect(result).toHaveLength(1);
+    });
+
+    it("should handle special characters in search", async () => {
+      const mockEvents = [
+        {
+          id: 1,
+          userId: "user1",
+          title: "Meeting @ Office",
+          startTime: new Date(),
+          endTime: new Date(),
+          isAllDay: false,
+          recurrence: "none" as const,
+        },
+      ];
+
+      jest
+        .spyOn(LocalIntegrationService, "getEvents")
+        .mockResolvedValue(mockEvents);
+
+      const result = await LocalIntegrationService.searchEvents("user1", "@");
+
+      expect(result).toHaveLength(1);
     });
   });
 

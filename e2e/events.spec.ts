@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { loginUser, TEST_USER } from "./test-helpers";
 
 test.describe("Event Management", () => {
   test("event creation form loads", async ({ page }) => {
@@ -17,18 +18,31 @@ test.describe("Event Management", () => {
   });
 
   test("create new event", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
+    await loginUser(page, TEST_USER.email, TEST_USER.password);
+
     // Open create event form
-    // await page.getByRole("button", { name: /create event/i }).click();
+    await page.getByRole("button", { name: /create event/i }).click();
+
     // Fill form
-    // await page.getByLabel(/title/i).fill("Test Event");
-    // await page.getByLabel(/description/i).fill("Test Description");
-    // await page.getByLabel(/location/i).fill("Test Location");
+    await page.getByLabel(/title/i).fill("Test Event");
+    await page.getByLabel(/description/i).fill("Test Description");
+    await page.getByLabel(/location/i).fill("Test Location");
+
     // Set start time (today at 10 AM)
-    // const today = new Date();
-    // const startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0);
+    const today = new Date();
+    const startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0);
+    const endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0);
+
+    // Fill time inputs
+    await page.getByLabel(/start time/i).fill(startTime.toISOString().slice(0, 16));
+    await page.getByLabel(/end time/i).fill(endTime.toISOString().slice(0, 16));
+
+    // Submit form
+    await page.getByRole("button", { name: /create/i }).click();
+
+    // Check that event appears in calendar
+    await expect(page.getByText("Test Event")).toBeVisible();
+  });
     // const endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0);
     // await page.getByLabel(/start time/i).fill(startTime.toISOString().slice(0, 16));
     // await page.getByLabel(/end time/i).fill(endTime.toISOString().slice(0, 16));

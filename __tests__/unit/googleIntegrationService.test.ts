@@ -513,6 +513,49 @@ describe("GoogleIntegrationService", () => {
 
       spy.mockRestore();
     });
+
+    it("should throw error when token refresh fails", async () => {
+      // Mock getCredentials to return valid credentials
+      const spy = jest.spyOn(GoogleIntegrationService as any, "getCredentials");
+      spy.mockResolvedValue({
+        client_id: "test-client-id",
+        client_secret: "test-client-secret",
+      });
+
+      const mockIntegration = {
+        id: 1,
+        userId: "user1",
+        accessToken: "expired-token",
+        refreshToken: "refresh-token",
+        expiresAt: new Date(Date.now() - 1000), // Past date
+      };
+
+      const mockOAuth2Client = {
+        setCredentials: jest.fn(),
+        refreshAccessToken: jest
+          .fn()
+          .mockRejectedValue(new Error("Refresh failed")),
+      };
+
+      const mockSelect = jest.fn(() => ({
+        from: jest.fn(() => ({
+          where: jest.fn(() => ({
+            limit: jest.fn().mockResolvedValue([mockIntegration]),
+          })),
+        })),
+      }));
+
+      (db.select as any).mockImplementation(mockSelect);
+      (google.auth.OAuth2 as any).mockImplementation(() => mockOAuth2Client);
+
+      await expect(
+        GoogleIntegrationService.createAuthenticatedClient("user1"),
+      ).rejects.toThrow("Refresh failed");
+
+      expect(mockOAuth2Client.refreshAccessToken).toHaveBeenCalled();
+
+      spy.mockRestore();
+    });
   });
 
   describe("hasValidIntegration", () => {
@@ -633,6 +676,23 @@ describe("GoogleIntegrationService", () => {
       await expect(
         GoogleIntegrationService.getCalendarEvents("user1"),
       ).rejects.toThrow("Google Calendar not connected or invalid credentials");
+    });
+
+    it("should handle API errors gracefully", async () => {
+      const mockOAuth2Client = {};
+      const mockEvents = {
+        list: jest.fn().mockRejectedValue(new Error("API rate limit exceeded")),
+      };
+      const mockCalendar = { events: mockEvents };
+
+      jest
+        .spyOn(GoogleIntegrationService, "createAuthenticatedClient")
+        .mockResolvedValue(mockOAuth2Client as any);
+      (google.calendar as jest.Mock).mockReturnValue(mockCalendar);
+
+      await expect(
+        GoogleIntegrationService.getCalendarEvents("user1"),
+      ).rejects.toThrow("Failed to fetch Google Calendar events");
     });
   });
 

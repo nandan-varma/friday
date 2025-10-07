@@ -297,5 +297,85 @@ describe("/api/chat", () => {
         stopWhen: "mock-stop-condition",
       });
     });
+
+    it("should handle tool execution errors gracefully", async () => {
+      const mockUser = { id: "user-123", name: "Test User" };
+      mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
+
+      // Mock streamText to simulate tool call that fails
+      const mockStreamResult = {
+        toUIMessageStreamResponse: jest
+          .fn()
+          .mockReturnValue(new Response("error response", { status: 500 })),
+      };
+      mockStreamText.mockReturnValue(mockStreamResult);
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            messages: [{ role: "user", content: "Create an event" }],
+          }),
+      } as any;
+
+      const response = await POST(request);
+      expect(response.status).toBe(500);
+    });
+
+    it("should validate tool parameters", async () => {
+      const mockUser = { id: "user-123", name: "Test User" };
+      mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
+
+      const mockStreamResult = {
+        toUIMessageStreamResponse: jest
+          .fn()
+          .mockReturnValue(new Response("stream response", { status: 200 })),
+      };
+      mockStreamText.mockReturnValue(mockStreamResult);
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            messages: [{ role: "user", content: "Show my events" }],
+          }),
+      } as any;
+
+      await POST(request);
+
+      // Verify tools are properly configured
+      expect(mockStreamText).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tools: expect.objectContaining({
+            getUpcomingEvents: expect.any(Object),
+            createEvent: expect.any(Object),
+            getTodayEvents: expect.any(Object),
+            searchEvents: expect.any(Object),
+            getEventStats: expect.any(Object),
+          }),
+        }),
+      );
+    });
+
+    it("should handle streaming response correctly", async () => {
+      const mockUser = { id: "user-123", name: "Test User" };
+      mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
+
+      const mockStreamResult = {
+        toUIMessageStreamResponse: jest
+          .fn()
+          .mockReturnValue(new Response("streaming data", { status: 200 })),
+      };
+      mockStreamText.mockReturnValue(mockStreamResult);
+
+      const request = {
+        json: () =>
+          Promise.resolve({
+            messages: [{ role: "user", content: "Hello" }],
+          }),
+      } as any;
+
+      const response = await POST(request);
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe("streaming data");
+    });
   });
 });

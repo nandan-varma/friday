@@ -46,12 +46,6 @@ jest.mock("../../src/lib/services/googleIntegrationService", () => ({
   },
 }));
 
-jest.mock("../../src/lib/validation", () => ({
-  validateEventData: jest.fn(),
-  handleValidationError: jest.fn(),
-  sanitizeString: jest.fn((str) => str),
-}));
-
 jest.mock("next/cache", () => ({
   revalidatePath: jest.fn(),
 }));
@@ -70,7 +64,6 @@ const mockProfileService =
   require("../../src/lib/services/profileService") as any;
 const mockGoogleService =
   require("../../src/lib/services/googleIntegrationService") as any;
-const mockValidation = require("../../src/lib/validation") as any;
 const mockCache = require("next/cache") as any;
 const mockNavigation = require("next/navigation") as any;
 
@@ -88,17 +81,19 @@ describe("Actions", () => {
       mockFormData.append("endTime", "2024-01-01T11:00:00Z");
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockValidation.validateEventData.mockReturnValue({
-        success: true,
-        data: {},
-      });
       mockEventService.EventService.saveEvent.mockResolvedValue({});
 
       await expect(createEvent(mockFormData)).resolves.toBeUndefined();
 
       expect(mockEventService.EventService.saveEvent).toHaveBeenCalledWith(
         "user-123",
-        {},
+        expect.objectContaining({
+          title: "Test Event",
+          startTime: new Date("2024-01-01T10:00:00Z"),
+          endTime: new Date("2024-01-01T11:00:00Z"),
+          isAllDay: false,
+          recurrence: "none",
+        }),
       );
       expect(mockCache.revalidatePath).toHaveBeenCalledWith("/dashboard");
     });
@@ -131,20 +126,13 @@ describe("Actions", () => {
       const mockUser = { id: "user-123" };
       const mockFormData = new FormData();
       mockFormData.append("title", "Test Event");
-      mockFormData.append("startTime", "2024-01-01T10:00:00Z");
-      mockFormData.append("endTime", "2024-01-01T11:00:00Z");
+      mockFormData.append("startTime", "2024-01-01T11:00:00Z");
+      mockFormData.append("endTime", "2024-01-01T10:00:00Z");
 
       mockAuth.auth.api.getSession.mockResolvedValue({ user: mockUser });
-      mockValidation.validateEventData.mockReturnValue({
-        success: false,
-        error: {},
-      });
-      mockValidation.handleValidationError.mockImplementation(
-        () => new Error("Validation failed"),
-      );
 
       await expect(createEvent(mockFormData)).rejects.toThrow(
-        "Validation failed",
+        "End time must be after start time",
       );
     });
   });
