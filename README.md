@@ -68,22 +68,26 @@ This application includes full Google Calendar integration with OAuth 2.0 authen
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd friday
    ```
 
 2. **Install dependencies**
+
    ```bash
    pnpm install
    ```
 
 3. **Set up environment variables**
+
    ```bash
    cp .env.example .env.local
    ```
-   
+
    Fill in your environment variables:
+
    ```env
    DATABASE_URL="your-database-url"
    AUTH_SECRET="your-auth-secret"
@@ -93,12 +97,14 @@ This application includes full Google Calendar integration with OAuth 2.0 authen
    ```
 
 4. **Set up the database**
+
    ```bash
    pnpm db:generate
    pnpm db:migrate
    ```
 
 5. **Run the development server**
+
    ```bash
    pnpm dev
    ```
@@ -135,21 +141,69 @@ This application includes full Google Calendar integration with OAuth 2.0 authen
 ## API Endpoints
 
 ### Google Calendar Integration
+
 - `GET /api/integrations/google/auth` - Get OAuth authorization URL
 - `POST /api/integrations/google/callback` - Handle OAuth callback
 - `GET /api/integrations/google/status` - Check connection status
 - `GET /api/integrations/google/events` - Fetch Google Calendar events
 
 ### Events
+
 - `GET /api/events` - Get user events
 - `POST /api/events` - Create new event
 - `PUT /api/events/[id]` - Update event
 - `DELETE /api/events/[id]` - Delete event
 
 ### AI Features
+
 - `POST /api/chat` - AI assistant chat
 - `POST /api/ai/parse-event` - Parse natural language to event
 - `POST /api/ai/suggest-time` - Get time suggestions
+
+## Testing
+
+This project includes comprehensive testing with unit tests, integration tests, and end-to-end tests.
+
+### Running Tests
+
+```bash
+# Run all tests
+pnpm test
+
+# Run unit tests only
+pnpm run test
+
+# Run E2E tests
+pnpm run test:e2e
+
+# Run E2E tests with UI
+pnpm run test:e2e:ui
+```
+
+### Test Structure
+
+- **Unit Tests** (`__tests__/unit/`): Test individual components and utilities
+- **Integration Tests** (`__tests__/integration/`): Test API endpoints and database interactions
+- **E2E Tests** (`e2e/`): Full browser tests using Playwright
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and testing. The CI pipeline runs on every push and pull request to any branch.
+
+### CI Pipeline
+
+The CI workflow includes:
+
+- **Linting**: ESLint code quality checks
+- **Type Checking**: TypeScript compilation verification
+- **Build**: Next.js production build
+- **Unit Tests**: Jest test suite
+- **E2E Tests**: Playwright browser tests
+
+### Test Reports
+
+- Playwright HTML reports are uploaded as artifacts on test failures
+- Test results are available in the Actions tab of the repository
 
 ## Contributing
 
@@ -166,11 +220,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Support
 
 If you encounter any issues or have questions:
+
 1. Check the [setup documentation](./GOOGLE_CALENDAR_SETUP.md)
 2. Review the environment variable configuration
 3. Ensure all required APIs are enabled in Google Cloud Console
 
 For Google Calendar integration issues, verify:
+
 - OAuth credentials are correctly configured
 - Redirect URIs match your environment
 - Google Calendar API is enabled
