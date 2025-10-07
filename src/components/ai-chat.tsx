@@ -10,18 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import { Send, Bot, User, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "@ai-sdk/react";
-import {
-  DefaultChatTransport,
-  type UIMessage,
-  type ToolCallPart,
-  type ToolResultPart,
-  type TextPart,
-} from "ai";
+import { DefaultChatTransport, type TextPart } from "ai";
 import {
   UpcomingEvents,
   EventCreated,
   ToolLoading,
-  ToolError,
   EventData,
 } from "./ai-tool-components";
 
@@ -74,16 +67,34 @@ export function AIChat({ onEventClick }: AIChatProps) {
     });
   };
 
-  const renderToolPart = (part: any) => {
-    if (part.type === "tool-call") {
-      return <ToolLoading key={part.toolCallId} toolName={part.toolName} />;
-    } else if (part.type === "tool-result") {
-      switch (part.toolName) {
+  const renderToolPart = (part: unknown) => {
+    const toolPart = part as {
+      toolCallId: string;
+      type: string;
+      toolName: string;
+      result: unknown;
+    };
+
+    if (toolPart.type === "tool-call") {
+      return (
+        <ToolLoading key={toolPart.toolCallId} toolName={toolPart.toolName} />
+      );
+    } else if (toolPart.type === "tool-result") {
+      switch (toolPart.toolName) {
         case "getUpcomingEvents": {
+          const events = toolPart.result as Array<{
+            id: string;
+            title: string;
+            description?: string;
+            location?: string;
+            startTime: string;
+            endTime: string;
+            isAllDay?: boolean;
+          }>;
           return (
             <UpcomingEvents
-              key={part.toolCallId}
-              events={(part.result as any[]).map((event: any) => ({
+              key={toolPart.toolCallId}
+              events={events.map((event) => ({
                 id: event.id,
                 title: event.title,
                 description: event.description,
@@ -92,17 +103,26 @@ export function AIChat({ onEventClick }: AIChatProps) {
                 endTime: event.endTime,
                 isAllDay: event.isAllDay,
               }))}
-              count={(part.result as any[]).length}
+              count={events.length}
               onEventClick={onEventClick}
             />
           );
         }
 
         case "getTodayEvents": {
+          const events = toolPart.result as Array<{
+            id: string;
+            title: string;
+            description?: string;
+            location?: string;
+            startTime: string;
+            endTime: string;
+            isAllDay?: boolean;
+          }>;
           return (
             <UpcomingEvents
-              key={part.toolCallId}
-              events={(part.result as any[]).map((event: any) => ({
+              key={toolPart.toolCallId}
+              events={events.map((event) => ({
                 id: event.id,
                 title: event.title,
                 description: event.description,
@@ -111,24 +131,33 @@ export function AIChat({ onEventClick }: AIChatProps) {
                 endTime: event.endTime,
                 isAllDay: event.isAllDay,
               }))}
-              count={(part.result as any[]).length}
+              count={events.length}
               onEventClick={onEventClick}
             />
           );
         }
 
         case "createEvent": {
+          const event = toolPart.result as {
+            id: string;
+            title: string;
+            description?: string;
+            location?: string;
+            startTime: string;
+            endTime: string;
+            isAllDay?: boolean;
+          };
           return (
             <EventCreated
-              key={part.toolCallId}
+              key={toolPart.toolCallId}
               event={{
-                id: (part.result as any).id,
-                title: (part.result as any).title,
-                description: (part.result as any).description,
-                location: (part.result as any).location,
-                startTime: (part.result as any).startTime,
-                endTime: (part.result as any).endTime,
-                isAllDay: (part.result as any).isAllDay,
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                startTime: event.startTime,
+                endTime: event.endTime,
+                isAllDay: event.isAllDay,
               }}
               onEventClick={onEventClick}
             />
@@ -136,10 +165,19 @@ export function AIChat({ onEventClick }: AIChatProps) {
         }
 
         case "searchEvents": {
+          const events = toolPart.result as Array<{
+            id: string;
+            title: string;
+            description?: string;
+            location?: string;
+            startTime: string;
+            endTime: string;
+            isAllDay?: boolean;
+          }>;
           return (
             <UpcomingEvents
-              key={part.toolCallId}
-              events={(part.result as any[]).map((event: any) => ({
+              key={toolPart.toolCallId}
+              events={events.map((event) => ({
                 id: event.id,
                 title: event.title,
                 description: event.description,
@@ -148,15 +186,22 @@ export function AIChat({ onEventClick }: AIChatProps) {
                 endTime: event.endTime,
                 isAllDay: event.isAllDay,
               }))}
-              count={(part.result as any[]).length}
+              count={events.length}
               onEventClick={onEventClick}
             />
           );
         }
 
         case "getEventStats": {
+          const stats = toolPart.result as {
+            totalEvents: number;
+            todayEvents: number;
+            upcomingEvents: number;
+            localEvents: number;
+            googleEvents: number;
+          };
           return (
-            <Card key={part.toolCallId}>
+            <Card key={toolPart.toolCallId}>
               <CardHeader>
                 <CardTitle>Calendar Statistics</CardTitle>
               </CardHeader>
@@ -164,7 +209,7 @@ export function AIChat({ onEventClick }: AIChatProps) {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold">
-                      {(part.result as any).totalEvents}
+                      {stats.totalEvents}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Total Events
@@ -172,13 +217,13 @@ export function AIChat({ onEventClick }: AIChatProps) {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">
-                      {(part.result as any).todayEvents}
+                      {stats.todayEvents}
                     </div>
                     <div className="text-sm text-muted-foreground">Today</div>
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">
-                      {(part.result as any).upcomingEvents}
+                      {stats.upcomingEvents}
                     </div>
                     <div className="text-sm text-muted-foreground">
                       Upcoming (7 days)
@@ -186,8 +231,7 @@ export function AIChat({ onEventClick }: AIChatProps) {
                   </div>
                   <div className="text-center">
                     <div className="text-2xl font-bold">
-                      {(part.result as any).localEvents +
-                        (part.result as any).googleEvents}
+                      {stats.localEvents + stats.googleEvents}
                     </div>
                     <div className="text-sm text-muted-foreground">Sources</div>
                   </div>
