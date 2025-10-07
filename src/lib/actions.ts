@@ -10,84 +10,142 @@ import { auth } from '@/lib/auth'
 
 // Event Actions
 export async function createEvent(formData: FormData) {
-  'use server'
+   'use server'
 
-  try {
-    // Get the current user session
-    const session = await auth.api.getSession({
-      headers: await import('next/headers').then(m => m.headers())
-    })
+   try {
+      // Get the current user session
+      const session = await auth.api.getSession({
+         headers: await import('next/headers').then(m => m.headers())
+      })
 
-    if (!session?.user) {
-      throw new Error('Unauthorized')
-    }
+      if (!session?.user) {
+         throw new Error('Unauthorized')
+      }
 
-    const title = formData.get('title') as string
-    const description = formData.get('description') as string
-    const location = formData.get('location') as string
-    const startTime = new Date(formData.get('startTime') as string)
-    const endTime = new Date(formData.get('endTime') as string)
-    const isAllDay = formData.get('isAllDay') === 'true'
-    const recurrence = formData.get('recurrence') as string
+      const title = formData.get('title') as string
+      const description = formData.get('description') as string
+      const location = formData.get('location') as string
+      const startTimeStr = formData.get('startTime') as string
+      const endTimeStr = formData.get('endTime') as string
+      const isAllDay = formData.get('isAllDay') === 'true'
+      const recurrenceInput = formData.get('recurrence') as string
 
-    const eventData = {
-      title,
-      description: description || null,
-      location: location || null,
-      startTime,
-      endTime,
-      isAllDay,
-      recurrence
-    }
+      // Validate recurrence
+      const validRecurrences = ["none", "daily", "weekly", "monthly", "yearly"] as const
+      if (recurrenceInput && !validRecurrences.includes(recurrenceInput as any)) {
+         throw new Error('Invalid recurrence value')
+      }
+      const recurrence = recurrenceInput as "none" | "daily" | "weekly" | "monthly" | "yearly" | undefined
 
-    await EventService.saveEvent(session.user.id, eventData)
+      // Validation
+      if (!title?.trim()) {
+         throw new Error('Title is required')
+      }
+      if (!startTimeStr) {
+         throw new Error('Start time is required')
+      }
+      if (!endTimeStr) {
+         throw new Error('End time is required')
+      }
 
-    revalidatePath('/dashboard')
-  } catch (error) {
-    console.error('Error creating event:', error)
-    throw new Error('Failed to create event')
-  }
+      const startTime = new Date(startTimeStr)
+      const endTime = new Date(endTimeStr)
+
+      if (isNaN(startTime.getTime())) {
+         throw new Error('Invalid start time')
+      }
+      if (isNaN(endTime.getTime())) {
+         throw new Error('Invalid end time')
+      }
+      if (startTime >= endTime) {
+         throw new Error('End time must be after start time')
+      }
+
+      const eventData = {
+         title: title.trim(),
+         description: description?.trim() || null,
+         location: location?.trim() || null,
+         startTime,
+         endTime,
+         isAllDay,
+         recurrence
+      }
+
+      await EventService.saveEvent(session.user.id, eventData)
+
+      revalidatePath('/dashboard')
+   } catch (error) {
+      console.error('Error creating event:', error)
+      throw error instanceof Error ? error : new Error('Failed to create event')
+   }
 }
 
 export async function updateEvent(formData: FormData) {
-  'use server'
+   'use server'
 
-  try {
-    // Get the current user session
-    const session = await auth.api.getSession({
-      headers: await import('next/headers').then(m => m.headers())
-    })
+   try {
+      // Get the current user session
+      const session = await auth.api.getSession({
+         headers: await import('next/headers').then(m => m.headers())
+      })
 
-    if (!session?.user) {
-      throw new Error('Unauthorized')
-    }
+      if (!session?.user) {
+         throw new Error('Unauthorized')
+      }
 
-    const eventId = formData.get('eventId') as string
-    const title = formData.get('title') as string
-    const description = formData.get('description') as string
-    const location = formData.get('location') as string
-    const startTime = new Date(formData.get('startTime') as string)
-    const endTime = new Date(formData.get('endTime') as string)
-    const isAllDay = formData.get('isAllDay') === 'true'
-    const recurrence = formData.get('recurrence') as "none" | "daily" | "weekly" | "monthly" | "yearly"
+      const eventId = formData.get('eventId') as string
+      const title = formData.get('title') as string
+      const description = formData.get('description') as string
+      const location = formData.get('location') as string
+      const startTimeStr = formData.get('startTime') as string
+      const endTimeStr = formData.get('endTime') as string
+      const isAllDay = formData.get('isAllDay') === 'true'
+      const recurrence = formData.get('recurrence') as "none" | "daily" | "weekly" | "monthly" | "yearly"
 
-    const eventData = {
-      title,
-      description: description || null,
-      location: location || null,
-      startTime,
-      endTime,
-      isAllDay,
-      recurrence
-    }
+      // Validation
+      if (!eventId?.trim()) {
+         throw new Error('Event ID is required')
+      }
+      if (!title?.trim()) {
+         throw new Error('Title is required')
+      }
+      if (!startTimeStr) {
+         throw new Error('Start time is required')
+      }
+      if (!endTimeStr) {
+         throw new Error('End time is required')
+      }
 
-    await EventService.saveEvent(session.user.id, eventData, { eventId })
+      const startTime = new Date(startTimeStr)
+      const endTime = new Date(endTimeStr)
 
-    revalidatePath('/dashboard')
-  } catch (error) {
-    console.error('Error updating event:', error)
-    throw new Error('Failed to update event')
-  }
+      if (isNaN(startTime.getTime())) {
+         throw new Error('Invalid start time')
+      }
+      if (isNaN(endTime.getTime())) {
+         throw new Error('Invalid end time')
+      }
+      if (startTime >= endTime) {
+         throw new Error('End time must be after start time')
+      }
+
+      const eventData = {
+         title: title.trim(),
+         description: description?.trim() || null,
+         location: location?.trim() || null,
+         startTime,
+         endTime,
+         isAllDay,
+         recurrence
+      }
+
+      await EventService.saveEvent(session.user.id, eventData, { eventId })
+
+      revalidatePath('/dashboard')
+   } catch (error) {
+      console.error('Error updating event:', error)
+      throw error instanceof Error ? error : new Error('Failed to update event')
+   }
 }
 
 export async function deleteEvent(formData: FormData) {
@@ -116,64 +174,79 @@ export async function deleteEvent(formData: FormData) {
 
 // Profile Actions
 export async function updateProfile(formData: FormData) {
-  'use server'
+   'use server'
 
-  try {
-    // Get the current user session
-    const session = await auth.api.getSession({
-      headers: await import('next/headers').then(m => m.headers())
-    })
+   try {
+      // Get the current user session
+      const session = await auth.api.getSession({
+         headers: await import('next/headers').then(m => m.headers())
+      })
 
-    if (!session?.user) {
-      throw new Error('Unauthorized')
-    }
+      if (!session?.user) {
+         throw new Error('Unauthorized')
+      }
 
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
+      const name = formData.get('name') as string
+      const email = formData.get('email') as string
 
-    await updateUserProfile(session.user.id, {
-      name: name || undefined,
-      email: email || undefined
-    })
+      // Validation
+      if (name && name.trim().length < 2) {
+         throw new Error('Name must be at least 2 characters long')
+      }
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+         throw new Error('Invalid email format')
+      }
 
-    revalidatePath('/dashboard')
-  } catch (error) {
-    console.error('Error updating profile:', error)
-    throw new Error('Failed to update profile')
-  }
+      await updateUserProfile(session.user.id, {
+         name: name?.trim() || undefined,
+         email: email?.trim() || undefined
+      })
+
+      revalidatePath('/dashboard')
+   } catch (error) {
+      console.error('Error updating profile:', error)
+      throw error instanceof Error ? error : new Error('Failed to update profile')
+   }
 }
 
 // Settings Actions
 export async function updateSettings(formData: FormData) {
-  'use server'
+   'use server'
 
-  try {
-    // Get the current user session
-    const session = await auth.api.getSession({
-      headers: await import('next/headers').then(m => m.headers())
-    })
+   try {
+      // Get the current user session
+      const session = await auth.api.getSession({
+         headers: await import('next/headers').then(m => m.headers())
+      })
 
-    if (!session?.user) {
-      throw new Error('Unauthorized')
-    }
+      if (!session?.user) {
+         throw new Error('Unauthorized')
+      }
 
-    const timezone = formData.get('timezone') as string
-    const notificationsEnabled = formData.get('notificationsEnabled') === 'true'
-    const aiSuggestionsEnabled = formData.get('aiSuggestionsEnabled') === 'true'
-    const reminderTime = parseInt(formData.get('reminderTime') as string)
+      const timezone = formData.get('timezone') as string
+      const notificationsEnabled = formData.get('notificationsEnabled') === 'true'
+      const aiSuggestionsEnabled = formData.get('aiSuggestionsEnabled') === 'true'
+      const reminderTimeStr = formData.get('reminderTime') as string
 
-    await updateUserSettings(session.user.id, {
-      timezone,
-      notificationsEnabled,
-      aiSuggestionsEnabled,
-      reminderTime
-    })
+      // Validation
+      if (reminderTimeStr && (isNaN(parseInt(reminderTimeStr)) || parseInt(reminderTimeStr) < 0)) {
+         throw new Error('Reminder time must be a non-negative number')
+      }
 
-    revalidatePath('/dashboard')
-  } catch (error) {
-    console.error('Error updating settings:', error)
-    throw new Error('Failed to update settings')
-  }
+      const reminderTime = parseInt(reminderTimeStr)
+
+      await updateUserSettings(session.user.id, {
+         timezone: timezone?.trim(),
+         notificationsEnabled,
+         aiSuggestionsEnabled,
+         reminderTime
+      })
+
+      revalidatePath('/dashboard')
+   } catch (error) {
+      console.error('Error updating settings:', error)
+      throw error instanceof Error ? error : new Error('Failed to update settings')
+   }
 }
 
 // Data fetching actions

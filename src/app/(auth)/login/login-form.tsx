@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
 import { signIn } from "@/lib/auth-client";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { headers } from "next/headers";
 
 // Skeleton component for loading state
 function LoginFormSkeleton() {

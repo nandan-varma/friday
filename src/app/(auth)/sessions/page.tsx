@@ -184,6 +184,7 @@ function SessionsContent() {
     const [sessions, setSessions] = useState<Session[]>([])
     const [loading, setLoading] = useState(true)
     const [revoking, setRevoking] = useState<string | null>(null)
+    const [currentToken, setCurrentToken] = useState<string | null>(null)
     const router = useRouter()
 
     const loadSessions = async () => {
@@ -209,8 +210,22 @@ function SessionsContent() {
         }
     }
 
+    const loadCurrentToken = async () => {
+        try {
+            const response = await client.getSession()
+            if ('data' in response && response.data?.session) {
+                setCurrentToken(response.data.session.token)
+            } else {
+                setCurrentToken(null)
+            }
+        } catch {
+            setCurrentToken(null)
+        }
+    }
+
     useEffect(() => {
         loadSessions()
+        loadCurrentToken()
     }, [])
 
     const detectDeviceType = (userAgent?: string | null) => {
@@ -241,11 +256,7 @@ function SessionsContent() {
         return expirationDate < new Date()
     }
 
-    const getCurrentSessionToken = () => {
-        // This would typically come from your auth state or cookies
-        // For now, we'll assume the first session is current
-        return sessions[0]?.token
-    }
+
 
     const handleRevokeSession = async (token: string) => {
         try {
@@ -467,7 +478,7 @@ function SessionsContent() {
                                 key={session.id}
                                 session={session}
                                 index={index}
-                                isCurrentSession={session.token === getCurrentSessionToken()}
+                                isCurrentSession={session.token === currentToken}
                                 revoking={revoking}
                                 onRevoke={handleRevokeSession}
                                 formatDate={formatDate}

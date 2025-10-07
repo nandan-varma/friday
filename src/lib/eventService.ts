@@ -116,13 +116,15 @@ export class EventService {
                 ? new Date(event.start.date)
                 : new Date()
 
+        const isAllDay = !event.start?.dateTime && !!event.start?.date
+
         const endTime = event.end?.dateTime
             ? new Date(event.end.dateTime)
             : event.end?.date
                 ? new Date(event.end.date)
-                : new Date(startTime.getTime() + 60 * 60 * 1000) // Default 1 hour
-
-        const isAllDay = !event.start?.dateTime && !!event.start?.date
+                : isAllDay
+                    ? new Date(startTime.getTime() + 24 * 60 * 60 * 1000) // Default 1 day for all-day events
+                    : new Date(startTime.getTime() + 60 * 60 * 1000) // Default 1 hour
 
         return {
             id: `google_${event.id}`,

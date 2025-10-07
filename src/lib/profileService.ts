@@ -3,9 +3,9 @@ import { user, userSettings } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
 
 export interface UserProfile {
-  id: string
-  name: string | null
-  email: string
+   id: string
+   name: string
+   email: string
 }
 
 export interface UserSettingsData {
@@ -45,28 +45,29 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
  * @returns Updated user profile
  */
 export async function updateUserProfile(
-  userId: string,
-  data: { name?: string; email?: string }
+   userId: string,
+   data: { name?: string; email?: string }
 ): Promise<UserProfile> {
-  try {
-    const [updatedUser] = await db
-      .update(user)
-      .set({
-        ...data,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, userId))
-      .returning({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      })
+   try {
+      const updateData: any = { updatedAt: new Date() }
+      if (data.name !== undefined) updateData.name = data.name
+      if (data.email !== undefined) updateData.email = data.email
 
-    return updatedUser
-  } catch (error) {
-    console.error("Error updating user profile:", error)
-    throw new Error("Failed to update user profile")
-  }
+      const [updatedUser] = await db
+         .update(user)
+         .set(updateData)
+         .where(eq(user.id, userId))
+         .returning({
+            id: user.id,
+            name: user.name,
+            email: user.email,
+         })
+
+      return updatedUser
+   } catch (error) {
+      console.error("Error updating user profile:", error)
+      throw new Error("Failed to update user profile")
+   }
 }
 
 /**

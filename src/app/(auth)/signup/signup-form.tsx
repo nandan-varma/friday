@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
-import Google from "@/components/icons/google";
 import { signUp } from "@/lib/auth-client";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
@@ -99,9 +98,9 @@ export default function SignupForm() {
     return (
         <Card className="w-full shadow-lg border-0 backdrop-blur-xs">
             <CardHeader className="space-y-1 text-center">
-                <CardTitle className="text-2xl font-semibold">Sign in</CardTitle>
+                <CardTitle className="text-2xl font-semibold">Sign up</CardTitle>
                 <CardDescription>
-                    Enter your email and password to access your account
+                    Create your account to get started
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -126,6 +125,9 @@ export default function SignupForm() {
                             className="h-11"
                             disabled={isLoading}
                         />
+                    </div>
+
+                    <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium">
                             Email
                         </Label>
@@ -181,10 +183,10 @@ export default function SignupForm() {
                         {isLoading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Signing in...
+                                Signing up...
                             </>
                         ) : (
-                            "Sign in"
+                            "Sign up"
                         )}
                     </Button>
                 </form>
@@ -225,9 +227,9 @@ export default function SignupForm() {
             
             <CardFooter className="flex flex-col space-y-2 text-center text-sm">
                 <p>
-                    Don't have an account?{" "}
-                    <a href="/signup" className="font-medium hover:underline">
-                        Sign up
+                    Already have an account?{" "}
+                    <a href="/login" className="font-medium hover:underline">
+                        Sign in
                     </a>
                 </p>
             </CardFooter>
