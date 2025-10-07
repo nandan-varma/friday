@@ -10,6 +10,10 @@ import { auth } from '@/lib/auth'
 import { validateEventData, validateEventUpdate, validateProfileUpdate, validateSettingsUpdate, handleValidationError, sanitizeString } from '@/lib/validation'
 
 // Event Actions
+/**
+ * Creates a new event from form data.
+ * @param formData - The form data containing event details
+ */
 export async function createEvent(formData: FormData) {
     'use server'
 

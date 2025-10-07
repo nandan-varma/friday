@@ -47,7 +47,12 @@ export class GoogleIntegrationService {
    */
   private static async getCredentials() {
     const { GOOGLE_CREDENTIALS } = await import('./env');
-    const credentials = JSON.parse(GOOGLE_CREDENTIALS);
+    let credentials;
+    try {
+      credentials = JSON.parse(GOOGLE_CREDENTIALS);
+    } catch (error) {
+      throw new Error('Invalid GOOGLE_CREDENTIALS: must be valid JSON');
+    }
     const key = credentials.installed || credentials.web;
 
     if (!key || !key.client_id || !key.client_secret) {
