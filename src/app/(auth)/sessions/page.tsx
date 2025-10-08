@@ -206,7 +206,6 @@ function SessionsContent() {
     try {
       setLoading(true);
       const response = await client.listSessions();
-      console.log("Loaded sessions:", response);
       if ("error" in response && response.error) {
         // not logged in
         router.push("/login");
