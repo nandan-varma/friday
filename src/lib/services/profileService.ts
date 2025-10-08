@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { user, userSettings } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import logger from "@/lib/logger";
 
 export interface UserProfile {
   id: string;
@@ -35,7 +36,7 @@ export async function getUserProfile(
 
     return currentUser || null;
   } catch (error) {
-    console.error("Error fetching user profile:", error);
+    logger.error({ err: error }, "Error fetching user profile");
     throw new Error("Failed to fetch user profile");
   }
 }
@@ -67,7 +68,7 @@ export async function updateUserProfile(
 
     return updatedUser;
   } catch (error) {
-    console.error("Error updating user profile:", error);
+    logger.error({ err: error }, "Error updating user profile");
     throw new Error("Failed to update user profile");
   }
 }
@@ -93,7 +94,7 @@ export async function getUserSettings(
 
     return settings || null;
   } catch (error) {
-    console.error("Error fetching user settings:", error);
+    logger.error({ err: error }, "Error fetching user settings");
     throw new Error("Failed to fetch user settings");
   }
 }
@@ -157,7 +158,7 @@ export async function updateUserSettings(
       }
     });
   } catch (error) {
-    console.error("Error updating user settings:", error);
+    logger.error({ err: error }, "Error updating user settings");
     throw new Error("Failed to update user settings");
   }
 }
@@ -176,7 +177,7 @@ export async function createDefaultUserSettings(userId: string): Promise<void> {
       reminderTime: 30,
     });
   } catch (error) {
-    console.error("Error creating default user settings:", error);
+    logger.error({ err: error }, "Error creating default user settings");
     throw new Error("Failed to create default user settings");
   }
 }

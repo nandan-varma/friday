@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { GoogleIntegrationService } from "@/lib/services/googleIntegrationService";
+import logger from "@/lib/logger";
 
 export default async function GoogleAuthPage({
   searchParams,
@@ -22,7 +23,7 @@ export default async function GoogleAuthPage({
 
     redirect(authUrl.toString());
   } catch (error) {
-    console.error("Error generating Google auth URL:", error);
+    logger.error({ err: error }, "Error generating Google auth URL");
     redirect("/settings?error=auth_url_generation_failed");
   }
 }

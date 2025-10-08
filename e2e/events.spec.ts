@@ -30,11 +30,25 @@ test.describe("Event Management", () => {
 
     // Set start time (today at 10 AM)
     const today = new Date();
-    const startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0);
-    const endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0);
+    const startTime = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      10,
+      0,
+    );
+    const endTime = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+      11,
+      0,
+    );
 
     // Fill time inputs
-    await page.getByLabel(/start time/i).fill(startTime.toISOString().slice(0, 16));
+    await page
+      .getByLabel(/start time/i)
+      .fill(startTime.toISOString().slice(0, 16));
     await page.getByLabel(/end time/i).fill(endTime.toISOString().slice(0, 16));
 
     // Submit form
@@ -42,14 +56,6 @@ test.describe("Event Management", () => {
 
     // Check that event appears in calendar
     await expect(page.getByText("Test Event")).toBeVisible();
-  });
-    // const endTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0);
-    // await page.getByLabel(/start time/i).fill(startTime.toISOString().slice(0, 16));
-    // await page.getByLabel(/end time/i).fill(endTime.toISOString().slice(0, 16));
-    // Submit form
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Check that event appears in calendar
-    // await expect(page.getByText("Test Event")).toBeVisible();
   });
 
   test("event validation works", async ({ page }) => {

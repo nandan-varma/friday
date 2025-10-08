@@ -265,15 +265,6 @@ describe("EventService", () => {
         },
       ];
 
-      const mockGoogleEvents = [
-        {
-          id: "google123",
-          summary: "Google Event",
-          start: { dateTime: "2023-10-01T12:00:00Z" },
-          end: { dateTime: "2023-10-01T13:00:00Z" },
-        },
-      ];
-
       (LocalIntegrationService.getEvents as jest.Mock).mockResolvedValue(
         mockLocalEvents,
       );

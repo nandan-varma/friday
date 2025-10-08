@@ -9,6 +9,8 @@ if (typeof globalThis.ReadableStream === "undefined") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   globalThis.ReadableStream = require("web-streams-polyfill").ReadableStream;
 }
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 if (typeof globalThis.WritableStream === "undefined") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   globalThis.WritableStream = require("web-streams-polyfill").WritableStream;

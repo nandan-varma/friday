@@ -1,38 +1,41 @@
-import 'server-only'
+import "server-only";
 
-import { db } from "@/lib/db"
-import { notifications } from "@/lib/db/schema"
-import { eq, and, lt, isNull } from "drizzle-orm"
-import { getUserSettings } from "./profileService"
+import { db } from "@/lib/db";
+import { notifications } from "@/lib/db/schema";
+import { eq, and, lt, isNull } from "drizzle-orm";
+import { getUserSettings } from "./profileService";
+import logger from "@/lib/logger";
 
 export interface NotificationData {
-  userId: string
-  title: string
-  message: string
-  type: 'event_reminder' | 'event_update' | 'system'
-  eventId?: string
-  scheduledFor?: Date
+  userId: string;
+  title: string;
+  message: string;
+  type: "event_reminder" | "event_update" | "system";
+  eventId?: string;
+  scheduledFor?: Date;
 }
 
 export interface Notification {
-  id: number
-  userId: string
-  title: string
-  message: string
-  type: string
-  eventId?: string | null
-  scheduledFor?: Date | null
-  sentAt?: Date | null
-  readAt?: Date | null
-  createdAt: Date
-  updatedAt: Date
+  id: number;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  eventId?: string | null;
+  scheduledFor?: Date | null;
+  sentAt?: Date | null;
+  readAt?: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export class NotificationService {
   /**
    * Create a new notification
    */
-  static async createNotification(data: NotificationData): Promise<Notification> {
+  static async createNotification(
+    data: NotificationData,
+  ): Promise<Notification> {
     try {
       const [notification] = await db
         .insert(notifications)
@@ -44,12 +47,12 @@ export class NotificationService {
           eventId: data.eventId || null,
           scheduledFor: data.scheduledFor || null,
         })
-        .returning()
+        .returning();
 
-      return notification as Notification
+      return notification as Notification;
     } catch (error) {
-      console.error("Error creating notification:", error)
-      throw new Error("Failed to create notification")
+      logger.error({ err: error }, "Error creating notification");
+      throw new Error("Failed to create notification");
     }
   }
 
@@ -59,16 +62,16 @@ export class NotificationService {
   static async getUserNotifications(
     userId: string,
     options?: {
-      unreadOnly?: boolean
-      limit?: number
-      offset?: number
-    }
+      unreadOnly?: boolean;
+      limit?: number;
+      offset?: number;
+    },
   ): Promise<Notification[]> {
     try {
-      const conditions = [eq(notifications.userId, userId)]
+      const conditions = [eq(notifications.userId, userId)];
 
       if (options?.unreadOnly) {
-        conditions.push(isNull(notifications.readAt))
+        conditions.push(isNull(notifications.readAt));
       }
 
       const query = db
@@ -77,20 +80,23 @@ export class NotificationService {
         .where(and(...conditions))
         .orderBy(notifications.createdAt)
         .limit(options?.limit || 50)
-        .offset(options?.offset || 0)
+        .offset(options?.offset || 0);
 
-      const userNotifications = await query
-      return userNotifications as Notification[]
+      const userNotifications = await query;
+      return userNotifications as Notification[];
     } catch (error) {
-      console.error("Error fetching user notifications:", error)
-      throw new Error("Failed to fetch user notifications")
+      logger.error({ err: error }, "Error fetching user notifications");
+      throw new Error("Failed to fetch user notifications");
     }
   }
 
   /**
    * Mark notification as read
    */
-  static async markAsRead(notificationId: number, userId: string): Promise<void> {
+  static async markAsRead(
+    notificationId: number,
+    userId: string,
+  ): Promise<void> {
     try {
       await db
         .update(notifications)
@@ -98,10 +104,15 @@ export class NotificationService {
           readAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+        .where(
+          and(
+            eq(notifications.id, notificationId),
+            eq(notifications.userId, userId),
+          ),
+        );
     } catch (error) {
-      console.error("Error marking notification as read:", error)
-      throw new Error("Failed to mark notification as read")
+      logger.error({ err: error }, "Error marking notification as read");
+      throw new Error("Failed to mark notification as read");
     }
   }
 
@@ -116,24 +127,34 @@ export class NotificationService {
           readAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(and(eq(notifications.userId, userId), isNull(notifications.readAt)))
+        .where(
+          and(eq(notifications.userId, userId), isNull(notifications.readAt)),
+        );
     } catch (error) {
-      console.error("Error marking all notifications as read:", error)
-      throw new Error("Failed to mark all notifications as read")
+      logger.error({ err: error }, "Error marking all notifications as read");
+      throw new Error("Failed to mark all notifications as read");
     }
   }
 
   /**
    * Delete a notification
    */
-  static async deleteNotification(notificationId: number, userId: string): Promise<void> {
+  static async deleteNotification(
+    notificationId: number,
+    userId: string,
+  ): Promise<void> {
     try {
       await db
         .delete(notifications)
-        .where(and(eq(notifications.id, notificationId), eq(notifications.userId, userId)))
+        .where(
+          and(
+            eq(notifications.id, notificationId),
+            eq(notifications.userId, userId),
+          ),
+        );
     } catch (error) {
-      console.error("Error deleting notification:", error)
-      throw new Error("Failed to delete notification")
+      logger.error({ err: error }, "Error deleting notification");
+      throw new Error("Failed to delete notification");
     }
   }
 
@@ -144,12 +165,12 @@ export class NotificationService {
     userId: string,
     eventId: string,
     eventTitle: string,
-    reminderTime: Date
+    reminderTime: Date,
   ): Promise<Notification> {
     try {
-      const userSettings = await getUserSettings(userId)
+      const userSettings = await getUserSettings(userId);
       if (!userSettings?.notificationsEnabled) {
-        throw new Error("Notifications are disabled for this user")
+        throw new Error("Notifications are disabled for this user");
       }
 
       return await this.createNotification({
@@ -159,10 +180,10 @@ export class NotificationService {
         type: "event_reminder",
         eventId,
         scheduledFor: reminderTime,
-      })
+      });
     } catch (error) {
-      console.error("Error creating event reminder:", error)
-      throw new Error("Failed to create event reminder")
+      logger.error({ err: error }, "Error creating event reminder");
+      throw new Error("Failed to create event reminder");
     }
   }
 
@@ -173,12 +194,12 @@ export class NotificationService {
     userId: string,
     eventId: string,
     eventTitle: string,
-    updateType: string
+    updateType: string,
   ): Promise<Notification> {
     try {
-      const userSettings = await getUserSettings(userId)
+      const userSettings = await getUserSettings(userId);
       if (!userSettings?.notificationsEnabled) {
-        throw new Error("Notifications are disabled for this user")
+        throw new Error("Notifications are disabled for this user");
       }
 
       return await this.createNotification({
@@ -187,10 +208,10 @@ export class NotificationService {
         message: `${eventTitle} has been ${updateType}`,
         type: "event_update",
         eventId,
-      })
+      });
     } catch (error) {
-      console.error("Error creating event update notification:", error)
-      throw new Error("Failed to create event update notification")
+      logger.error({ err: error }, "Error creating event update notification");
+      throw new Error("Failed to create event update notification");
     }
   }
 
@@ -199,22 +220,22 @@ export class NotificationService {
    */
   static async getPendingNotifications(): Promise<Notification[]> {
     try {
-      const now = new Date()
+      const now = new Date();
       const pendingNotifications = await db
         .select()
         .from(notifications)
         .where(
           and(
             isNull(notifications.sentAt),
-            lt(notifications.scheduledFor, now)
-          )
+            lt(notifications.scheduledFor, now),
+          ),
         )
-        .orderBy(notifications.scheduledFor)
+        .orderBy(notifications.scheduledFor);
 
-      return pendingNotifications as Notification[]
+      return pendingNotifications as Notification[];
     } catch (error) {
-      console.error("Error fetching pending notifications:", error)
-      throw new Error("Failed to fetch pending notifications")
+      logger.error({ err: error }, "Error fetching pending notifications");
+      throw new Error("Failed to fetch pending notifications");
     }
   }
 
@@ -229,10 +250,10 @@ export class NotificationService {
           sentAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(notifications.id, notificationId))
+        .where(eq(notifications.id, notificationId));
     } catch (error) {
-      console.error("Error marking notification as sent:", error)
-      throw new Error("Failed to mark notification as sent")
+      logger.error({ err: error }, "Error marking notification as sent");
+      throw new Error("Failed to mark notification as sent");
     }
   }
 
@@ -240,26 +261,28 @@ export class NotificationService {
    * Get notification statistics for a user
    */
   static async getNotificationStats(userId: string): Promise<{
-    total: number
-    unread: number
-    sent: number
+    total: number;
+    unread: number;
+    sent: number;
   }> {
     try {
-      const allNotifications = await this.getUserNotifications(userId)
-      const unreadNotifications = await this.getUserNotifications(userId, { unreadOnly: true })
+      const allNotifications = await this.getUserNotifications(userId);
+      const unreadNotifications = await this.getUserNotifications(userId, {
+        unreadOnly: true,
+      });
 
-      const sentCount = allNotifications.filter(n => n.sentAt).length
+      const sentCount = allNotifications.filter((n) => n.sentAt).length;
 
       return {
         total: allNotifications.length,
         unread: unreadNotifications.length,
         sent: sentCount,
-      }
+      };
     } catch (error) {
-      console.error("Error getting notification stats:", error)
-      throw new Error("Failed to get notification stats")
+      logger.error({ err: error }, "Error getting notification stats");
+      throw new Error("Failed to get notification stats");
     }
   }
 }
 
-export default NotificationService
+export default NotificationService;
