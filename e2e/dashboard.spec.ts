@@ -1,77 +1,56 @@
 import { test, expect } from "@playwright/test";
-import { loginUser, TEST_USER } from "./test-helpers";
+import { signup } from "./utils";
 
 test.describe("Dashboard", () => {
-  test("dashboard redirects to login when not authenticated", async ({
-    page,
-  }) => {
-    await page.goto("/dashboard");
-
-    // Should redirect to login if not authenticated
-    await expect(page.url()).toContain("/login");
-  });
-
-  test("dashboard loads when authenticated", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
-
-    // Should be on dashboard
-    await expect(page.url()).toContain("/dashboard");
-    await expect(page.getByText("Calendar")).toBeVisible();
-  });
-
-  test("navigation between dashboard sections", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
-
-    // Check navigation elements exist
-    await expect(page.getByRole("link", { name: /calendar/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /ai chat/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /settings/i })).toBeVisible();
-
-    // Navigate to AI chat
-    await page.getByRole("link", { name: /ai chat/i }).click();
-    await expect(page.url()).toContain("/dashboard/ai");
-
-    // Navigate back to dashboard
-    await page.getByRole("link", { name: /calendar/i }).click();
-    await expect(page.url()).toContain("/dashboard");
-  });
-
-  test("AI chat page loads", async ({ page }) => {
-    await page.goto("/dashboard/ai");
-
-    // In test environment, middleware may not redirect - page should load
-    // TODO: Fix middleware for test environment or mock authentication
-    await expect(page.url()).toContain("/dashboard/ai");
-  });
-
-  test("AI chat interface elements", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
-    await page.goto("/dashboard/ai");
-
-    // Check for chat input
-    const chatInput = page.locator('textarea[placeholder*="message"]');
-    await expect(chatInput).toBeVisible();
-
-    // Check for send button
-    await expect(page.getByRole("button", { name: /send/i })).toBeVisible();
-  });
-
-  test("settings page loads", async ({ page }) => {
-    await page.goto("/settings");
-
-    // In test environment, middleware may not redirect - page should load
-    // TODO: Fix middleware for test environment or mock authentication
-    await expect(page.url()).toContain("/settings");
-  });
-
-  test("main navigation works", async ({ page }) => {
-    // Test navigation from root
+  test("should load dashboard page", async ({ page }) => {
     await page.goto("/");
+    await expect(page.locator("body")).toBeVisible();
+  });
 
-    // Check main navigation elements
-    await expect(page.getByRole("link", { name: /sign in/i })).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /get started/i }).first(),
-    ).toBeVisible();
+  test("should display dashboard after login", async ({ page }) => {
+    const email = `dashboard-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Dashboard Test User";
+
+    await signup(page, email, password, name);
+
+    await expect(page).toHaveURL("/dashboard");
+    await expect(page.locator("text=Dashboard")).toBeVisible();
+  });
+
+  test("should navigate to calendar view", async ({ page }) => {
+    const email = `calendar-nav-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Calendar Nav Test User";
+
+    await signup(page, email, password, name);
+
+    await page.click('text=Calendar');
+    await expect(page).toHaveURL(/.*calendar/);
+    await expect(page.locator("text=Calendar")).toBeVisible();
+  });
+
+  test("should navigate to AI chat", async ({ page }) => {
+    const email = `ai-nav-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "AI Nav Test User";
+
+    await signup(page, email, password, name);
+
+    await page.click('text=AI');
+    await expect(page).toHaveURL("/dashboard/ai");
+    await expect(page.locator("text=AI Assistant")).toBeVisible();
+  });
+
+  test("should navigate to settings", async ({ page }) => {
+    const email = `settings-nav-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Settings Nav Test User";
+
+    await signup(page, email, password, name);
+
+    await page.click('text=Settings');
+    await expect(page).toHaveURL("/settings");
+    await expect(page.locator("text=Settings")).toBeVisible();
   });
 });

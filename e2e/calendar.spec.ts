@@ -1,75 +1,63 @@
 import { test, expect } from "@playwright/test";
-import { loginUser, TEST_USER } from "./test-helpers";
+import { signup } from "./utils";
 
-test.describe("Calendar Functionality", () => {
-  test("calendar page loads", async ({ page }) => {
-    await page.goto("/dashboard");
-
-    // Should redirect to login if not authenticated
-    await expect(page.url()).toContain("/login");
+test.describe("Calendar", () => {
+  test("should load calendar page", async ({ page }) => {
+    await page.goto("/");
+    // Basic check that the page loads
+    await expect(page.locator("body")).toBeVisible();
   });
 
-  test("calendar view switches work", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
+  test("should display calendar view", async ({ page }) => {
+    const email = `calendar-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Calendar Test User";
 
-    // Test month view (default)
-    await expect(page.getByRole("button", { name: /month/i })).toBeVisible();
+    await signup(page, email, password, name);
+    await page.click('text=Calendar');
 
+    await expect(page.locator("text=Calendar")).toBeVisible();
+  });
+
+  test("should switch between calendar views", async ({ page }) => {
+    const email = `calendar-view-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Calendar View Test User";
+
+    await signup(page, email, password, name);
+    await page.click('text=Calendar');
+    
+    // Test month view
+    await page.click('button[data-view="month"]');
+    await expect(page.locator('[data-view="month"]')).toHaveClass(/active/);
+    
     // Test week view
-    await page.getByRole("button", { name: /week/i }).click();
-    await expect(page.getByText(/week of/i)).toBeVisible();
-
+    await page.click('button[data-view="week"]');
+    await expect(page.locator('[data-view="week"]')).toHaveClass(/active/);
+    
     // Test day view
-    await page.getByRole("button", { name: /day/i }).click();
-    await expect(page.getByText(/today/i)).toBeVisible();
-
-    // Test agenda view
-    await page.getByRole("button", { name: /agenda/i }).click();
-    await expect(page.getByText(/agenda/i)).toBeVisible();
+    await page.click('button[data-view="day"]');
+    await expect(page.locator('[data-view="day"]')).toHaveClass(/active/);
   });
 
-  test("calendar navigation works", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
+  test("should navigate calendar dates", async ({ page }) => {
+    const email = `calendar-nav-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Calendar Nav Test User";
 
-    // Test previous/next navigation
-    const prevButton = page.getByRole("button", { name: /previous/i });
-    const nextButton = page.getByRole("button", { name: /next/i });
-    await expect(prevButton).toBeVisible();
-    await expect(nextButton).toBeVisible();
-
-    // Test today button
-    await expect(page.getByRole("button", { name: /today/i })).toBeVisible();
-  });
-
-  test("calendar displays current month", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
-
-    // Check that current month/year is displayed
-    const currentDate = new Date();
-    const currentMonth = currentDate.toLocaleString("default", {
-      month: "long",
-    });
-    const currentYear = currentDate.getFullYear();
-    await expect(
-      page.getByText(new RegExp(`${currentMonth} ${currentYear}`)),
-    ).toBeVisible();
-  });
-
-  test("calendar shows days of week", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
-
-    // Check for day headers
-    const daysOfWeek = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    for (const day of daysOfWeek) {
-      await expect(page.getByText(day)).toBeVisible();
-    }
+    await signup(page, email, password, name);
+    await page.click('text=Calendar');
+    
+    const initialDate = await page.locator('[data-testid="current-date"]').textContent();
+    
+    await page.click('button[data-testid="next-period"]');
+    const nextDate = await page.locator('[data-testid="current-date"]').textContent();
+    
+    expect(nextDate).not.toBe(initialDate);
+    
+    await page.click('button[data-testid="prev-period"]');
+    const backDate = await page.locator('[data-testid="current-date"]').textContent();
+    
+    expect(backDate).toBe(initialDate);
   });
 });

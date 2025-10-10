@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import * as dotenv from "dotenv";
+
+// Load test environment variables
+dotenv.config({ path: ".env.test" });
 
 const PORT = process.env.PORT ?? 3000;
 const baseURL = `http://localhost:${PORT}`;
@@ -20,10 +24,18 @@ export default defineConfig({
     video: process.env.CI ? "retain-on-failure" : "off",
   },
   webServer: {
-    command: "pnpm run build && pnpm run start",
+    command: "pnpm run dev",
     url: baseURL,
     timeout: 120_000,
     reuseExistingServer: !process.env.CI,
+    env: {
+      DATABASE_URL: process.env.DATABASE_URL ?? "",
+      AUTH_SECRET: process.env.AUTH_SECRET ?? "",
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY ?? "",
+      GOOGLE_CREDENTIALS: process.env.GOOGLE_CREDENTIALS ?? "",
+      GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI ?? "",
+      TRUSTED_ORIGINS: process.env.TRUSTED_ORIGINS ?? "",
+    },
   },
   projects: [
     {

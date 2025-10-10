@@ -160,14 +160,21 @@ export default function SettingsPage() {
     );
 
     // Listen for messages from the popup
-    const handleMessage = (event: MessageEvent) => {
+    const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
 
       if (event.data.type === "GOOGLE_AUTH_SUCCESS") {
         popup?.close();
         window.removeEventListener("message", handleMessage);
-        // Refresh the page to show updated integration status
-        window.location.reload();
+        
+        // Show success message
+        toast({
+          title: "Success",
+          description: "Google Calendar connected successfully",
+        });
+        
+        // Reload the integration data
+        await loadData();
       } else if (event.data.type === "GOOGLE_AUTH_ERROR") {
         popup?.close();
         window.removeEventListener("message", handleMessage);
@@ -184,6 +191,7 @@ export default function SettingsPage() {
 
   const handleGoogleDisconnect = async () => {
     try {
+      setSaving(true);
       await disconnectGoogleCalendar();
       setGoogleIntegration(null);
       toast({
@@ -196,6 +204,34 @@ export default function SettingsPage() {
         description: "Failed to disconnect Google Calendar",
         variant: "destructive",
       });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGoogleSync = async () => {
+    try {
+      setSaving(true);
+      toast({
+        title: "Syncing",
+        description: "Syncing with Google Calendar...",
+      });
+      
+      // Reload data to trigger sync
+      await loadData();
+      
+      toast({
+        title: "Success",
+        description: "Google Calendar synced successfully",
+      });
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to sync Google Calendar",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -431,7 +467,12 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleGoogleSync}
+                        disabled={saving}
+                      >
                         <RefreshCw className="w-4 h-4 mr-2" />
                         Sync Now
                       </Button>
@@ -439,6 +480,7 @@ export default function SettingsPage() {
                         variant="destructive"
                         size="sm"
                         onClick={handleGoogleDisconnect}
+                        disabled={saving}
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Disconnect

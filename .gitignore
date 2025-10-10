@@ -33,3 +33,4 @@ test-results/
 
 # coverage
 coverage/
+.swc/

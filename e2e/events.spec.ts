@@ -1,150 +1,71 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { test, expect } from "@playwright/test";
-import { loginUser, TEST_USER } from "./test-helpers";
+import { signup, createEvent } from "./utils";
 
-test.describe("Event Management", () => {
-  test("event creation form loads", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // Click create event button
-    // await page.getByRole("button", { name: /create event/i }).click();
-    // Check form elements
-    // await expect(page.getByLabel(/title/i)).toBeVisible();
-    // await expect(page.getByLabel(/description/i)).toBeVisible();
-    // await expect(page.getByLabel(/location/i)).toBeVisible();
-    // await expect(page.getByLabel(/start time/i)).toBeVisible();
-    // await expect(page.getByLabel(/end time/i)).toBeVisible();
+test.describe("Events", () => {
+  test("should load events page structure", async ({ page }) => {
+    await page.goto("/");
+    // Basic check that the page loads
+    await expect(page.locator("body")).toBeVisible();
   });
 
-  test("create new event", async ({ page }) => {
-    await loginUser(page, TEST_USER.email, TEST_USER.password);
+  test("should create a new event", async ({ page }) => {
+    const email = `event-create-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Event Create Test User";
 
-    // Open create event form
-    await page.getByRole("button", { name: /create event/i }).click();
+    await signup(page, email, password, name);
 
-    // Fill form
-    await page.getByLabel(/title/i).fill("Test Event");
-    await page.getByLabel(/description/i).fill("Test Description");
-    await page.getByLabel(/location/i).fill("Test Location");
+    const title = "Test Event";
+    const description = "This is a test event";
+    const startDate = "2024-01-15T10:00";
+    const endDate = "2024-01-15T11:00";
 
-    // Set start time (today at 10 AM)
-    const today = new Date();
-    const startTime = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      10,
-      0,
-    );
-    const endTime = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      11,
-      0,
-    );
+    await createEvent(page, title, description, startDate, endDate);
 
-    // Fill time inputs
-    await page
-      .getByLabel(/start time/i)
-      .fill(startTime.toISOString().slice(0, 16));
-    await page.getByLabel(/end time/i).fill(endTime.toISOString().slice(0, 16));
-
-    // Submit form
-    await page.getByRole("button", { name: /create/i }).click();
-
-    // Check that event appears in calendar
-    await expect(page.getByText("Test Event")).toBeVisible();
+    await expect(page.locator(`text=${title}`)).toBeVisible();
   });
 
-  test("event validation works", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // Open create event form
-    // await page.getByRole("button", { name: /create event/i }).click();
-    // Try to submit empty form
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Should show validation errors
-    // await expect(page.getByText(/title is required/i)).toBeVisible();
+  test("should edit an existing event", async ({ page }) => {
+    const email = `event-edit-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Event Edit Test User";
+
+    await signup(page, email, password, name);
+
+    const originalTitle = "Original Event";
+    const newTitle = "Updated Event";
+
+    // Create event first
+    await createEvent(page, originalTitle, "Description", "2024-01-15T10:00", "2024-01-15T11:00");
+
+    // Edit the event
+    await page.click(`text=${originalTitle}`);
+    await page.click('button[data-testid="edit-event"]');
+    
+    await page.fill('input[name="title"]', newTitle);
+    await page.click('button[type="submit"]');
+
+    await expect(page.locator(`text=${newTitle}`)).toBeVisible();
+    await expect(page.locator(`text=${originalTitle}`)).not.toBeVisible();
   });
 
-  test("edit existing event", async ({ page }) => {
-    // TODO: Add authentication and create test event first
-    // await loginUser(page);
-    // await createTestEvent(page);
-    // Click on event to edit
-    // await page.getByText("Test Event").click();
-    // Click edit button
-    // await page.getByRole("button", { name: /edit/i }).click();
-    // Modify title
-    // await page.getByLabel(/title/i).fill("Updated Test Event");
-    // Save changes
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Check updated event
-    // await expect(page.getByText("Updated Test Event")).toBeVisible();
-  });
+  test("should delete an event", async ({ page }) => {
+    const email = `event-delete-test${Date.now()}@example.com`;
+    const password = "password123";
+    const name = "Event Delete Test User";
 
-  test("delete event", async ({ page }) => {
-    // TODO: Add authentication and create test event first
-    // await loginUser(page);
-    // await createTestEvent(page);
-    // Click on event
-    // await page.getByText("Test Event").click();
-    // Click delete button
-    // await page.getByRole("button", { name: /delete/i }).click();
-    // Confirm deletion
-    // await page.getByRole("button", { name: /confirm/i }).click();
-    // Check event is gone
-    // await expect(page.getByText("Test Event")).not.toBeVisible();
-  });
+    await signup(page, email, password, name);
 
-  test("event time validation", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // Open create event form
-    // await page.getByRole("button", { name: /create event/i }).click();
-    // Set end time before start time
-    // await page.getByLabel(/title/i).fill("Invalid Event");
-    // await page.getByLabel(/start time/i).fill("2024-01-01T14:00");
-    // await page.getByLabel(/end time/i).fill("2024-01-01T10:00");
-    // Try to submit
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Should show error
-    // await expect(page.getByText(/end time must be after start time/i)).toBeVisible();
-  });
+    const title = "Event to Delete";
 
-  test("recurring event creation", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // Open create event form
-    // await page.getByRole("button", { name: /create event/i }).click();
-    // Fill basic info
-    // await page.getByLabel(/title/i).fill("Recurring Meeting");
-    // Set recurrence
-    // await page.getByLabel(/recurrence/i).selectOption("weekly");
-    // Submit
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Check that multiple instances appear
-    // await expect(page.getByText("Recurring Meeting")).toHaveCount(4); // Multiple weeks
-  });
+    // Create event first
+    await createEvent(page, title, "Description", "2024-01-15T10:00", "2024-01-15T11:00");
 
-  test("all-day event creation", async ({ page }) => {
-    // TODO: Add authentication
-    // await loginUser(page);
-    // await page.goto("/dashboard");
-    // Open create event form
-    // await page.getByRole("button", { name: /create event/i }).click();
-    // Fill basic info
-    // await page.getByLabel(/title/i).fill("All Day Event");
-    // Check all-day toggle
-    // await page.getByLabel(/all day/i).check();
-    // Submit
-    // await page.getByRole("button", { name: /save/i }).click();
-    // Check that event appears as all-day
-    // await expect(page.getByText("All Day Event")).toBeVisible();
+    // Delete the event
+    await page.click(`text=${title}`);
+    await page.click('button[data-testid="delete-event"]');
+    await page.click('button[data-testid="confirm-delete"]');
+
+    await expect(page.locator(`text=${title}`)).not.toBeVisible();
   });
 });

@@ -21,7 +21,6 @@ import {
   Shield,
 } from "lucide-react";
 import { client } from "@/lib/auth-client";
-import logger from "@/lib/logger";
 
 const navigation = [
   { name: "Calendar", href: "/dashboard", icon: Calendar },
@@ -117,7 +116,6 @@ export default function DashboardLayout({
                 className="w-full justify-start gap-3 h-10"
                 onClick={() => {
                   // TODO: Open create event modal
-                  logger.info("Open create event modal");
                 }}
               >
                 <Plus className="w-4 h-4" />
@@ -128,7 +126,6 @@ export default function DashboardLayout({
                 className="w-full justify-start gap-3 h-10"
                 onClick={() => {
                   // TODO: Open search
-                  logger.info("Open search");
                 }}
               >
                 <Search className="w-4 h-4" />
