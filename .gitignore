@@ -34,3 +34,6 @@ test-results/
 # coverage
 coverage/
 .swc/
+
+# MacOS
+.DS_Store

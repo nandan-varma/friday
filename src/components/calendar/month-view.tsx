@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion } from "motion/react";
 import { UnifiedEvent } from "@/lib/services/eventService";
 
 interface MonthViewProps {
@@ -104,7 +105,13 @@ export function MonthView({
           </div>
 
           {/* Calendar days */}
-          <div className="grid grid-cols-7 gap-1">
+          <motion.div
+            key={format(currentDate, "yyyy-MM")}
+            className="grid grid-cols-7 gap-1"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             {allDays.map((date, index) => {
               const dayEvents = getEventsForDate(date);
               const isCurrentMonth = isSameMonth(date, currentDate);
@@ -112,7 +119,7 @@ export function MonthView({
               const isSelected = isSameDay(date, selectedDate);
 
               return (
-                <div
+                <motion.div
                   key={index}
                   className={cn(
                     "min-h-[120px] p-2 border rounded-lg cursor-pointer transition-colors hover:bg-muted/50",
@@ -121,6 +128,8 @@ export function MonthView({
                     isSelected && "ring-2 ring-primary",
                   )}
                   onClick={() => setSelectedDate(date)}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <span
@@ -141,7 +150,7 @@ export function MonthView({
                   {/* Events */}
                   <div className="space-y-1">
                     {dayEvents.slice(0, 3).map((event) => (
-                      <div
+                      <motion.div
                         key={event.id}
                         className={cn(
                           "text-xs p-1 rounded truncate cursor-pointer hover:opacity-80",
@@ -149,14 +158,17 @@ export function MonthView({
                             ? "bg-blue-100 text-blue-800"
                             : "bg-green-100 text-green-800",
                         )}
-                        onClick={(e) => {
+                        onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
                           onEventClick(event);
                         }}
                         title={event.title}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
                       >
                         {event.title}
-                      </div>
+                      </motion.div>
                     ))}
                     {dayEvents.length > 3 && (
                       <div className="text-xs text-muted-foreground">
@@ -164,10 +176,10 @@ export function MonthView({
                       </div>
                     )}
                   </div>
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </motion.div>
         </CardContent>
       </Card>
 

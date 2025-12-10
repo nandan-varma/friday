@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, List, Grid3X3, Clock } from "lucide-react";
+
 import { MonthView } from "./month-view";
 import { WeekView } from "./week-view";
 import { DayView } from "./day-view";
@@ -70,7 +71,7 @@ export function CalendarView({
           </TabsList>
         </div>
 
-        <TabsContent value="month" className="mt-6" forceMount>
+        <TabsContent value="month" className="mt-6">
           <MonthView
             currentDate={currentDate}
             events={events}
@@ -80,7 +81,7 @@ export function CalendarView({
           />
         </TabsContent>
 
-        <TabsContent value="week" className="mt-6" forceMount>
+        <TabsContent value="week" className="mt-6">
           <WeekView
             currentDate={currentDate}
             events={events}
@@ -90,7 +91,7 @@ export function CalendarView({
           />
         </TabsContent>
 
-        <TabsContent value="day" className="mt-6" forceMount>
+        <TabsContent value="day" className="mt-6">
           <DayView
             currentDate={currentDate}
             events={events}
@@ -100,7 +101,7 @@ export function CalendarView({
           />
         </TabsContent>
 
-        <TabsContent value="agenda" className="mt-6" forceMount>
+        <TabsContent value="agenda" className="mt-6">
           <AgendaView
             currentDate={currentDate}
             events={events}

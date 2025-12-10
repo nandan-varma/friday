@@ -44,22 +44,25 @@ jest.mock("../../src/lib/auth", () => ({
   },
 }));
 
+jest.mock("../../src/lib/logger", () => {
+  const mockLogger = {
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  };
+  return { __esModule: true, default: mockLogger };
+});
+
 jest.mock("../../src/lib/services/googleIntegrationService", () => ({
   GoogleIntegrationService: {
     exchangeCodeForTokens: jest.fn(),
   },
 }));
 
-jest.mock("../../src/lib/logger", () => ({
-  default: {
-    error: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-  },
-}));
-
 const mockAuth = require("../../src/lib/auth") as any;
-const mockGoogleIntegrationService = require("../../src/lib/services/googleIntegrationService") as any;
+const mockGoogleIntegrationService =
+  require("../../src/lib/services/googleIntegrationService") as any;
 const { NextRequest } = require("next/server");
 
 describe("/api/auth/google/callback", () => {
@@ -78,58 +81,69 @@ describe("/api/auth/google/callback", () => {
       });
 
       // Mock successful token exchange
-      mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens.mockResolvedValue({
-        id: 1,
-        userId: "user-123",
-        accessToken: "mock-access-token",
-        refreshToken: "mock-refresh-token",
-        expiresAt: new Date(),
-      });
+      mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens.mockResolvedValue(
+        {
+          id: 1,
+          userId: "user-123",
+          accessToken: "mock-access-token",
+          refreshToken: "mock-refresh-token",
+          expiresAt: new Date(),
+        },
+      );
 
       // Create request with authorization code
-      const request = new NextRequest("http://localhost:3000/api/auth/google/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const request = new NextRequest(
+        "http://localhost:3000/api/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: "mock-auth-code",
+            state: "mock-state",
+          }),
         },
-        body: JSON.stringify({
-          code: "mock-auth-code",
-          state: "mock-state",
-        }),
-      });
+      );
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(200);
       expect(data).toEqual({ success: true });
-      expect(mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens).toHaveBeenCalledWith(
-        "mock-auth-code",
-        "user-123"
-      );
+      expect(
+        mockGoogleIntegrationService.GoogleIntegrationService
+          .exchangeCodeForTokens,
+      ).toHaveBeenCalledWith("mock-auth-code", "user-123");
     });
 
     it("should return 401 if user is not authenticated", async () => {
       // Mock no session
       mockAuth.auth.api.getSession.mockResolvedValue(null);
 
-      const request = new NextRequest("http://localhost:3000/api/auth/google/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const request = new NextRequest(
+        "http://localhost:3000/api/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: "mock-auth-code",
+            state: "mock-state",
+          }),
         },
-        body: JSON.stringify({
-          code: "mock-auth-code",
-          state: "mock-state",
-        }),
-      });
+      );
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(401);
       expect(data).toEqual({ error: "Unauthorized" });
-      expect(mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens).not.toHaveBeenCalled();
+      expect(
+        mockGoogleIntegrationService.GoogleIntegrationService
+          .exchangeCodeForTokens,
+      ).not.toHaveBeenCalled();
     });
 
     it("should return 400 if authorization code is missing", async () => {
@@ -141,22 +155,28 @@ describe("/api/auth/google/callback", () => {
         },
       });
 
-      const request = new NextRequest("http://localhost:3000/api/auth/google/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const request = new NextRequest(
+        "http://localhost:3000/api/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            state: "mock-state",
+          }),
         },
-        body: JSON.stringify({
-          state: "mock-state",
-        }),
-      });
+      );
 
       const response = await POST(request);
       const data = await response.json();
 
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "Missing authorization code" });
-      expect(mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens).not.toHaveBeenCalled();
+      expect(
+        mockGoogleIntegrationService.GoogleIntegrationService
+          .exchangeCodeForTokens,
+      ).not.toHaveBeenCalled();
     });
 
     it("should return 500 if token exchange fails", async () => {
@@ -170,19 +190,22 @@ describe("/api/auth/google/callback", () => {
 
       // Mock failed token exchange
       mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens.mockRejectedValue(
-        new Error("Failed to exchange code for tokens")
+        new Error("Failed to exchange code for tokens"),
       );
 
-      const request = new NextRequest("http://localhost:3000/api/auth/google/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const request = new NextRequest(
+        "http://localhost:3000/api/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            code: "mock-auth-code",
+            state: "mock-state",
+          }),
         },
-        body: JSON.stringify({
-          code: "mock-auth-code",
-          state: "mock-state",
-        }),
-      });
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -201,13 +224,16 @@ describe("/api/auth/google/callback", () => {
       });
 
       // Create a request with empty body - this will result in empty object from JSON.parse
-      const request = new NextRequest("http://localhost:3000/api/auth/google/callback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const request = new NextRequest(
+        "http://localhost:3000/api/auth/google/callback",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
         },
-        body: JSON.stringify({}),
-      });
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -215,7 +241,10 @@ describe("/api/auth/google/callback", () => {
       // Should fail validation since code is missing
       expect(response.status).toBe(400);
       expect(data).toEqual({ error: "Missing authorization code" });
-      expect(mockGoogleIntegrationService.GoogleIntegrationService.exchangeCodeForTokens).not.toHaveBeenCalled();
+      expect(
+        mockGoogleIntegrationService.GoogleIntegrationService
+          .exchangeCodeForTokens,
+      ).not.toHaveBeenCalled();
     });
   });
 });

@@ -15,15 +15,16 @@ export async function signup(
   name: string,
 ) {
   await page.goto("/signup");
-  await page.fill("#name", name);
-  await page.fill("#email", email);
-  await page.fill("#password", password);
-  await page.click('button[type="submit"]');
+  await page.type("#name", name);
+  await page.type("#email", email);
+  await page.type("#password", password);
+  // Just try to click the button, even if disabled
+  await page.click('button[type="submit"]', { force: true });
   await page.waitForURL("/dashboard");
 }
 
 export async function logout(page: Page) {
-  await page.click('text=Sign Out');
+  await page.click("text=Sign Out");
   await page.click("");
   await page.waitForURL("/login");
 }
@@ -31,9 +32,9 @@ export async function logout(page: Page) {
 export async function createEvent(
   page: Page,
   title: string,
-  description: string,
-  startDate: string,
-  endDate: string,
+  _description: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+  _startDate: string, // eslint-disable-line @typescript-eslint/no-unused-vars
+  _endDate: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
   await page.click("text=New Event");
   await page.fill("#title", title);

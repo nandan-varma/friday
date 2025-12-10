@@ -19,8 +19,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -69,7 +67,7 @@ export function EventForm({
     recurrence: "none",
   });
 
-  const [saving, setSaving] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -133,8 +131,10 @@ export function EventForm({
     }
   }, [formData]);
 
-  const handleSubmit = async (formData: FormData) => {
-    if (!formData.get("title")?.toString().trim()) {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!formData.title.trim()) {
       toast({
         title: "Error",
         description: "Please enter an event title",
@@ -144,42 +144,40 @@ export function EventForm({
     }
 
     try {
-      setSaving(true);
+      setIsSubmitting(true);
 
-      // Add calculated fields to formData
-      let startTime: Date;
-      let endTime: Date;
+      // Combine date and time
+      const [startHours, startMinutes] = formData.startTime.split(":");
+      const startDateTime = new Date(formData.startDate);
+      startDateTime.setHours(
+        parseInt(startHours),
+        parseInt(startMinutes),
+        0,
+        0,
+      );
 
-      if (formData.get("isAllDay") === "true") {
-        startTime = new Date(formData.get("startDate") as string);
-        startTime.setHours(0, 0, 0, 0);
-        endTime = new Date(formData.get("endDate") as string);
-        endTime.setHours(23, 59, 59, 999);
-      } else {
-        const startTimeStr = formData.get("startTime") as string;
-        const endTimeStr = formData.get("endTime") as string;
-        const [startHour, startMinute] = startTimeStr.split(":").map(Number);
-        const [endHour, endMinute] = endTimeStr.split(":").map(Number);
+      const [endHours, endMinutes] = formData.endTime.split(":");
+      const endDateTime = new Date(formData.endDate);
+      endDateTime.setHours(parseInt(endHours), parseInt(endMinutes), 0, 0);
 
-        startTime = new Date(formData.get("startDate") as string);
-        startTime.setHours(startHour, startMinute, 0, 0);
-
-        endTime = new Date(formData.get("endDate") as string);
-        endTime.setHours(endHour, endMinute, 0, 0);
-      }
-
-      formData.set("startTime", startTime.toISOString());
-      formData.set("endTime", endTime.toISOString());
+      const submitData = new FormData();
+      submitData.set("title", formData.title);
+      submitData.set("description", formData.description);
+      submitData.set("location", formData.location);
+      submitData.set("startTime", startDateTime.toISOString());
+      submitData.set("endTime", endDateTime.toISOString());
+      submitData.set("isAllDay", formData.isAllDay.toString());
+      submitData.set("recurrence", formData.recurrence);
 
       if (initialData?.id) {
-        formData.set("eventId", initialData.id);
-        await updateEvent(formData);
+        submitData.set("eventId", initialData.id);
+        await updateEvent(submitData);
         toast({
           title: "Success",
           description: "Event updated successfully",
         });
       } else {
-        await createEvent(formData);
+        await createEvent(submitData);
         toast({
           title: "Success",
           description: "Event created successfully",
@@ -196,7 +194,7 @@ export function EventForm({
         variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -210,177 +208,83 @@ export function EventForm({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>
-            {initialData?.id ? "Edit Event" : "Create New Event"}
-          </DialogTitle>
-          <DialogDescription>
-            {initialData?.id
-              ? "Update the event details below."
-              : "Fill in the details to create a new event."}
-          </DialogDescription>
-        </DialogHeader>
-
-        <form action={handleSubmit} className="space-y-6 py-4">
-          {/* Hidden inputs for form data */}
-          <input type="hidden" name="title" value={formData.title} />
-          <input
-            type="hidden"
-            name="description"
-            value={formData.description}
-          />
-          <input type="hidden" name="location" value={formData.location} />
-          <input
-            type="hidden"
-            name="startDate"
-            value={formData.startDate.toISOString()}
-          />
-          <input
-            type="hidden"
-            name="endDate"
-            value={formData.endDate.toISOString()}
-          />
-          <input type="hidden" name="startTime" value={formData.startTime} />
-          <input type="hidden" name="endTime" value={formData.endTime} />
-          <input
-            type="hidden"
-            name="isAllDay"
-            value={formData.isAllDay.toString()}
-          />
-          <input type="hidden" name="recurrence" value={formData.recurrence} />
-
-          {/* Title */}
-          <div className="space-y-2">
-            <Label htmlFor="title">Event Title *</Label>
-            <Input
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, title: e.target.value }))
-              }
-              placeholder="Enter event title"
-              required
-            />
-          </div>
-
-          {/* All Day Toggle */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="all-day"
-              name="isAllDay"
-              checked={formData.isAllDay}
-              onCheckedChange={(checked) =>
-                setFormData((prev) => ({ ...prev, isAllDay: checked }))
-              }
-            />
-            <Label htmlFor="all-day">All day event</Label>
-          </div>
-
-          {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Start Date */}
+      <DialogContent className="sm:max-w-[600px]">
+        <div>
+          <DialogHeader>
+            <DialogTitle>
+              {initialData ? "Edit Event" : "Create New Event"}
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.startDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.startDate
-                      ? format(formData.startDate, "PPP")
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.startDate}
-                    onSelect={(date) =>
-                      date &&
-                      setFormData((prev) => ({ ...prev, startDate: date }))
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) =>
+                  setFormData({ ...formData, title: e.target.value })
+                }
+                placeholder="Event title"
+              />
             </div>
 
-            {/* End Date */}
             <div className="space-y-2">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !formData.endDate && "text-muted-foreground",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {formData.endDate
-                      ? format(formData.endDate, "PPP")
-                      : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={formData.endDate}
-                    onSelect={(date) =>
-                      date &&
-                      setFormData((prev) => ({ ...prev, endDate: date }))
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) =>
+                  setFormData({ ...formData, description: e.target.value })
+                }
+                placeholder="Event description"
+                rows={3}
+              />
             </div>
-          </div>
 
-          {/* Time Selection (only if not all day) */}
-          {!formData.isAllDay && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Start Time</Label>
+                <Label>Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.startDate && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.startDate
+                        ? format(formData.startDate, "PPP")
+                        : "Pick start date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.startDate}
+                      onSelect={(date) =>
+                        date && setFormData({ ...formData, startDate: date })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Time</Label>
                 <Select
                   value={formData.startTime}
                   onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, startTime: value }))
+                    setFormData({ ...formData, startTime: value })
                   }
+                  disabled={formData.isAllDay}
                 >
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder="Select time" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {timeOptions.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>End Time</Label>
-                <Select
-                  value={formData.endTime}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, endTime: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
+                  <SelectContent>
                     {timeOptions.map((time) => (
                       <SelectItem key={time} value={time}>
                         {time}
@@ -390,79 +294,123 @@ export function EventForm({
                 </Select>
               </div>
             </div>
-          )}
 
-          {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location" className="flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              Location
-            </Label>
-            <Input
-              id="location"
-              name="location"
-              value={formData.location}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, location: e.target.value }))
-              }
-              placeholder="Enter event location"
-            />
-          </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.endDate && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.endDate
+                        ? format(formData.endDate, "PPP")
+                        : "Pick end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={formData.endDate}
+                      onSelect={(date) =>
+                        date && setFormData({ ...formData, endDate: date })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  description: e.target.value,
-                }))
-              }
-              placeholder="Enter event description"
-              rows={3}
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Time</Label>
+                <Select
+                  value={formData.endTime}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, endTime: value })
+                  }
+                  disabled={formData.isAllDay}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select time" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeOptions.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
 
-          {/* Recurrence */}
-          <div className="space-y-2">
-            <Label>Repeat</Label>
-            <Select
-              value={formData.recurrence}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, recurrence: value }))
-              }
-              name="recurrence"
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Does not repeat</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <div className="relative">
+                <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
+                  placeholder="Event location"
+                  className="pl-9"
+                />
+              </div>
+            </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={saving}>
-              {saving
-                ? "Saving..."
-                : initialData?.id
-                  ? "Update Event"
-                  : "Create Event"}
-            </Button>
-          </DialogFooter>
-        </form>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="isAllDay"
+                checked={formData.isAllDay}
+                onCheckedChange={(checked) =>
+                  setFormData({ ...formData, isAllDay: checked })
+                }
+              />
+              <Label htmlFor="isAllDay">All day event</Label>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="recurrence">Recurrence</Label>
+              <Select
+                value={formData.recurrence}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, recurrence: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select recurrence" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? "Saving..."
+                  : initialData
+                    ? "Update Event"
+                    : "Create Event"}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

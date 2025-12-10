@@ -2,9 +2,28 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarView } from "@/components/calendar/calendar-view";
-import { EventForm } from "@/components/event/event-form";
+import dynamic from "next/dynamic";
 import { UnifiedEvent } from "@/lib/services/eventService";
+
+const CalendarView = dynamic(
+  () =>
+    import("@/components/calendar/calendar-view").then((mod) => ({
+      default: mod.CalendarView,
+    })),
+  {
+    loading: () => <div className="space-y-4">Loading calendar...</div>,
+  },
+);
+
+const EventForm = dynamic(
+  () =>
+    import("@/components/event/event-form").then((mod) => ({
+      default: mod.EventForm,
+    })),
+  {
+    ssr: false,
+  },
+);
 
 interface DashboardClientProps {
   initialEvents: UnifiedEvent[];
