@@ -25,7 +25,6 @@ export async function signup(
 
 export async function logout(page: Page) {
   await page.click("text=Sign Out");
-  await page.click("");
   await page.waitForURL("/login");
 }
 
@@ -36,9 +35,14 @@ export async function createEvent(
   _startDate: string, // eslint-disable-line @typescript-eslint/no-unused-vars
   _endDate: string, // eslint-disable-line @typescript-eslint/no-unused-vars
 ) {
-  await page.click("text=New Event");
+  // Click the "New Event" button in the calendar header (not the sidebar one)
+  await page.click('button:has(svg.lucide-plus):has-text("New Event")');
+
+  // Wait for the event form to appear
+  await page.waitForSelector("#title");
+
   await page.fill("#title", title);
   // For now, just create a basic event with default dates
-  await page.click('button[type="submit"]');
+  await page.click('button:has-text("Create Event")');
   await page.waitForSelector(`text=${title}`);
 }
