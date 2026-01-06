@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Header } from "@/components/header";
 
 function useScrollAnimation() {
   const ref = useRef<HTMLDivElement>(null);
@@ -46,9 +47,10 @@ export default function Page() {
   const ctaRef = useScrollAnimation();
   
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background">
+        <Header />
       {/* Hero Section */}
-      <section className="relative overflow-hidden px-6 pt-32 pb-20 lg:pt-40 lg:pb-32">
+      <section className="relative overflow-hidden px-6 pt-16 pb-20 lg:pt-24 lg:pb-32">
         {/* Gradient Background */}
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--primary)_0%,_transparent_50%)] opacity-20" />
         

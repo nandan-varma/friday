@@ -186,6 +186,8 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
     }
   };
 
+
+
   return (
     <Card className="w-full max-w-md mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Sign In</h2>
@@ -201,6 +203,7 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
+            autoComplete="username webauthn"
             required
           />
         </div>
@@ -214,6 +217,7 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
+            autoComplete="current-password webauthn"
             required
           />
         </div>

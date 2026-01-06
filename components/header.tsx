@@ -52,7 +52,7 @@ export function Header() {
     };
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg">
+        <header className="sticky top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg">
             <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
                 <button onClick={handleLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">

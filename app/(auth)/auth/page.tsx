@@ -1,16 +1,51 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { SignUpForm, SignInForm } from "@/components/auth/auth-forms";
 import { PasskeyRegistration } from "@/components/auth/passkey-registration";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 type AuthStep = "choice" | "sign-up" | "sign-in" | "passkey-registration";
 
 export default function AuthPage() {
   const [step, setStep] = useState<AuthStep>("choice");
   const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Automatically attempt passkey authentication on page load
+    const attemptPasskeyAuth = async () => {
+      try {
+        const response = await authClient.signIn.passkey({
+          autoFill: false,
+        });
+        
+        
+        if (response.error) {
+          return;
+        }
+        
+        if (response.data) {
+          // Wait a moment for session to be established before redirecting
+          await new Promise(resolve => setTimeout(resolve, 500));
+          router.push("/app");
+        }
+      } catch (err: any) {
+      }
+    };
+    
+    // Small delay to ensure page is fully loaded
+    const timer = setTimeout(() => {
+      attemptPasskeyAuth();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [router]);
+
+
 
   const handleSignUpSuccess = (userData: any) => {
     setUser(userData);
@@ -40,7 +75,7 @@ export default function AuthPage() {
 
   if (step === "passkey-registration" && user) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
         <div className="w-full max-w-md">
           <PasskeyRegistration
             onSuccess={handlePasskeySuccess}
@@ -51,9 +86,11 @@ export default function AuthPage() {
     );
   }
 
+
+
   if (step === "sign-up") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
         <div className="w-full max-w-md space-y-4">
           <SignUpForm onSuccess={handleSignUpSuccess} />
           <p className="text-center text-sm text-muted-foreground">
@@ -73,7 +110,7 @@ export default function AuthPage() {
 
   if (step === "sign-in") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
         <div className="w-full max-w-md space-y-4">
           <SignInForm onSuccess={handleSignInSuccess} />
           <p className="text-center text-sm text-muted-foreground">
@@ -93,7 +130,7 @@ export default function AuthPage() {
 
   // Choice step
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold">Welcome</h1>

@@ -3,18 +3,48 @@ import type { NextRequest } from 'next/server'
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 
-export const auth_protected_routes = [
-  '/api/calendars',
-  '/api/events',
-  '/app'
+export const public_routes = [
+    '/',
+    '/auth',
+    '/privacy',
+    '/terms',
 ];
 
-export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
+function isPublicRoute(pathname: string): boolean {
+    return public_routes.some(route => pathname === route || pathname.startsWith(route + '/'));
+}
 
-  const session = await auth.api.getSession({
-        headers: await headers()
-    })
-  
-  return NextResponse.next()
+export async function proxy(request: NextRequest) {
+    const pathname = request.nextUrl.pathname
+
+    // Allow public routes
+    if (isPublicRoute(pathname)) {
+        return NextResponse.next()
+    }
+
+    // For protected routes, check if user is authenticated
+    try {
+        const session = await auth.api.getSession({
+            headers: await headers()
+        })
+
+        // If not authenticated, redirect to auth
+        if (!session) {
+            const authUrl = new URL('/auth', request.url)
+            return NextResponse.redirect(authUrl)
+        }
+
+        return NextResponse.next()
+    } catch (error) {
+        // If session check fails, redirect to auth
+        const authUrl = new URL('/auth', request.url)
+        return NextResponse.redirect(authUrl)
+    }
+}
+
+export const config = {
+    matcher: [
+        // Match all routes except static files and API routes
+        '/((?!_next/static|_next/image|favicon.ico|api).*)',
+    ],
 }
