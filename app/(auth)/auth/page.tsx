@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { SignUpForm, SignInForm } from "@/components/auth-forms";
-import { PasskeyRegistration } from "@/components/passkey-registration";
+import { SignUpForm, SignInForm } from "@/components/auth/auth-forms";
+import { PasskeyRegistration } from "@/components/auth/passkey-registration";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 

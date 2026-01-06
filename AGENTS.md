@@ -267,6 +267,17 @@ function validateForm(data: FormData): FormErrors {
 }
 ```
 
+# Icon usage
+
+```typescript
+import { HugeiconsIcon } from '@hugeicons/react'
+import { Notification03Icon } from '@hugeicons/core-free-icons'
+ 
+function App() {
+  return <HugeiconsIcon icon={Notification03Icon} size={24} color="currentColor" strokeWidth={1.5} />
+}
+```
+
 ### Performance Guidelines
 
 #### React Optimization

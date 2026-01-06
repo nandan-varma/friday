@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Calendar01Icon, Notification02Icon, AiCloudIcon, ArrowRight01Icon, CheckmarkCircle02Icon, Menu01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import { Calendar01Icon, Notification02Icon, AiCloudIcon, ArrowRight01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -39,56 +40,13 @@ function useScrollAnimation() {
 }
 
 export default function Page() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter();
   const featuresRef = useScrollAnimation();
   const faqRef = useScrollAnimation();
   const ctaRef = useScrollAnimation();
   
   return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg">
-        <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <span className="text-lg font-bold">F</span>
-            </div>
-            <span className="text-xl font-bold">Friday</span>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">Features</a>
-            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">FAQ</a>
-            <Button variant="outline" size="sm">Sign in</Button>
-            <Button size="sm">Get started free</Button>
-          </div>
-          
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <HugeiconsIcon icon={mobileMenuOpen ? Cancel01Icon : Menu01Icon} />
-          </button>
-        </nav>
-        
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-lg">
-            <div className="flex flex-col gap-4 px-6 py-4">
-              <a href="#features" className="text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>Features</a>
-              <a href="#faq" className="text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>FAQ</a>
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" className="w-full">Sign in</Button>
-                <Button size="sm" className="w-full">Get started free</Button>
-              </div>
-            </div>
-          </div>
-        )}
-      </header>
-
+    <div className="min-h-screen bg-background pt-16">
       {/* Hero Section */}
       <section className="relative overflow-hidden px-6 pt-32 pb-20 lg:pt-40 lg:pb-32">
         {/* Gradient Background */}
@@ -109,13 +67,13 @@ export default function Page() {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="text-base px-8 group">
+            <Button size="lg" className="text-base px-8 group" onClick={() => router.push("/auth")}>
               Get started free
               <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button variant="outline" size="lg" className="text-base px-8">
+            {/* <Button variant="outline" size="lg" className="text-base px-8">
               Watch demo
-            </Button>
+            </Button> */}
           </div>
         </div>
         
@@ -243,7 +201,7 @@ export default function Page() {
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join thousands of professionals who've already upgraded their calendar experience.
           </p>
-          <Button size="lg" className="text-base px-8 group">
+          <Button size="lg" className="text-base px-8 group" onClick={() => router.push("/auth")}>
             Get started free
             <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
