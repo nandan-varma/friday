@@ -1,5 +1,5 @@
 "use client"
-import type { CalendarEvent } from "@/app/(app)/app/page"
+import type { CalendarEvent } from "@/types/calendar"
 import { WeekView } from "@/components/app/views/week-view"
 import { DayView } from "@/components/app/views/day-view"
 import { MonthView } from "@/components/app/views/month-view"

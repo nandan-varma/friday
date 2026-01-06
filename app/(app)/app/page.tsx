@@ -5,23 +5,7 @@ import { CalendarHeader } from "@/components/app/calendar-header"
 import { CalendarSidebar } from "@/components/app/calendar-sidebar"
 import { CalendarGrid } from "@/components/app/calendar-grid"
 import { EventDialog } from "@/components/app/event-dialog"
-
-export interface CalendarEvent {
-  id: string
-  title: string
-  description?: string
-  start: Date
-  end: Date
-  calendarId: string
-  color: string
-}
-
-export interface Calendar {
-  id: string
-  name: string
-  color: string
-  checked: boolean
-}
+import type { Calendar, CalendarEvent } from "@/types/calendar"
 
 const INITIAL_CALENDARS: Calendar[] = [
   { id: "personal", name: "Personal", color: "blue", checked: true },

@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { authClient } from '@/lib/auth-client'
 import { Spinner } from '@/components/ui/spinner'
 
-export default function GoogleCallbackPage() {
+function GoogleCallbackContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing')
@@ -122,5 +122,17 @@ export default function GoogleCallbackPage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function GoogleCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Spinner className="size-12" />
+      </div>
+    }>
+      <GoogleCallbackContent />
+    </Suspense>
   )
 }

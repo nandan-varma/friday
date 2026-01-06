@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useState, useRef, useEffect } from "react"
-import type { CalendarEvent } from "@/app/page"
+import type { CalendarEvent } from "@/types/calendar"
 import { GripVertical } from "lucide-react"
 
 interface EventCardProps {

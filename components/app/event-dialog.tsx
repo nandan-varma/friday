@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { CalendarEvent, Calendar } from "@/app/page"
+import type { CalendarEvent, Calendar } from "@/types/calendar"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -104,7 +104,7 @@ export function EventDialog({ open, onOpenChange, event, initialData, calendars,
 
           <div className="space-y-2">
             <Label htmlFor="calendar">Calendar</Label>
-            <Select value={calendarId} onValueChange={setCalendarId}>
+            <Select value={calendarId} onValueChange={(value) => setCalendarId(value || "")}>
               <SelectTrigger id="calendar">
                 <SelectValue />
               </SelectTrigger>

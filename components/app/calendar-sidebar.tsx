@@ -4,7 +4,7 @@ import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
-import type { Calendar } from "@/app/page"
+import type { Calendar } from "@/types/calendar"
 
 interface CalendarSidebarProps {
   calendars: Calendar[]

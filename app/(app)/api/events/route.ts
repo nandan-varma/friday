@@ -1,10 +1,15 @@
-import { db } from "@/db";
-import { event, type NewEvent } from "@/db/schema/calendar";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { eq, and, gte, lte } from "drizzle-orm";
-import { nanoid } from "nanoid";
+import {
+  fetchGoogleEvents,
+  fetchAllSelectedCalendarEvents,
+  createGoogleEvent,
+  updateGoogleEvent,
+  deleteGoogleEvent,
+} from "@/lib/google-calendar";
+import { getIntegration } from "@/lib/google-oauth";
 
+// GET /api/events - Fetch events from Google Calendar
 export async function GET(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -15,35 +20,33 @@ export async function GET(request: Request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Check if Google Calendar is connected
+    const integration = await getIntegration(session.user.id);
+    
+    if (!integration) {
+      return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
+    }
+
     const { searchParams } = new URL(request.url);
     const start = searchParams.get("start");
     const end = searchParams.get("end");
     const calendarId = searchParams.get("calendarId");
 
-    let query = db.query.event.findMany({
-      where: eq(event.userId, session.user.id),
-      orderBy: (event, { asc }) => [asc(event.start)],
-    });
-
-    // Apply filters if provided
-    const filters: any[] = [eq(event.userId, session.user.id)];
-
-    if (start) {
-      filters.push(gte(event.start, new Date(start)));
-    }
-
-    if (end) {
-      filters.push(lte(event.end, new Date(end)));
-    }
+    let events;
 
     if (calendarId) {
-      filters.push(eq(event.calendarId, calendarId));
+      // Fetch from specific calendar
+      events = await fetchGoogleEvents(session.user.id, calendarId, {
+        timeMin: start ? new Date(start) : undefined,
+        timeMax: end ? new Date(end) : undefined,
+      });
+    } else {
+      // Fetch from all selected calendars
+      events = await fetchAllSelectedCalendarEvents(session.user.id, {
+        timeMin: start ? new Date(start) : undefined,
+        timeMax: end ? new Date(end) : undefined,
+      });
     }
-
-    const events = await db.query.event.findMany({
-      where: and(...filters),
-      orderBy: (event, { asc }) => [asc(event.start)],
-    });
 
     return Response.json(events);
   } catch (error) {
@@ -52,6 +55,7 @@ export async function GET(request: Request) {
   }
 }
 
+// POST /api/events - Create event in Google Calendar
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -65,21 +69,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       calendarId,
-      title,
+      summary,
       description,
       location,
       start,
       end,
-      allDay,
-      color,
-      recurrence,
-      reminders,
       attendees,
-      videoConferenceUrl,
-      status,
     } = body;
 
-    if (!title?.trim()) {
+    if (!summary?.trim()) {
       return Response.json({ error: "Event title is required" }, { status: 400 });
     }
 
@@ -91,25 +89,14 @@ export async function POST(request: Request) {
       return Response.json({ error: "Start and end times are required" }, { status: 400 });
     }
 
-    const newEvent: NewEvent = {
-      id: nanoid(),
-      userId: session.user.id,
-      calendarId,
-      title: title.trim(),
-      description: description?.trim() || null,
-      location: location?.trim() || null,
+    const created = await createGoogleEvent(session.user.id, calendarId, {
+      summary: summary.trim(),
+      description: description?.trim(),
+      location: location?.trim(),
       start: new Date(start),
       end: new Date(end),
-      allDay: allDay || false,
-      color: color || null,
-      recurrence: recurrence || null,
-      reminders: reminders ? JSON.stringify(reminders) : null,
-      attendees: attendees ? JSON.stringify(attendees) : null,
-      videoConferenceUrl: videoConferenceUrl?.trim() || null,
-      status: status || "confirmed",
-    };
-
-    const [created] = await db.insert(event).values(newEvent).returning();
+      attendees: attendees || [],
+    });
 
     return Response.json(created, { status: 201 });
   } catch (error) {
@@ -118,6 +105,7 @@ export async function POST(request: Request) {
   }
 }
 
+// PATCH /api/events - Update event in Google Calendar
 export async function PATCH(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -129,29 +117,31 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { id, ...updates } = body;
+    const { eventId, calendarId, ...updates } = body;
 
-    if (!id) {
+    if (!eventId) {
       return Response.json({ error: "Event ID is required" }, { status: 400 });
     }
 
-    // Convert date strings to Date objects if present
-    if (updates.start) updates.start = new Date(updates.start);
-    if (updates.end) updates.end = new Date(updates.end);
-
-    // Convert arrays to JSON strings if present
-    if (updates.reminders) updates.reminders = JSON.stringify(updates.reminders);
-    if (updates.attendees) updates.attendees = JSON.stringify(updates.attendees);
-
-    const [updated] = await db
-      .update(event)
-      .set({ ...updates, updatedAt: new Date() })
-      .where(and(eq(event.id, id), eq(event.userId, session.user.id)))
-      .returning();
-
-    if (!updated) {
-      return Response.json({ error: "Event not found" }, { status: 404 });
+    if (!calendarId) {
+      return Response.json({ error: "Calendar ID is required" }, { status: 400 });
     }
+
+    // Convert date strings to Date objects if present
+    const updateData: any = {};
+    if (updates.summary !== undefined) updateData.summary = updates.summary;
+    if (updates.description !== undefined) updateData.description = updates.description;
+    if (updates.location !== undefined) updateData.location = updates.location;
+    if (updates.start) updateData.start = new Date(updates.start);
+    if (updates.end) updateData.end = new Date(updates.end);
+    if (updates.attendees) updateData.attendees = updates.attendees;
+
+    const updated = await updateGoogleEvent(
+      session.user.id,
+      calendarId,
+      eventId,
+      updateData
+    );
 
     return Response.json(updated);
   } catch (error) {
@@ -160,6 +150,7 @@ export async function PATCH(request: Request) {
   }
 }
 
+// DELETE /api/events - Delete event from Google Calendar
 export async function DELETE(request: Request) {
   try {
     const session = await auth.api.getSession({
@@ -171,15 +162,18 @@ export async function DELETE(request: Request) {
     }
 
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get("id");
+    const eventId = searchParams.get("id");
+    const calendarId = searchParams.get("calendarId");
 
-    if (!id) {
+    if (!eventId) {
       return Response.json({ error: "Event ID is required" }, { status: 400 });
     }
 
-    await db
-      .delete(event)
-      .where(and(eq(event.id, id), eq(event.userId, session.user.id)));
+    if (!calendarId) {
+      return Response.json({ error: "Calendar ID is required" }, { status: 400 });
+    }
+
+    await deleteGoogleEvent(session.user.id, calendarId, eventId);
 
     return Response.json({ success: true });
   } catch (error) {

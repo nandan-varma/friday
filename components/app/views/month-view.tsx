@@ -1,5 +1,5 @@
 "use client"
-import type { CalendarEvent } from "@/app/(app)/app/page"
+import type { CalendarEvent } from "@/types/calendar"
 
 interface MonthViewProps {
   events: CalendarEvent[]
