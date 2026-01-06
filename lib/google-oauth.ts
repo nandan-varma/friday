@@ -90,31 +90,42 @@ export async function storeIntegration(
   refreshToken: string | undefined,
   tokenExpiry: Date
 ) {
-  const integration = await db
-    .insert(googleCalendarIntegration)
-    .values({
-      id: `gcal_${userId}_${Date.now()}`,
-      userId,
-      googleUserId,
-      accessToken,
-      refreshToken: refreshToken || null,
-      tokenExpiry,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: googleCalendarIntegration.userId,
-      set: {
+  // Check if integration already exists
+  const existing = await getIntegration(userId);
+
+  if (existing) {
+    // Update existing integration
+    const [updated] = await db
+      .update(googleCalendarIntegration)
+      .set({
         googleUserId,
         accessToken,
         refreshToken: refreshToken || null,
         tokenExpiry,
         updatedAt: new Date(),
-      },
-    })
-    .returning();
+      })
+      .where(eq(googleCalendarIntegration.userId, userId))
+      .returning();
 
-  return integration[0];
+    return updated;
+  } else {
+    // Insert new integration
+    const [created] = await db
+      .insert(googleCalendarIntegration)
+      .values({
+        id: `gcal_${userId}_${Date.now()}`,
+        userId,
+        googleUserId,
+        accessToken,
+        refreshToken: refreshToken || null,
+        tokenExpiry,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .returning();
+
+    return created;
+  }
 }
 
 // Get integration for user
