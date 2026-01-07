@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { db } from "@/db";
 import { googleCalendarIntegration } from "@/db/schema/calendar";
 import { eq } from "drizzle-orm";
+import { encryptToken, decryptToken } from "@/lib/crypto-utils";
 
 interface GoogleCredentials {
   web: {
@@ -99,8 +100,8 @@ export async function storeIntegration(
       .update(googleCalendarIntegration)
       .set({
         googleUserId,
-        accessToken,
-        refreshToken: refreshToken || null,
+        accessToken: encryptToken(accessToken),
+        refreshToken: refreshToken ? encryptToken(refreshToken) : null,
         tokenExpiry,
         updatedAt: new Date(),
       })
@@ -116,8 +117,8 @@ export async function storeIntegration(
         id: `gcal_${userId}_${Date.now()}`,
         userId,
         googleUserId,
-        accessToken,
-        refreshToken: refreshToken || null,
+        accessToken: encryptToken(accessToken),
+        refreshToken: refreshToken ? encryptToken(refreshToken) : null,
         tokenExpiry,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -136,7 +137,15 @@ export async function getIntegration(userId: string) {
     .where(eq(googleCalendarIntegration.userId, userId))
     .limit(1);
 
-  return integrations[0] || null;
+  const integration = integrations[0];
+  if (integration) {
+    return {
+      ...integration,
+      accessToken: decryptToken(integration.accessToken),
+      refreshToken: integration.refreshToken ? decryptToken(integration.refreshToken) : null,
+    };
+  }
+  return null;
 }
 
 // Refresh access token
@@ -156,21 +165,28 @@ export async function refreshAccessToken(userId: string): Promise<string> {
     refresh_token: integration.refreshToken,
   });
 
-  const { credentials } = await oauth2Client.refreshAccessToken();
+  try {
+    const { credentials } = await oauth2Client.refreshAccessToken();
 
-  // Update tokens in database
-  await db
-    .update(googleCalendarIntegration)
-    .set({
-      accessToken: credentials.access_token!,
-      tokenExpiry: credentials.expiry_date
-        ? new Date(credentials.expiry_date)
-        : new Date(Date.now() + 3600 * 1000),
-      updatedAt: new Date(),
-    })
-    .where(eq(googleCalendarIntegration.userId, userId));
+    // Update tokens in database
+    await db
+      .update(googleCalendarIntegration)
+      .set({
+        accessToken: encryptToken(credentials.access_token!),
+        tokenExpiry: credentials.expiry_date
+          ? new Date(credentials.expiry_date)
+          : new Date(Date.now() + 3600 * 1000),
+        updatedAt: new Date(),
+      })
+      .where(eq(googleCalendarIntegration.userId, userId));
 
-  return credentials.access_token!;
+    return credentials.access_token!;
+  } catch (error) {
+    console.error("Failed to refresh access token:", error);
+    // Revoke integration on failure
+    await revokeIntegration(userId);
+    throw new Error("Failed to refresh access token. Please reconnect your Google account.");
+  }
 }
 
 // Get valid access token (refreshes if expired)

@@ -125,9 +125,9 @@ export default function SupportPage() {
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <HugeiconsIcon icon={CheckmarkCircle02Icon} className="w-16 h-16 text-primary mb-4" />
                   <h3 className="text-xl font-semibold mb-2">Message sent successfully!</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Thank you for reaching out. We'll get back to you soon.
-                  </p>
+      <p className="text-muted-foreground mb-6">
+        &quot;Terms of Service&quot;
+      </p>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-6">

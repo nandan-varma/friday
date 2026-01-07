@@ -114,7 +114,7 @@ export default function AuthPage() {
         <div className="w-full max-w-md space-y-4">
           <SignInForm onSuccess={handleSignInSuccess} />
           <p className="text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Button
               variant="link"
               className="p-0 h-auto"

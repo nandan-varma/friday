@@ -89,15 +89,20 @@ export default function CalendarPage() {
   const updateSelectedCalendars = useUpdateSelectedCalendars()
 
   // Initialize local calendar states from integration data
-  useEffect(() => {
+  const initialStates = useMemo(() => {
     if (integration?.selectedCalendarIds && googleCalendars) {
-      const initialStates: Record<string, boolean> = {}
+      const states: Record<string, boolean> = {};
       googleCalendars.forEach((cal) => {
-        initialStates[cal.id] = integration.selectedCalendarIds?.includes(cal.id) ?? true
-      })
-      setLocalCalendarStates(initialStates)
+        states[cal.id] = integration.selectedCalendarIds?.includes(cal.id) ?? true;
+      });
+      return states;
     }
-  }, [integration?.selectedCalendarIds, googleCalendars])
+    return {};
+  }, [integration?.selectedCalendarIds, googleCalendars]);
+
+  useEffect(() => {
+    setLocalCalendarStates(initialStates);
+  }, [initialStates])
 
   // Transform Google calendars to our Calendar type
   const calendars: Calendar[] = useMemo(() => {

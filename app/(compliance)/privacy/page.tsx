@@ -35,13 +35,9 @@ export default function PrivacyPage() {
                 <p>
                   Friday ("we," "us," "our," or "Company") operates the Friday calendar application. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our application.
                 </p>
-                <p>
-                  We are committed to protecting your privacy and ensuring you have a positive experience on Friday. If you have questions about this Privacy Policy, please contact us at{" "}
-                  <a href="mailto:contact@nandan.fyi" className="text-primary hover:underline">
-                    contact@nandan.fyi
-                  </a>
-                  .
-                </p>
+      <p>
+        We&apos;re committed to protecting your privacy and being transparent about how we collect, use, and share information.
+      </p>
               </CardContent>
             </Card>
 
