@@ -4,13 +4,16 @@ A calendar app for busy people.
 
 ## TODO
 
-- [ ] Landing Page
-- [ ] Design
-- [ ] Authentication
-- [ ] Calendar View
-- [ ] Event Management
-- [ ] Notifications
+- [*] Landing Page
+- [*] Design
+- [*] Authentication
+- [*] Calendar View
 - [ ] Settings
+- [ ] Event Management
+- [ ] Onboarding
+- [ ] AI Integration
+- [ ] User Profile
+- [ ] Notifications
 
 ## Features
 - **Easy Scheduling**: Quickly create and manage events

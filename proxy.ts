@@ -29,10 +29,17 @@ export async function proxy(request: NextRequest) {
         })
 
         // If not authenticated, redirect to auth
-        if (!session) {
+        if (!session?.user) {
             const authUrl = new URL('/auth', request.url)
             return NextResponse.redirect(authUrl)
         }
+
+        // when authenticated, / should redirect to /app
+        if(session.user && pathname === '/') {
+            const appUrl = new URL('/app', request.url)
+            return NextResponse.redirect(appUrl)
+        }
+
 
         return NextResponse.next()
     } catch (error) {

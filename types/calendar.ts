@@ -15,4 +15,7 @@ export interface CalendarEvent {
   end: Date
   calendarId: string
   color: string
+  location?: string
+  attendees?: string[]
+  htmlLink?: string
 }
