@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Menu, Search, Settings, Grid3x3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useRouter } from "next/navigation"
 
 interface CalendarHeaderProps {
   selectedDate: Date
@@ -12,6 +13,9 @@ interface CalendarHeaderProps {
 }
 
 export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewModeChange }: CalendarHeaderProps) {
+
+  const router = useRouter();
+
   const handlePrevious = () => {
     const newDate = new Date(selectedDate)
     if (viewMode === "week") {
@@ -73,7 +77,9 @@ export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewMod
           <Search className="h-5 w-5" />
           <span className="sr-only">Search</span>
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10">
+        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={()=>{
+          router.push("/settings")
+        }}>
           <Settings className="h-5 w-5" />
           <span className="sr-only">Settings</span>
         </Button>

@@ -104,13 +104,13 @@ export function EventDialog({ open, onOpenChange, event, initialData, calendars,
 
           <div className="space-y-2">
             <Label htmlFor="calendar">Calendar</Label>
-            <Select value={calendarId} onValueChange={(value) => setCalendarId(value || "")}>
-              <SelectTrigger id="calendar">
+            <Select value={calendarId} onValueChange={(value) => setCalendarId(value || "")}> 
+              <SelectTrigger id="calendar" className="w-full min-w-30 max-w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {calendars.map((cal) => (
-                  <SelectItem key={cal.id} value={cal.id}>
+                  <SelectItem key={cal.id} value={cal.name}>
                     {cal.name}
                   </SelectItem>
                 ))}

@@ -107,6 +107,7 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
     return `${displayHours}:${minutes.toString().padStart(2, "0")}${ampm}`
   }
 
+
   const colorClasses = {
     blue: "bg-blue-600/90 hover:bg-blue-600 border-blue-700",
     amber: "bg-amber-500/90 hover:bg-amber-500 border-amber-600",
@@ -114,16 +115,22 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
     pink: "bg-pink-600/90 hover:bg-pink-600 border-pink-700",
   }
 
+  // Fallback for transparent or missing color
+  const needsFallbackBg = !event.color || event.color === "transparent" || event.color === "rgba(0,0,0,0)" || event.color === "#0000" || event.color === "#00000000"
+
   return (
     <div
       ref={cardRef}
       data-event
-      className={`group absolute left-1 right-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-sm text-white shadow-md transition-all cursor-pointer ${
-        colorClasses[event.color as keyof typeof colorClasses]
+      className={`group absolute left-1 right-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-sm shadow-md transition-all cursor-pointer ${
+        colorClasses[event.color as keyof typeof colorClasses] || (needsFallbackBg ? "bg-gray-200 text-foreground border-gray-300" : "")
       } ${isDragging || isResizing ? "opacity-90 scale-[1.02] shadow-lg z-50" : "hover:scale-[1.01] hover:shadow-lg z-10"}`}
       style={{
         top: `${position.top}px`,
         height: `${position.height}px`,
+        backgroundColor: needsFallbackBg ? "#e5e7eb" : undefined, // Tailwind gray-200
+        color: needsFallbackBg ? "#111827" : undefined, // Tailwind gray-900 (for text)
+        borderColor: needsFallbackBg ? "#d1d5db" : undefined, // Tailwind gray-300
       }}
       onClick={(e) => {
         if (!hasDraggedRef.current) {
@@ -137,7 +144,7 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
       />
 
       <div className="flex items-start gap-1 cursor-move" onMouseDown={(e) => handleMouseDown(e, "drag")}>
-        <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-70 flex-shrink-0 mt-0.5" />
+        <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-70 shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <div className="truncate font-medium leading-tight">{event.title}</div>
           <div className="text-xs opacity-90">

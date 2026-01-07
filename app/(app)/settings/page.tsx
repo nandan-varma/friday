@@ -1,77 +1,40 @@
-'use client'
+
+
+
+"use client"
 
 import { Button } from '@/components/ui/button'
-import { useEffect, useState } from 'react'
 import { Spinner } from '@/components/ui/spinner'
-
-interface IntegrationStatus {
-  connected: boolean
-  googleUserId?: string
-  lastSyncAt?: string
-  selectedCalendarIds?: string[]
-}
+import { Header } from '@/components/header'
+import {
+  useGoogleIntegration,
+  useConnectGoogle,
+  useDisconnectGoogle,
+} from '@/hooks/use-google-calendar'
 
 export default function SettingsPage() {
-  const [googleStatus, setGoogleStatus] = useState<IntegrationStatus | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [isDisconnecting, setIsDisconnecting] = useState(false)
+  const {
+    data: googleStatus,
+    isLoading,
+    refetch: refetchIntegration,
+  } = useGoogleIntegration()
 
-  useEffect(() => {
-    fetchIntegrationStatus()
-  }, [])
+  const connectMutation = useConnectGoogle()
+  const disconnectMutation = useDisconnectGoogle()
 
-  const fetchIntegrationStatus = async () => {
-    try {
-      setIsLoading(true)
-      const response = await fetch('/api/integrations/google')
-      const data = await response.json()
-      setGoogleStatus(data)
-    } catch (error) {
-      console.error('Failed to fetch integration status:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  const handleConnect = () => {
+    connectMutation.mutate()
   }
 
-  const handleConnect = async () => {
-    try {
-      setIsConnecting(true)
-      const response = await fetch('/api/integrations/google', {
-        method: 'POST',
-      })
-      const data = await response.json()
-
-      if (data.authUrl) {
-        // Redirect to Google OAuth
-        window.location.href = data.authUrl
-      }
-    } catch (error) {
-      console.error('Failed to initiate connection:', error)
-      setIsConnecting(false)
-    }
-  }
-
-  const handleDisconnect = async () => {
+  const handleDisconnect = () => {
     if (!confirm('Are you sure you want to disconnect Google Calendar?')) {
       return
     }
-
-    try {
-      setIsDisconnecting(true)
-      await fetch('/api/integrations/google', {
-        method: 'DELETE',
-      })
-      await fetchIntegrationStatus()
-    } catch (error) {
-      console.error('Failed to disconnect:', error)
-    } finally {
-      setIsDisconnecting(false)
-    }
+    disconnectMutation.mutate()
   }
-
   return (
     <div className="min-h-screen bg-background pt-16">
+      <Header />
       <div className="max-w-4xl mx-auto p-4">
         <h1 className="text-3xl font-bold mb-6">Settings</h1>
         <p className="text-muted-foreground mb-8">Manage your account settings and preferences here.</p>
@@ -119,12 +82,12 @@ export default function SettingsPage() {
                       Loading...
                     </Button>
                   ) : googleStatus?.connected ? (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       onClick={handleDisconnect}
-                      disabled={isDisconnecting}
+                      disabled={disconnectMutation.status === 'pending' || disconnectMutation.isPending}
                     >
-                      {isDisconnecting ? (
+                      {(disconnectMutation.status === 'pending' || disconnectMutation.isPending) ? (
                         <>
                           <Spinner className="size-4 mr-2" />
                           Disconnecting...
@@ -134,11 +97,11 @@ export default function SettingsPage() {
                       )}
                     </Button>
                   ) : (
-                    <Button 
+                    <Button
                       onClick={handleConnect}
-                      disabled={isConnecting}
+                      disabled={connectMutation.status === 'pending' || connectMutation.isPending}
                     >
-                      {isConnecting ? (
+                      {(connectMutation.status === 'pending' || connectMutation.isPending) ? (
                         <>
                           <Spinner className="size-4 mr-2" />
                           Connecting...
