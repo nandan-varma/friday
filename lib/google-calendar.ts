@@ -3,9 +3,41 @@ import { getAuthenticatedClient, getIntegration } from "./google-oauth";
 import { db } from "@/db";
 import { googleCalendarIntegration } from "@/db/schema/calendar";
 import { eq } from "drizzle-orm";
+import type { Calendar, CalendarEvent } from "@/types/calendar";
 
 export type GoogleCalendar = calendar_v3.Schema$CalendarListEntry;
 export type GoogleEvent = calendar_v3.Schema$Event;
+
+// Transform GoogleEvent to CalendarEvent
+export function transformGoogleEventToCalendarEvent(
+  event: GoogleEvent & { calendarId: string },
+  calendars: Calendar[]
+): CalendarEvent {
+  const calendar = calendars.find((c) => c.id === event.calendarId);
+  const startDate = event.start?.dateTime
+    ? new Date(event.start.dateTime)
+    : event.start?.date
+    ? new Date(event.start.date)
+    : new Date();
+  const endDate = event.end?.dateTime
+    ? new Date(event.end.dateTime)
+    : event.end?.date
+    ? new Date(event.end.date)
+    : new Date();
+
+  return {
+    id: event.id!,
+    title: event.summary || "Untitled Event",
+    description: event.description || undefined,
+    start: startDate,
+    end: endDate,
+    calendarId: event.calendarId,
+    color: calendar?.color || "blue",
+    location: event.location || undefined,
+    attendees: event.attendees?.map((a) => a.email!) || undefined,
+    htmlLink: event.htmlLink || undefined,
+  };
+}
 
 // Get Google Calendar API client
 async function getCalendarClient(userId: string) {

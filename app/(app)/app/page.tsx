@@ -115,38 +115,8 @@ export default function CalendarPage() {
     }))
   }, [googleCalendars, localCalendarStates])
 
-  // Transform Google events to our CalendarEvent type
-  const events: CalendarEvent[] = useMemo(() => {
-    if (!googleEvents) return []
-    return googleEvents
-      .map((event) => {
-        const calendar = calendars.find((c) => c.id === event.calendarId)
-        const startDate = event.start?.dateTime
-          ? new Date(event.start.dateTime)
-          : event.start?.date
-            ? new Date(event.start.date)
-            : new Date()
-        const endDate = event.end?.dateTime
-          ? new Date(event.end.dateTime)
-          : event.end?.date
-            ? new Date(event.end.date)
-            : new Date()
-
-        return {
-          id: event.id,
-          title: event.summary || "Untitled Event",
-          description: event.description,
-          start: startDate,
-          end: endDate,
-          calendarId: event.calendarId,
-          color: calendar?.color || "blue",
-          location: event.location,
-          attendees: event.attendees?.map((a) => a.email),
-          htmlLink: event.htmlLink,
-        }
-      })
-      .filter(Boolean) as CalendarEvent[]
-  }, [googleEvents, calendars])
+  // Events are now already transformed in the API
+  const events: CalendarEvent[] = googleEvents || []
 
   const handleToggleCalendar = (calendarId: string) => {
     setLocalCalendarStates((prev) => {

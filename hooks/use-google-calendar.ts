@@ -37,8 +37,7 @@ interface GoogleEvent {
   htmlLink?: string
 }
 
-// API response type for events
-interface EventsResponse extends Array<GoogleEvent> {}
+
 
 // Fetch integration status
 export function useGoogleIntegration() {
@@ -87,7 +86,7 @@ export function useGoogleEvents(
 ) {
   const { data: integration } = useGoogleIntegration()
 
-  return useQuery<EventsResponse>({
+  return useQuery<CalendarEvent[]>({
     queryKey: ["google-events", options?.start, options?.end, options?.calendarId],
     queryFn: async () => {
       const params = new URLSearchParams()
@@ -99,7 +98,13 @@ export function useGoogleEvents(
       if (!response.ok) {
         throw new Error("Failed to fetch events")
       }
-      return response.json()
+      const events = await response.json()
+      // Convert string dates back to Date objects
+      return events.map((event: any) => ({
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end),
+      }))
     },
     enabled: integration?.connected === true,
   })
@@ -200,7 +205,13 @@ export function useCreateEvent() {
       if (!response.ok) {
         throw new Error("Failed to create event")
       }
-      return response.json()
+      const event = await response.json()
+      // Convert string dates back to Date objects
+      return {
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end),
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-events"] })
@@ -245,7 +256,13 @@ export function useUpdateEvent() {
       if (!response.ok) {
         throw new Error("Failed to update event")
       }
-      return response.json()
+      const event = await response.json()
+      // Convert string dates back to Date objects
+      return {
+        ...event,
+        start: new Date(event.start),
+        end: new Date(event.end),
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-events"] })

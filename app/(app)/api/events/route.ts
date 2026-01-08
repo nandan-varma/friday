@@ -3,12 +3,17 @@ import { headers } from "next/headers";
 import {
   fetchGoogleEvents,
   fetchAllSelectedCalendarEvents,
+  fetchGoogleCalendars,
   createGoogleEvent,
   updateGoogleEvent,
   deleteGoogleEvent,
+  transformGoogleEventToCalendarEvent,
 } from "@/lib/google-calendar";
 import { getIntegration } from "@/lib/google-oauth";
+import type { Calendar } from "@/types/calendar";
 import { z } from "zod";
+
+const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const;
 
 // GET /api/events - Fetch events from Google Calendar
 export async function GET(request: Request) {
@@ -28,40 +33,56 @@ export async function GET(request: Request) {
       return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const start = searchParams.get("start");
-    const end = searchParams.get("end");
-    const calendarId = searchParams.get("calendarId");
+      const { searchParams } = new URL(request.url);
+      const start = searchParams.get("start");
+      const end = searchParams.get("end");
+      const calendarId = searchParams.get("calendarId");
 
-    // Validate query params
-    const querySchema = z.object({
-      start: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid start date'),
-      end: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid end date'),
-      calendarId: z.string().optional(),
-    });
-    const queryValidation = querySchema.safeParse({ start, end, calendarId });
-    if (!queryValidation.success) {
-      return Response.json(
+      // Validate query params
+      const querySchema = z.object({
+        start: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid start date'),
+        end: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid end date'),
+        calendarId: z.string().nullable().optional(),
+      });
+
+      const queryValidation = querySchema.safeParse({ start, end, calendarId });
+
+      if (!queryValidation.success) {
+        return Response.json(
         { error: 'Validation failed', details: queryValidation.error.issues },
         { status: 400 }
-      );
-    }
+        );
+      }
 
-    let events;
+    // Fetch calendars for transformation
+    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
+      id: cal.id!,
+      name: cal.summary || "Untitled Calendar",
+      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+      checked: true, // We'll handle this later if needed
+    }));
+
+    let googleEvents;
 
     if (calendarId) {
       // Fetch from specific calendar
-      events = await fetchGoogleEvents(session.user.id, calendarId, {
+      googleEvents = await fetchGoogleEvents(session.user.id, calendarId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
+      // Add calendarId to each event
+      googleEvents = googleEvents.map(event => ({ ...event, calendarId }));
     } else {
       // Fetch from all selected calendars
-      events = await fetchAllSelectedCalendarEvents(session.user.id, {
+      googleEvents = await fetchAllSelectedCalendarEvents(session.user.id, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
     }
+
+    // Transform to CalendarEvent[]
+    const events = googleEvents.map(event => transformGoogleEventToCalendarEvent(event, calendars));
 
     return Response.json(events);
   } catch (error) {
@@ -104,7 +125,7 @@ export async function POST(request: Request) {
 
     const { calendarId, summary, description, location, start, end, attendees } = validationResult.data;
 
-    const created = await createGoogleEvent(session.user.id, calendarId, {
+    const createdGoogleEvent = await createGoogleEvent(session.user.id, calendarId, {
       summary,
       description: description?.trim(),
       location: location?.trim(),
@@ -113,7 +134,21 @@ export async function POST(request: Request) {
       attendees: attendees?.map(a => a.email),
     });
 
-    return Response.json(created, { status: 201 });
+    // Transform to CalendarEvent
+    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
+      id: cal.id!,
+      name: cal.summary || "Untitled Calendar",
+      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+      checked: true,
+    }));
+
+    const createdEvent = transformGoogleEventToCalendarEvent(
+      { ...createdGoogleEvent, calendarId },
+      calendars
+    );
+
+    return Response.json(createdEvent, { status: 201 });
   } catch (error) {
     console.error("Failed to create event:", error);
     return Response.json({ error: "Failed to create event" }, { status: 500 });
@@ -169,14 +204,28 @@ export async function PATCH(request: Request) {
     if (validationResult.data.end) updateData.end = new Date(validationResult.data.end);
     if (validationResult.data.attendees) updateData.attendees = validationResult.data.attendees.map(a => a.email);
 
-    const updated = await updateGoogleEvent(
+    const updatedGoogleEvent = await updateGoogleEvent(
       session.user.id,
       calendarId,
       eventId,
       updateData
     );
 
-    return Response.json(updated);
+    // Transform to CalendarEvent
+    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
+      id: cal.id!,
+      name: cal.summary || "Untitled Calendar",
+      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+      checked: true,
+    }));
+
+    const updatedEvent = transformGoogleEventToCalendarEvent(
+      { ...updatedGoogleEvent, calendarId },
+      calendars
+    );
+
+    return Response.json(updatedEvent);
   } catch (error) {
     console.error("Failed to update event:", error);
     return Response.json({ error: "Failed to update event" }, { status: 500 });

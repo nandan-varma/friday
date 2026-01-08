@@ -37,7 +37,9 @@ export function EventDialog({ open, onOpenChange, event, initialData, calendars,
       setStartTime(event.start.toTimeString().slice(0, 5))
       setEndDate(event.end.toISOString().split("T")[0])
       setEndTime(event.end.toTimeString().slice(0, 5))
-      setCalendarId(event.calendarId)
+      // Find calendar name by ID
+      const calendar = calendars.find((cal) => cal.id === event.calendarId)
+      setCalendarId(calendar?.name || event.calendarId)
     } else if (initialData) {
       setTitle("")
       setDescription("")
@@ -45,7 +47,7 @@ export function EventDialog({ open, onOpenChange, event, initialData, calendars,
       setStartTime(initialData.start.toTimeString().slice(0, 5))
       setEndDate(initialData.end.toISOString().split("T")[0])
       setEndTime(initialData.end.toTimeString().slice(0, 5))
-      setCalendarId(calendars[0]?.id || "")
+      setCalendarId(calendars[0]?.name || "")
     }
   }, [event, initialData, calendars])
 
@@ -58,12 +60,16 @@ export function EventDialog({ open, onOpenChange, event, initialData, calendars,
     const start = new Date(startYear, startMonth - 1, startDay, startHour, startMin)
     const end = new Date(endYear, endMonth - 1, endDay, endHour, endMin)
 
+    // Find the calendar ID by name
+    const selectedCalendar = calendars.find((cal) => cal.name === calendarId)
+    const selectedCalendarId = selectedCalendar?.id || calendarId
+
     onSave({
       title,
       description,
       start,
       end,
-      calendarId,
+      calendarId: selectedCalendarId,
     })
   }
 
