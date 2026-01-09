@@ -29,6 +29,13 @@
       "when": 1767997574927,
       "tag": "0003_brave_ultron",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1767997913257,
+      "tag": "0004_lucky_starbolt",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,7 @@ export const githubIntegration = pgTable("github_integration", {
   id: text("id").primaryKey(),
   userId: text("user_id")
     .notNull()
+    .unique()
     .references(() => user.id, { onDelete: "cascade" }),
   githubUserId: text("github_user_id").notNull(),
   githubUsername: text("github_username").notNull(),
