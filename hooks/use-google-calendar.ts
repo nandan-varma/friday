@@ -264,7 +264,47 @@ export function useUpdateEvent() {
         end: new Date(event.end),
       }
     },
-    onSuccess: () => {
+    onMutate: async ({ eventId, updates }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["google-events"] })
+
+      // Snapshot previous value
+      const previousEvents = queryClient.getQueriesData<CalendarEvent[]>({ queryKey: ["google-events"] })
+
+      // Optimistically update all matching queries
+      queryClient.setQueriesData<CalendarEvent[]>(
+        { queryKey: ["google-events"] },
+        (old) => {
+          if (!old) return old
+          return old.map((event) =>
+            event.id === eventId
+              ? {
+                  ...event,
+                  ...(updates.summary !== undefined && { title: updates.summary }),
+                  ...(updates.description !== undefined && { description: updates.description }),
+                  ...(updates.location !== undefined && { location: updates.location }),
+                  ...(updates.start !== undefined && { start: updates.start }),
+                  ...(updates.end !== undefined && { end: updates.end }),
+                  ...(updates.attendees !== undefined && { attendees: updates.attendees }),
+                }
+              : event
+          )
+        }
+      )
+
+      // Return context for rollback
+      return { previousEvents }
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousEvents) {
+        context.previousEvents.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data)
+        })
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure sync with server
       queryClient.invalidateQueries({ queryKey: ["google-events"] })
     },
   })

@@ -71,8 +71,10 @@ export async function GET(request: Request) {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
-      // Add calendarId to each event
-      googleEvents = googleEvents.map(event => ({ ...event, calendarId }));
+      // Get accessRole for this calendar
+      const calendar = googleCalendars.find(cal => cal.id === calendarId);
+      // Add calendarId and accessRole to each event
+      googleEvents = googleEvents.map(event => ({ ...event, calendarId, accessRole: calendar?.accessRole }));
     } else {
       // Fetch from all selected calendars
       googleEvents = await fetchAllSelectedCalendarEvents(session.user.id, {
@@ -82,7 +84,7 @@ export async function GET(request: Request) {
     }
 
     // Transform to CalendarEvent[]
-    const events = googleEvents.map(event => transformGoogleEventToCalendarEvent(event, calendars));
+    const events = googleEvents.map(event => transformGoogleEventToCalendarEvent(event, calendars, event.accessRole || undefined));
 
     return Response.json(events);
   } catch (error) {
@@ -143,9 +145,12 @@ export async function POST(request: Request) {
       checked: true,
     }));
 
+    // Get accessRole for the calendar
+    const calendar = googleCalendars.find(cal => cal.id === calendarId);
     const createdEvent = transformGoogleEventToCalendarEvent(
       { ...createdGoogleEvent, calendarId },
-      calendars
+      calendars,
+      calendar?.accessRole || undefined
     );
 
     return Response.json(createdEvent, { status: 201 });
@@ -220,9 +225,12 @@ export async function PATCH(request: Request) {
       checked: true,
     }));
 
+    // Get accessRole for the calendar
+    const calendar = googleCalendars.find(cal => cal.id === calendarId);
     const updatedEvent = transformGoogleEventToCalendarEvent(
       { ...updatedGoogleEvent, calendarId },
-      calendars
+      calendars,
+      calendar?.accessRole || undefined
     );
 
     return Response.json(updatedEvent);

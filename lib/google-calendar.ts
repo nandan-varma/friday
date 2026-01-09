@@ -1,7 +1,7 @@
 import { google, calendar_v3 } from "googleapis";
 import { getAuthenticatedClient, getIntegration } from "./google-oauth";
 import { db } from "@/db";
-import { googleCalendarIntegration } from "@/db/schema/calendar";
+import { googleCalendarIntegration } from "@/db/schema/integrations";
 import { eq } from "drizzle-orm";
 import type { Calendar, CalendarEvent } from "@/types/calendar";
 
@@ -11,7 +11,8 @@ export type GoogleEvent = calendar_v3.Schema$Event;
 // Transform GoogleEvent to CalendarEvent
 export function transformGoogleEventToCalendarEvent(
   event: GoogleEvent & { calendarId: string },
-  calendars: Calendar[]
+  calendars: Calendar[],
+  calendarAccessRole?: string
 ): CalendarEvent {
   const calendar = calendars.find((c) => c.id === event.calendarId);
   const startDate = event.start?.dateTime
@@ -25,6 +26,14 @@ export function transformGoogleEventToCalendarEvent(
     ? new Date(event.end.date)
     : new Date();
 
+  // Determine if event is editable
+  // An event is editable if:
+  // 1. The calendar has 'owner' or 'writer' access
+  // 2. The user is the organizer (organizer.self === true)
+  const hasWriteAccess = calendarAccessRole === "owner" || calendarAccessRole === "writer";
+  const isOrganizer = event.organizer?.self === true;
+  const editable = hasWriteAccess && (isOrganizer || !event.organizer);
+
   return {
     id: event.id!,
     title: event.summary || "Untitled Event",
@@ -36,6 +45,7 @@ export function transformGoogleEventToCalendarEvent(
     location: event.location || undefined,
     attendees: event.attendees?.map((a) => a.email!) || undefined,
     htmlLink: event.htmlLink || undefined,
+    editable,
   };
 }
 
@@ -88,7 +98,7 @@ export async function fetchAllSelectedCalendarEvents(
     timeMin?: Date;
     timeMax?: Date;
   }
-): Promise<Array<GoogleEvent & { calendarId: string }>> {
+): Promise<Array<GoogleEvent & { calendarId: string; accessRole?: string }>> {
   const integration = await getIntegration(userId);
 
   if (!integration) {
@@ -100,17 +110,25 @@ export async function fetchAllSelectedCalendarEvents(
     ? JSON.parse(integration.selectedCalendarIds)
     : ["primary"];
 
-  const allEvents: Array<GoogleEvent & { calendarId: string }> = [];
+  // Fetch calendar list to get accessRole for each calendar
+  const googleCalendars = await fetchGoogleCalendars(userId);
+  const calendarAccessRoles = new Map(
+    googleCalendars.map((cal) => [cal.id!, cal.accessRole])
+  );
+
+  const allEvents: Array<GoogleEvent & { calendarId: string; accessRole?: string }> = [];
 
   // Fetch events from each calendar
   for (const calendarId of calendarIds) {
     try {
       const events = await fetchGoogleEvents(userId, calendarId, options);
-      // Add calendarId to each event for reference
+      const accessRole = calendarAccessRoles.get(calendarId);
+      // Add calendarId and accessRole to each event for reference
       allEvents.push(
         ...events.map((event) => ({
           ...event,
           calendarId,
+          accessRole: accessRole || undefined,
         }))
       );
     } catch (error) {

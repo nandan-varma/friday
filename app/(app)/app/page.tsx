@@ -228,20 +228,33 @@ export default function CalendarPage() {
     const event = events.find((e) => e.id === eventId)
     if (!event) return
 
+    // Only include fields that are actually being updated
+    const apiUpdates: {
+      summary?: string
+      description?: string
+      location?: string
+      start?: Date
+      end?: Date
+      attendees?: string[]
+    } = {}
+
+    if (updates.title !== undefined) apiUpdates.summary = updates.title
+    if (updates.description !== undefined) apiUpdates.description = updates.description
+    if (updates.location !== undefined) apiUpdates.location = updates.location
+    if (updates.start !== undefined) apiUpdates.start = updates.start
+    if (updates.end !== undefined) apiUpdates.end = updates.end
+    if (updates.attendees !== undefined) apiUpdates.attendees = updates.attendees
+
     updateEvent.mutate(
       {
         eventId,
         calendarId: event.calendarId,
-        updates: {
-          summary: updates.title,
-          description: updates.description,
-          location: updates.location,
-          start: updates.start,
-          end: updates.end,
-          attendees: updates.attendees,
-        },
+        updates: apiUpdates,
       },
       {
+        onSuccess: () => {
+          // Silent success - no toast needed for drag/drop
+        },
         onError: (error) => {
           toast.error("Failed to update event")
           console.error(error)

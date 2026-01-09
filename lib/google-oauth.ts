@@ -1,6 +1,6 @@
 import { google } from "googleapis";
 import { db } from "@/db";
-import { googleCalendarIntegration } from "@/db/schema/calendar";
+import { googleCalendarIntegration } from "@/db/schema/integrations";
 import { eq } from "drizzle-orm";
 import { encryptToken, decryptToken } from "@/lib/crypto-utils";
 

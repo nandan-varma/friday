@@ -30,6 +30,10 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
   }, [event.start, event.end, hourHeight])
 
   const handleMouseDown = (e: React.MouseEvent, type: "drag" | "resize-top" | "resize-bottom") => {
+    // Prevent dragging/resizing if event is not editable
+    if (event.editable === false) {
+      return
+    }
     e.stopPropagation()
     hasDraggedRef.current = false
 
@@ -122,9 +126,9 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
     <div
       ref={cardRef}
       data-event
-      className={`group absolute left-1 right-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-sm shadow-md transition-all cursor-pointer ${
+      className={`group absolute left-1 right-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-sm shadow-md transition-all ${event.editable === false ? 'cursor-default opacity-75' : 'cursor-pointer'} ${
         colorClasses[event.color as keyof typeof colorClasses] || (needsFallbackBg ? "bg-gray-200 text-foreground border-gray-300" : "text-white")
-      } ${isDragging || isResizing ? "opacity-90 scale-[1.02] shadow-lg z-50" : "hover:scale-[1.01] hover:shadow-lg z-10"}`}
+      } ${isDragging || isResizing ? "opacity-90 scale-[1.02] shadow-lg z-50" : event.editable !== false ? "hover:scale-[1.01] hover:shadow-lg z-10" : "z-10"}`}
       style={{
         top: `${position.top}px`,
         height: `${position.height}px`,
@@ -138,13 +142,15 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
         }
       }}
     >
-      <div
-        className="absolute inset-x-0 top-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => handleMouseDown(e, "resize-top")}
-      />
+      {event.editable !== false && (
+        <div
+          className="absolute inset-x-0 top-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity"
+          onMouseDown={(e) => handleMouseDown(e, "resize-top")}
+        />
+      )}
 
-      <div className="flex items-start gap-1 cursor-move" onMouseDown={(e) => handleMouseDown(e, "drag")}>
-        <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-70 flex-shrink-0 mt-0.5" />
+      <div className={`flex items-start gap-1 ${event.editable !== false ? 'cursor-move' : 'cursor-default'}`} onMouseDown={(e) => handleMouseDown(e, "drag")}>
+        {event.editable !== false && <GripVertical className="h-3 w-3 opacity-0 group-hover:opacity-70 shrink-0 mt-0.5" />}
         <div className="flex-1 min-w-0">
           <div className="truncate font-medium leading-tight">{event.title}</div>
           <div className="text-xs opacity-90">
@@ -156,10 +162,12 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
         </div>
       </div>
 
-      <div
-        className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity"
-        onMouseDown={(e) => handleMouseDown(e, "resize-bottom")}
-      />
+      {event.editable !== false && (
+        <div
+          className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity"
+          onMouseDown={(e) => handleMouseDown(e, "resize-bottom")}
+        />
+      )}
     </div>
   )
 }

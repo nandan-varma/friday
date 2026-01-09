@@ -18,4 +18,5 @@ export interface CalendarEvent {
   location?: string
   attendees?: string[]
   htmlLink?: string
+  editable?: boolean
 }
