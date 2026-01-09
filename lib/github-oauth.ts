@@ -125,11 +125,27 @@ export async function storeIntegration(
   tokenExpiry: Date | undefined,
   scope: string
 ): Promise<void> {
-  const integrationId = nanoid();
+  // Check if integration already exists
+  const existing = await getIntegration(userId);
 
-  await db
-    .insert(githubIntegration)
-    .values({
+  if (existing) {
+    // Update existing integration
+    await db
+      .update(githubIntegration)
+      .set({
+        githubUserId,
+        githubUsername,
+        accessToken,
+        refreshToken,
+        tokenExpiry,
+        scope,
+        updatedAt: new Date(),
+      })
+      .where(eq(githubIntegration.userId, userId));
+  } else {
+    // Insert new integration
+    const integrationId = nanoid();
+    await db.insert(githubIntegration).values({
       id: integrationId,
       userId,
       githubUserId,
@@ -140,19 +156,8 @@ export async function storeIntegration(
       scope,
       createdAt: new Date(),
       updatedAt: new Date(),
-    })
-    .onConflictDoUpdate({
-      target: githubIntegration.userId,
-      set: {
-        githubUserId,
-        githubUsername,
-        accessToken,
-        refreshToken,
-        tokenExpiry,
-        scope,
-        updatedAt: new Date(),
-      },
     });
+  }
 }
 
 /**
