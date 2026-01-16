@@ -8,8 +8,8 @@ import {
   updateGoogleEvent,
   deleteGoogleEvent,
   transformGoogleEventToCalendarEvent,
-} from "@/lib/google-calendar";
-import { getIntegration } from "@/lib/google-oauth";
+} from "@/lib/integrations/google/google-calendar";
+import { getIntegration } from "@/lib/integrations/google/google-oauth";
 import type { Calendar } from "@/types/calendar";
 import { z } from "zod";
 

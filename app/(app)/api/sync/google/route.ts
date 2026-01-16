@@ -6,8 +6,8 @@ import {
   fetchAllSelectedCalendarEvents,
   updateLastSyncAt,
   getSyncStatus,
-} from "@/lib/google-calendar";
-import { getIntegration } from "@/lib/google-oauth";
+} from "@/lib/integrations/google/google-calendar";
+import { getIntegration } from "@/lib/integrations/google/google-oauth";
 
 // POST /api/sync/google - Trigger manual sync
 export async function POST(req: NextRequest) {

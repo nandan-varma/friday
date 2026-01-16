@@ -4,7 +4,7 @@ import {
   exchangeCodeForTokens,
   getGoogleUserInfo,
   storeIntegration,
-} from "@/lib/google-oauth";
+} from "@/lib/integrations/google/google-oauth";
 import { headers } from "next/headers";
 
 // POST /api/integrations/google/callback - Handle OAuth callback

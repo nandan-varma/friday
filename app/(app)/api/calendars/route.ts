@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { fetchGoogleCalendars, updateSelectedCalendars } from "@/lib/google-calendar";
-import { getIntegration } from "@/lib/google-oauth";
+import { fetchGoogleCalendars, updateSelectedCalendars } from "@/lib/integrations/google/google-calendar";
+import { getIntegration } from "@/lib/integrations/google/google-oauth";
 
 // GET /api/calendars - Fetch user's Google calendars
 export async function GET() {

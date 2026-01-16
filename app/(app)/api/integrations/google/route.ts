@@ -7,7 +7,7 @@ import {
   storeIntegration,
   getIntegration,
   revokeIntegration,
-} from "@/lib/google-oauth";
+} from "@/lib/integrations/google/google-oauth";
 import { headers } from "next/headers";
 
 // POST /api/integrations/google - Initiate OAuth flow

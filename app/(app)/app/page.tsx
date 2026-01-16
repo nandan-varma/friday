@@ -1,364 +1,192 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { CalendarHeader } from "@/components/app/calendar-header"
-import { CalendarSidebar } from "@/components/app/calendar-sidebar"
-import { CalendarGrid } from "@/components/app/calendar-grid"
-import { EventDialog } from "@/components/app/event-dialog"
+import type React from "react"
+import { useState } from "react"
+import { useChat } from '@ai-sdk/react'
+import { DefaultChatTransport } from "ai"
 import { Button } from "@/components/ui/button"
-import { Spinner } from "@/components/ui/spinner"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import type { Calendar, CalendarEvent } from "@/types/calendar"
-import {
-  useGoogleIntegration,
-  useGoogleCalendars,
-  useGoogleEvents,
-  useConnectGoogle,
-  useCreateEvent,
-  useUpdateEvent,
-  useDeleteEvent,
-  useUpdateSelectedCalendars,
-} from "@/hooks/use-google-calendar"
-import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Github, Calendar, Send, Loader2 } from "lucide-react"
 
-// Color palette for calendars
-const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const
+export default function ChatPage() {
+  const [input, setInput] = useState("")
 
-export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 0, 6))
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "agenda">("week")
-  const [eventDialogOpen, setEventDialogOpen] = useState(false)
-  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
-  const [dialogInitialData, setDialogInitialData] = useState<{
-    start: Date
-    end: Date
-  } | null>(null)
-  const [localCalendarStates, setLocalCalendarStates] = useState<Record<string, boolean>>({})
-
-  // Fetch integration status
-  const { data: integration, isLoading: integrationLoading } = useGoogleIntegration()
-
-  // Fetch calendars
-  const { data: googleCalendars, isLoading: calendarsLoading } = useGoogleCalendars()
-
-  // Calculate date range for events based on view mode
-  const eventDateRange = useMemo(() => {
-    const start = new Date(selectedDate)
-    const end = new Date(selectedDate)
-
-    switch (viewMode) {
-      case "day":
-        start.setHours(0, 0, 0, 0)
-        end.setHours(23, 59, 59, 999)
-        break
-      case "week":
-        const dayOfWeek = start.getDay()
-        start.setDate(start.getDate() - dayOfWeek)
-        start.setHours(0, 0, 0, 0)
-        end.setDate(start.getDate() + 6)
-        end.setHours(23, 59, 59, 999)
-        break
-      case "month":
-        start.setDate(1)
-        start.setHours(0, 0, 0, 0)
-        end.setMonth(end.getMonth() + 1)
-        end.setDate(0)
-        end.setHours(23, 59, 59, 999)
-        break
-      case "agenda":
-        start.setHours(0, 0, 0, 0)
-        end.setDate(end.getDate() + 30)
-        end.setHours(23, 59, 59, 999)
-        break
-    }
-
-    return { start, end }
-  }, [selectedDate, viewMode])
-
-  // Fetch events
-  const { data: googleEvents, isLoading: eventsLoading } = useGoogleEvents({
-    start: eventDateRange.start,
-    end: eventDateRange.end,
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+    }),
   })
 
-  // Mutations
-  const connectGoogle = useConnectGoogle()
-  const createEvent = useCreateEvent()
-  const updateEvent = useUpdateEvent()
-  const deleteEvent = useDeleteEvent()
-  const updateSelectedCalendars = useUpdateSelectedCalendars()
-
-  // Initialize local calendar states from integration data
-  const initialStates = useMemo(() => {
-    if (integration?.selectedCalendarIds && googleCalendars) {
-      const states: Record<string, boolean> = {};
-      googleCalendars.forEach((cal) => {
-        states[cal.id] = integration.selectedCalendarIds?.includes(cal.id) ?? true;
-      });
-      return states;
-    }
-    return {};
-  }, [integration?.selectedCalendarIds, googleCalendars]);
-
-  useEffect(() => {
-    setLocalCalendarStates(initialStates);
-  }, [initialStates])
-
-  // Transform Google calendars to our Calendar type
-  const calendars: Calendar[] = useMemo(() => {
-    if (!googleCalendars) return []
-    return googleCalendars.map((cal, index) => ({
-      id: cal.id,
-      name: cal.summary || "Untitled Calendar",
-      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
-      checked: localCalendarStates[cal.id] ?? true,
-    }))
-  }, [googleCalendars, localCalendarStates])
-
-  // Events are now already transformed in the API
-  const events: CalendarEvent[] = googleEvents || []
-
-  const handleToggleCalendar = (calendarId: string) => {
-    setLocalCalendarStates((prev) => {
-      const newStates = { ...prev, [calendarId]: !prev[calendarId] }
-
-      // Update selected calendars in backend
-      const selectedIds = Object.entries(newStates)
-        .filter(([_, checked]) => checked)
-        .map(([id]) => id)
-
-      updateSelectedCalendars.mutate(selectedIds, {
-        onError: (error) => {
-          toast.error("Failed to update calendar selection")
-          console.error(error)
-        },
-      })
-
-      return newStates
-    })
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim() || status !== "ready") return
+    sendMessage({ text: input })
+    setInput("")
   }
 
-  const handleCreateEvent = (start: Date, end: Date) => {
-    setDialogInitialData({ start, end })
-    setSelectedEvent(null)
-    setEventDialogOpen(true)
-  }
-
-  const handleEditEvent = (event: CalendarEvent) => {
-    setSelectedEvent(event)
-    setDialogInitialData(null)
-    setEventDialogOpen(true)
-  }
-
-  const handleSaveEvent = async (eventData: Partial<CalendarEvent>) => {
-    if (selectedEvent) {
-      // Update existing event
-      updateEvent.mutate(
-        {
-          eventId: selectedEvent.id,
-          calendarId: selectedEvent.calendarId,
-          updates: {
-            summary: eventData.title,
-            description: eventData.description,
-            location: eventData.location,
-            start: eventData.start,
-            end: eventData.end,
-            attendees: eventData.attendees,
-          },
-        },
-        {
-          onSuccess: () => {
-            toast.success("Event updated successfully")
-            setEventDialogOpen(false)
-          },
-          onError: (error) => {
-            toast.error("Failed to update event")
-            console.error(error)
-          },
-        }
-      )
-    } else {
-      // Create new event
-      createEvent.mutate(
-        {
-          calendarId: eventData.calendarId || calendars[0]?.id || "primary",
-          summary: eventData.title || "Untitled Event",
-          description: eventData.description,
-          location: eventData.location,
-          start: eventData.start || new Date(),
-          end: eventData.end || new Date(),
-          attendees: eventData.attendees,
-        },
-        {
-          onSuccess: () => {
-            toast.success("Event created successfully")
-            setEventDialogOpen(false)
-          },
-          onError: (error) => {
-            toast.error("Failed to create event")
-            console.error(error)
-          },
-        }
-      )
-    }
-  }
-
-  const handleDeleteEvent = (eventId: string) => {
-    if (!selectedEvent) return
-
-    deleteEvent.mutate(
-      {
-        eventId,
-        calendarId: selectedEvent.calendarId,
-      },
-      {
-        onSuccess: () => {
-          toast.success("Event deleted successfully")
-          setEventDialogOpen(false)
-        },
-        onError: (error) => {
-          toast.error("Failed to delete event")
-          console.error(error)
-        },
-      }
-    )
-  }
-
-  const handleUpdateEvent = (eventId: string, updates: Partial<CalendarEvent>) => {
-    const event = events.find((e) => e.id === eventId)
-    if (!event) return
-
-    // Only include fields that are actually being updated
-    const apiUpdates: {
-      summary?: string
-      description?: string
-      location?: string
-      start?: Date
-      end?: Date
-      attendees?: string[]
-    } = {}
-
-    if (updates.title !== undefined) apiUpdates.summary = updates.title
-    if (updates.description !== undefined) apiUpdates.description = updates.description
-    if (updates.location !== undefined) apiUpdates.location = updates.location
-    if (updates.start !== undefined) apiUpdates.start = updates.start
-    if (updates.end !== undefined) apiUpdates.end = updates.end
-    if (updates.attendees !== undefined) apiUpdates.attendees = updates.attendees
-
-    updateEvent.mutate(
-      {
-        eventId,
-        calendarId: event.calendarId,
-        updates: apiUpdates,
-      },
-      {
-        onSuccess: () => {
-          // Silent success - no toast needed for drag/drop
-        },
-        onError: (error) => {
-          toast.error("Failed to update event")
-          console.error(error)
-        },
-      }
-    )
-  }
-
-  const visibleEvents = events.filter((event) => calendars.find((cal) => cal.id === event.calendarId)?.checked)
-
-  // Loading state
-  if (integrationLoading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Spinner className="size-8" />
-          <p className="text-sm text-muted-foreground">Loading calendar...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Not connected state
-  if (!integration?.connected) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-background">
-        <div className="flex max-w-md flex-col items-center gap-6 text-center">
-          <div className="flex flex-col gap-2">
-            <h2 className="text-2xl font-semibold">Connect Your Google Calendar</h2>
-            <p className="text-sm text-muted-foreground">
-              To get started, connect your Google Calendar account to sync your events and calendars.
-            </p>
-          </div>
-          <Button
-            size="lg"
-            onClick={() => connectGoogle.mutate()}
-            disabled={connectGoogle.isPending}
-          >
-            {connectGoogle.isPending ? (
-              <>
-                <Spinner className="mr-2" />
-                Connecting...
-              </>
-            ) : (
-              "Connect Google Calendar"
-            )}
-          </Button>
-          {connectGoogle.isError && (
-            <Alert variant="destructive">
-              <AlertDescription>
-                Failed to connect Google Calendar. Please try again.
-              </AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </div>
-    )
+  const insertTag = (tag: string) => {
+    setInput((prev) => prev + (prev ? " " : "") + tag)
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] bg-background">
-      <CalendarSidebar
-        calendars={calendars}
-        onToggleCalendar={handleToggleCalendar}
-        selectedDate={selectedDate}
-        onDateSelect={setSelectedDate}
-      />
-
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <CalendarHeader
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
-
-        {calendarsLoading || eventsLoading ? (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <Spinner className="size-8" />
-              <p className="text-sm text-muted-foreground">Loading events...</p>
-            </div>
+    <div className="flex flex-col h-screen bg-background">
+        {/* Header */}
+        <header className="border-b bg-card">
+          <div className="container mx-auto px-4 py-4">
+            <h1 className="text-2xl font-bold text-foreground">AI Assistant</h1>
+            <p className="text-sm text-muted-foreground">Chat with your GitHub and Calendar integrations</p>
           </div>
-        ) : (
-          <CalendarGrid
-            events={visibleEvents}
-            selectedDate={selectedDate}
-            viewMode={viewMode}
-            onCreateEvent={handleCreateEvent}
-            onEditEvent={handleEditEvent}
-            onUpdateEvent={handleUpdateEvent}
-          />
-        )}
-      </div>
+        </header>
 
-      <EventDialog
-        open={eventDialogOpen}
-        onOpenChange={setEventDialogOpen}
-        event={selectedEvent}
-        initialData={dialogInitialData}
-        calendars={calendars}
-        onSave={handleSaveEvent}
-        onDelete={handleDeleteEvent}
-      />
-    </div>
+        {/* Main Chat Area */}
+        <div className="flex-1 container mx-auto px-4 py-6 flex flex-col max-w-4xl">
+          {/* Quick Actions */}
+          {messages.length === 0 && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="text-lg">Quick Actions</CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4 bg-transparent"
+                  onClick={() => setInput("Show me my GitHub activity today")}
+                >
+                  <Github className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">GitHub Activity</div>
+                    <div className="text-xs text-muted-foreground">View commits, PRs, and issues</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4 bg-transparent"
+                  onClick={() => setInput("What's on my calendar today?")}
+                >
+                  <Calendar className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">Today's Schedule</div>
+                    <div className="text-xs text-muted-foreground">See your calendar events</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4 bg-transparent"
+                  onClick={() => setInput("Generate my daily standup")}
+                >
+                  <Github className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">Daily Standup</div>
+                    <div className="text-xs text-muted-foreground">GitHub activity summary</div>
+                  </div>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="justify-start h-auto py-4 px-4 bg-transparent"
+                  onClick={() => setInput("List my repositories")}
+                >
+                  <Github className="mr-2 h-5 w-5" />
+                  <div className="text-left">
+                    <div className="font-semibold">My Repositories</div>
+                    <div className="text-xs text-muted-foreground">Browse your GitHub repos</div>
+                  </div>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Messages */}
+          <ScrollArea className="flex-1 pr-4">
+            <div className="space-y-4">
+              {messages.map((message) => (
+                <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <Card
+                    className={`max-w-[80%] ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-card"
+                      }`}
+                  >
+                    <CardContent className="p-4">
+                      {message.parts.map((part, index) => {
+                        if (part.type === "text") {
+                          return (
+                            <div key={index} className="whitespace-pre-wrap text-pretty">
+                              {part.text}
+                            </div>
+                          )
+                        }
+                        // Handle tool calls
+                        if (part.type.startsWith("tool-")) {
+                          const toolName = part.type.replace("tool-", "")
+                          return (
+                            <div key={index} className="mt-2">
+                              <Badge variant="secondary" className="mb-2">
+                                🔧 {toolName}
+                              </Badge>
+                              {(part as any).state === "input-available" && (
+                                <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
+                                  {JSON.stringify((part as any).input, null, 2)}
+                                </pre>
+                              )}
+                            </div>
+                          )
+                        }
+                        return null
+                      })}
+                    </CardContent>
+                  </Card>
+                </div>
+              ))}
+              {status === "streaming" && (
+                <div className="flex justify-start">
+                  <Card className="bg-card">
+                    <CardContent className="p-4 flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      <span className="text-sm text-muted-foreground">Thinking...</span>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          {/* Input Area */}
+          <div className="mt-6 space-y-2">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => insertTag("@github")}
+                className="flex items-center gap-1"
+              >
+                <Github className="h-3 w-3" />
+                GitHub
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => insertTag("@calendar")}
+                className="flex items-center gap-1"
+              >
+                <Calendar className="h-3 w-3" />
+                Calendar
+              </Button>
+            </div>
+            <form onSubmit={handleSubmit} className="flex gap-2">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask about your GitHub activity or calendar..."
+                disabled={status !== "ready"}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={status !== "ready" || !input.trim()}>
+                {status === "streaming" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              </Button>
+            </form>
+          </div>
+        </div>
+      </div>
   )
 }

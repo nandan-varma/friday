@@ -261,14 +261,43 @@ export async function refreshAccessToken(userId: string): Promise<string> {
   return integration.accessToken;
 }
 
+// Simple in-memory cache with TTL
+const cache = new Map<string, { data: any; expiry: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(path: string, options: RequestInit = {}): string {
+  return `${path}:${JSON.stringify(options)}`;
+}
+
+function getCachedResponse(key: string): any | null {
+  const cached = cache.get(key);
+  if (cached && cached.expiry > Date.now()) {
+    return cached.data;
+  }
+  if (cached) {
+    cache.delete(key); // Remove expired
+  }
+  return null;
+}
+
+function setCachedResponse(key: string, data: any): void {
+  cache.set(key, { data, expiry: Date.now() + CACHE_TTL });
+}
+
 /**
- * Get GitHub API client with authentication
+ * Get GitHub API client with authentication and caching
  */
 export async function getGithubClient(userId: string) {
   const accessToken = await refreshAccessToken(userId);
 
   return {
     fetch: async (path: string, options: RequestInit = {}) => {
+      const cacheKey = getCacheKey(path, options);
+      const cached = getCachedResponse(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
       const response = await fetch(`https://api.github.com${path}`, {
         ...options,
         headers: {
@@ -283,7 +312,9 @@ export async function getGithubClient(userId: string) {
         throw new Error(`GitHub API error: ${error}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      setCachedResponse(cacheKey, data);
+      return data;
     },
   };
 }

@@ -4,7 +4,7 @@ import {
   getAuthorizationUrl,
   getIntegration,
   revokeIntegration,
-} from "@/lib/github-oauth";
+} from "@/lib/integrations/github/github-oauth";
 import { headers } from "next/headers";
 
 // POST /api/integrations/github - Initiate OAuth flow

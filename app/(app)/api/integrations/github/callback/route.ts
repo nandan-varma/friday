@@ -4,7 +4,7 @@ import {
   exchangeCodeForTokens,
   getGithubUserInfo,
   storeIntegration,
-} from "@/lib/github-oauth";
+} from "@/lib/integrations/github/github-oauth";
 import { headers } from "next/headers";
 
 // POST /api/integrations/github/callback - Handle OAuth callback
