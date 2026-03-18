@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
+import { authClient } from "@/lib/auth-client";
 
 function useScrollAnimation() {
   const ref = useRef<HTMLDivElement>(null);
@@ -45,6 +46,21 @@ export default function Page() {
   const featuresRef = useScrollAnimation();
   const faqRef = useScrollAnimation();
   const ctaRef = useScrollAnimation();
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session.data?.user) {
+          router.push("/app");
+        }
+      } catch (error) {
+        console.error("Failed to get session:", error);
+      }
+    };
+
+    checkSession();
+  }, [router]);
   
   return (
     <div className="min-h-screen bg-background">

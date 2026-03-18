@@ -131,11 +131,17 @@ export async function storeIntegration(
 
 // Get integration for user
 export async function getIntegration(userId: string) {
+  console.log(`[getIntegration] Looking up integration for userId: ${userId}`);
   const integrations = await db
     .select()
     .from(googleCalendarIntegration)
     .where(eq(googleCalendarIntegration.userId, userId))
     .limit(1);
+
+  console.log(`[getIntegration] Query result:`, {
+    found: integrations.length > 0,
+    count: integrations.length,
+  });
 
   const integration = integrations[0];
   if (integration) {
@@ -191,9 +197,11 @@ export async function refreshAccessToken(userId: string): Promise<string> {
 
 // Get valid access token (refreshes if expired)
 export async function getValidAccessToken(userId: string): Promise<string> {
+  console.log(`[getValidAccessToken] Getting token for userId: ${userId}`);
   const integration = await getIntegration(userId);
 
   if (!integration) {
+    console.error(`[getValidAccessToken] No integration found for userId: ${userId}`);
     throw new Error("No Google Calendar integration found for user");
   }
 

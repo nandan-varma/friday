@@ -51,6 +51,7 @@ export function transformGoogleEventToCalendarEvent(
 
 // Get Google Calendar API client
 async function getCalendarClient(userId: string) {
+  console.log(`[getCalendarClient] Getting client for userId: ${userId}`);
   const oauth2Client = await getAuthenticatedClient(userId);
   return google.calendar({ version: "v3", auth: oauth2Client });
 }
@@ -99,11 +100,20 @@ export async function fetchAllSelectedCalendarEvents(
     timeMax?: Date;
   }
 ): Promise<Array<GoogleEvent & { calendarId: string; accessRole?: string }>> {
+  console.log(`[fetchAllSelectedCalendarEvents] Checking integration for userId: ${userId}`);
   const integration = await getIntegration(userId);
 
   if (!integration) {
+    console.error(`[fetchAllSelectedCalendarEvents] No integration found for userId: ${userId}`);
     throw new Error("No Google Calendar integration found");
   }
+  
+  console.log(`[fetchAllSelectedCalendarEvents] Integration found:`, {
+    id: integration.id,
+    googleUserId: integration.googleUserId,
+    hasRefreshToken: !!integration.refreshToken,
+    tokenExpiry: integration.tokenExpiry,
+  });
 
   // If no calendars selected, fetch from primary calendar
   const calendarIds = integration.selectedCalendarIds

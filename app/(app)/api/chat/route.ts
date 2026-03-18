@@ -17,11 +17,13 @@ export async function POST(req: Request) {
 
   const userId = session.user.id
 
+  console.log(`[chat-route] Authenticated user ID from session: ${userId}`)
+
   // Get GitHub username from integration if available
   const githubInteg = await getIntegration(userId)
   const githubUsername = githubInteg?.githubUsername
 
-  console.log(`[v0] Starting chat for user ${userId} (GitHub: ${githubUsername || "not connected"})`) 
+  console.log(`[chat-route] Starting chat for user ${userId} (GitHub: ${githubUsername || "not connected"})`)  
 
   const { messages }: { messages: UIMessage[] } = await req.json()
 

@@ -1,5 +1,6 @@
 import { calendarTools } from "@/tools/calendar-tools"
 import { multiAgentPrompt } from "@/prompts/system-prompts"
+import { createAuthenticatedTools } from "@/lib/create-authenticated-tools"
 import { LanguageModel } from "ai"
 import { openai } from "@ai-sdk/openai";
 
@@ -72,34 +73,19 @@ export function createChatAgent(options: ChatAgentOptions) {
     systemPrompt = multiAgentPrompt,
   } = options
 
+  console.log(`[createChatAgent] Creating agent for authenticated user: ${userId}`)
+
   const tools = getToolsForIntegrations(integrations)
 
-  // Inject userId and username into tool calls
-  const wrappedTools = Object.fromEntries(
-    Object.entries(tools).map(([name, toolDef]) => {
-      const originalExecute = toolDef.execute
-      return [
-        name,
-        {
-          ...toolDef,
-          execute: async (args: any) => {
-            // Auto-inject userId if not provided
-            if (!args.userId) {
-              args.userId = userId
-            }
-            // Auto-inject username for GitHub tools if not provided
-            if (!args.username && githubUsername && name.startsWith("list")) {
-              args.username = githubUsername
-            }
-            return originalExecute(args)
-          },
-        },
-      ]
-    }),
+  // Create authenticated tools that inject the real userId from session
+  const authenticatedTools = createAuthenticatedTools(
+    tools,
+    userId,
+    githubUsername ? { username: githubUsername } : undefined
   )
 
   return {
-    tools: wrappedTools,
+    tools: authenticatedTools,
     model,
     systemPrompt,
   }
