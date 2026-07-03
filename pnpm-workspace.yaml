@@ -1,5 +1,13 @@
 packages:
   - .
+allowBuilds:
+  esbuild: true
+  msw: set this to true or false
+  sharp: true
+  unrs-resolver: true
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+overrides:
+  postcss: '>=8.5.10'
+  esbuild: '>=0.25.0'
