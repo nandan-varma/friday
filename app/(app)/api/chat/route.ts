@@ -6,10 +6,16 @@ import { chatAgent } from "@/agents/chat-agent";
 import { chatRatelimit } from "@/lib/ratelimit";
 import { readChat, saveChat } from "@/lib/chat-store";
 import { createLogger } from "@/lib/logger";
+import { z } from "zod";
+import { parseJsonBody } from "@/lib/api";
 
 export const maxDuration = 30;
 
 const log = createLogger("api/chat");
+const chatRequestSchema = z.object({
+  id: z.string().uuid(),
+  message: z.object({ id: z.string().min(1) }).passthrough(),
+});
 
 export async function POST(req: Request) {
   const startedAt = Date.now();
@@ -33,7 +39,9 @@ export async function POST(req: Request) {
     log.error("rate limit check failed, allowing request", { userId, error });
   }
 
-  const { id, message }: { id: string; message: UIMessage } = await req.json();
+  const parsed = await parseJsonBody(req, chatRequestSchema);
+  if (parsed.error) return parsed.error;
+  const { id, message } = parsed.data as unknown as { id: string; message: UIMessage };
   log.info("chat request", { userId, chatId: id, messageId: message?.id });
 
   const existing = await readChat(id, userId);

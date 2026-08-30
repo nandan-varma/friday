@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import type { Calendar, CalendarEvent } from "@/types/calendar"
+import { RecurringScopeDialog, type RecurringEditScope } from "@/components/app/recurring-scope-dialog"
 import {
   useGoogleIntegration,
   useGoogleCalendars,
@@ -21,20 +22,46 @@ import {
   useUpdateSelectedCalendars,
 } from "@/hooks/use-google-calendar"
 import { toast } from "sonner"
+import { addDays, endOfDay, endOfMonth, endOfWeek, startOfDay, startOfMonth, startOfWeek } from "date-fns"
+import { shiftDate, type CalendarViewMode } from "@/lib/calendar-date-utils"
 
 // Color palette for calendars
 const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const
 
+type ApiEventUpdates = {
+  summary?: string
+  description?: string
+  location?: string
+  start?: Date
+  end?: Date
+  attendees?: string[]
+  allDay?: boolean
+}
+
 export default function CalendarPage() {
-  const [selectedDate, setSelectedDate] = useState(new Date(2026, 0, 6))
-  const [viewMode, setViewMode] = useState<"day" | "week" | "month" | "agenda">("week")
+  const [selectedDate, setSelectedDate] = useState(() => new Date())
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("week")
   const [eventDialogOpen, setEventDialogOpen] = useState(false)
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null)
   const [dialogInitialData, setDialogInitialData] = useState<{
     start: Date
     end: Date
+    allDay?: boolean
   } | null>(null)
   const [localCalendarStates, setLocalCalendarStates] = useState<Record<string, boolean>>({})
+  // A drag/resize on a recurring instance needs the same this-event/all-events
+  // choice as editing through the dialog - held here until the user answers.
+  const [pendingGridUpdate, setPendingGridUpdate] = useState<{
+    eventId: string
+    calendarId: string
+    apiUpdates: ApiEventUpdates
+    originalEvent: CalendarEvent
+    action: "move" | "resize"
+  } | null>(null)
+  // Bumped per-event so a cancelled scope prompt forces EventCard to remount
+  // and re-derive its position from the (unchanged) source data, instead of
+  // staying wherever the drag visually left it.
+  const [eventResetTokens, setEventResetTokens] = useState<Record<string, number>>({})
 
   // Fetch integration status
   const { data: integration, isLoading: integrationLoading } = useGoogleIntegration()
@@ -44,36 +71,16 @@ export default function CalendarPage() {
 
   // Calculate date range for events based on view mode
   const eventDateRange = useMemo(() => {
-    const start = new Date(selectedDate)
-    const end = new Date(selectedDate)
-
     switch (viewMode) {
       case "day":
-        start.setHours(0, 0, 0, 0)
-        end.setHours(23, 59, 59, 999)
-        break
+        return { start: startOfDay(selectedDate), end: endOfDay(selectedDate) }
       case "week":
-        const dayOfWeek = start.getDay()
-        start.setDate(start.getDate() - dayOfWeek)
-        start.setHours(0, 0, 0, 0)
-        end.setDate(start.getDate() + 6)
-        end.setHours(23, 59, 59, 999)
-        break
+        return { start: startOfWeek(selectedDate), end: endOfWeek(selectedDate) }
       case "month":
-        start.setDate(1)
-        start.setHours(0, 0, 0, 0)
-        end.setMonth(end.getMonth() + 1)
-        end.setDate(0)
-        end.setHours(23, 59, 59, 999)
-        break
+        return { start: startOfMonth(selectedDate), end: endOfMonth(selectedDate) }
       case "agenda":
-        start.setHours(0, 0, 0, 0)
-        end.setDate(end.getDate() + 30)
-        end.setHours(23, 59, 59, 999)
-        break
+        return { start: startOfDay(selectedDate), end: endOfDay(addDays(selectedDate, 30)) }
     }
-
-    return { start, end }
   }, [selectedDate, viewMode])
 
   // Fetch events
@@ -139,8 +146,28 @@ export default function CalendarPage() {
     })
   }
 
-  const handleCreateEvent = (start: Date, end: Date) => {
-    setDialogInitialData({ start, end })
+  // Arrow-key date navigation, ignored while typing in a field or a dialog is open.
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (eventDialogOpen) return
+      const target = e.target as HTMLElement
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) || target.isContentEditable) return
+
+      if (e.key === "ArrowLeft") {
+        setSelectedDate((prev) => shiftDate(prev, viewMode, -1))
+      } else if (e.key === "ArrowRight") {
+        setSelectedDate((prev) => shiftDate(prev, viewMode, 1))
+      } else if (e.key === "t" || e.key === "T") {
+        setSelectedDate(new Date())
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown)
+    return () => document.removeEventListener("keydown", handleKeyDown)
+  }, [viewMode, eventDialogOpen])
+
+  const handleCreateEvent = (start: Date, end: Date, options?: { allDay?: boolean }) => {
+    setDialogInitialData({ start, end, allDay: options?.allDay })
     setSelectedEvent(null)
     setEventDialogOpen(true)
   }
@@ -151,12 +178,16 @@ export default function CalendarPage() {
     setEventDialogOpen(true)
   }
 
-  const handleSaveEvent = async (eventData: Partial<CalendarEvent>) => {
+  const handleSaveEvent = async (eventData: Partial<CalendarEvent>, scope?: RecurringEditScope) => {
     if (selectedEvent) {
-      // Update existing event
+      // A "series" edit targets Google's recurringEventId (the master
+      // event) instead of this one instance.
+      const eventId =
+        scope === "series" && selectedEvent.recurringEventId ? selectedEvent.recurringEventId : selectedEvent.id
+
       updateEvent.mutate(
         {
-          eventId: selectedEvent.id,
+          eventId,
           calendarId: selectedEvent.calendarId,
           updates: {
             summary: eventData.title,
@@ -165,6 +196,7 @@ export default function CalendarPage() {
             start: eventData.start,
             end: eventData.end,
             attendees: eventData.attendees,
+            allDay: eventData.allDay,
           },
         },
         {
@@ -189,6 +221,7 @@ export default function CalendarPage() {
           start: eventData.start || new Date(),
           end: eventData.end || new Date(),
           attendees: eventData.attendees,
+          allDay: eventData.allDay,
         },
         {
           onSuccess: () => {
@@ -204,21 +237,79 @@ export default function CalendarPage() {
     }
   }
 
-  const handleDeleteEvent = (eventId: string) => {
-    if (!selectedEvent) return
-
+  // Shared by the dialog's delete button and the keyboard Delete shortcut.
+  // Deleting through Google is permanent, so undo re-creates the event from
+  // a snapshot taken before the delete - it lands with a new event id.
+  const deleteEventWithUndo = (event: CalendarEvent) => {
     deleteEvent.mutate(
-      {
-        eventId,
-        calendarId: selectedEvent.calendarId,
-      },
+      { eventId: event.id, calendarId: event.calendarId },
       {
         onSuccess: () => {
-          toast.success("Event deleted successfully")
-          setEventDialogOpen(false)
+          toast("Event deleted", {
+            action: {
+              label: "Undo",
+              onClick: () => {
+                createEvent.mutate({
+                  calendarId: event.calendarId,
+                  summary: event.title,
+                  description: event.description,
+                  location: event.location,
+                  start: event.start,
+                  end: event.end,
+                  attendees: event.attendees,
+                  allDay: event.allDay,
+                })
+              },
+            },
+          })
         },
         onError: (error) => {
           toast.error("Failed to delete event")
+          console.error(error)
+        },
+      }
+    )
+  }
+
+  const handleDeleteEvent = (eventId: string, scope?: RecurringEditScope) => {
+    if (!selectedEvent) return
+    const targetId = scope === "series" && selectedEvent.recurringEventId ? selectedEvent.recurringEventId : eventId
+    deleteEventWithUndo({ ...selectedEvent, id: targetId })
+    setEventDialogOpen(false)
+  }
+
+  // Keyboard Delete/Backspace on a focused event card - always targets just
+  // that instance, skipping the recurring-series prompt for a quick action.
+  const handleEventDelete = (event: CalendarEvent) => {
+    deleteEventWithUndo(event)
+  }
+
+  // Actually persists a grid-driven update (drag/resize), with an undo
+  // toast. `originalEvent` is the pre-update snapshot used to revert.
+  const commitEventUpdate = (eventId: string, calendarId: string, apiUpdates: ApiEventUpdates, originalEvent: CalendarEvent) => {
+    const isMove = apiUpdates.start !== undefined || apiUpdates.end !== undefined
+
+    updateEvent.mutate(
+      { eventId, calendarId, updates: apiUpdates },
+      {
+        onSuccess: () => {
+          if (isMove) {
+            toast("Event updated", {
+              action: {
+                label: "Undo",
+                onClick: () => {
+                  updateEvent.mutate({
+                    eventId,
+                    calendarId,
+                    updates: { start: originalEvent.start, end: originalEvent.end, allDay: originalEvent.allDay },
+                  })
+                },
+              },
+            })
+          }
+        },
+        onError: (error) => {
+          toast.error("Failed to update event")
           console.error(error)
         },
       }
@@ -230,38 +321,46 @@ export default function CalendarPage() {
     if (!event) return
 
     // Only include fields that are actually being updated
-    const apiUpdates: {
-      summary?: string
-      description?: string
-      location?: string
-      start?: Date
-      end?: Date
-      attendees?: string[]
-    } = {}
-
+    const apiUpdates: ApiEventUpdates = {}
     if (updates.title !== undefined) apiUpdates.summary = updates.title
     if (updates.description !== undefined) apiUpdates.description = updates.description
     if (updates.location !== undefined) apiUpdates.location = updates.location
     if (updates.start !== undefined) apiUpdates.start = updates.start
     if (updates.end !== undefined) apiUpdates.end = updates.end
     if (updates.attendees !== undefined) apiUpdates.attendees = updates.attendees
+    if (updates.allDay !== undefined) apiUpdates.allDay = updates.allDay
 
-    updateEvent.mutate(
-      {
+    if (event.recurringEventId) {
+      const durationBefore = event.end.getTime() - event.start.getTime()
+      const durationAfter =
+        apiUpdates.start && apiUpdates.end ? apiUpdates.end.getTime() - apiUpdates.start.getTime() : durationBefore
+      setPendingGridUpdate({
         eventId,
         calendarId: event.calendarId,
-        updates: apiUpdates,
-      },
-      {
-        onSuccess: () => {
-          // Silent success - no toast needed for drag/drop
-        },
-        onError: (error) => {
-          toast.error("Failed to update event")
-          console.error(error)
-        },
-      }
-    )
+        apiUpdates,
+        originalEvent: event,
+        action: durationAfter === durationBefore ? "move" : "resize",
+      })
+      return
+    }
+
+    commitEventUpdate(eventId, event.calendarId, apiUpdates, event)
+  }
+
+  const handleGridScopeChoose = (scope: RecurringEditScope) => {
+    if (!pendingGridUpdate) return
+    const { eventId, calendarId, apiUpdates, originalEvent } = pendingGridUpdate
+    const targetId = scope === "series" && originalEvent.recurringEventId ? originalEvent.recurringEventId : eventId
+    commitEventUpdate(targetId, calendarId, apiUpdates, originalEvent)
+    setPendingGridUpdate(null)
+  }
+
+  const handleGridScopeCancel = () => {
+    if (pendingGridUpdate) {
+      const { eventId } = pendingGridUpdate
+      setEventResetTokens((prev) => ({ ...prev, [eventId]: (prev[eventId] ?? 0) + 1 }))
+    }
+    setPendingGridUpdate(null)
   }
 
   const visibleEvents = events.filter((event) => calendars.find((cal) => cal.id === event.calendarId)?.checked)
@@ -347,6 +446,8 @@ export default function CalendarPage() {
             onCreateEvent={handleCreateEvent}
             onEditEvent={handleEditEvent}
             onUpdateEvent={handleUpdateEvent}
+            onDeleteEvent={handleEventDelete}
+            eventResetTokens={eventResetTokens}
           />
         )}
       </div>
@@ -359,6 +460,13 @@ export default function CalendarPage() {
         calendars={calendars}
         onSave={handleSaveEvent}
         onDelete={handleDeleteEvent}
+      />
+
+      <RecurringScopeDialog
+        open={!!pendingGridUpdate}
+        action={pendingGridUpdate?.action ?? "move"}
+        onOpenChange={(open) => !open && handleGridScopeCancel()}
+        onChoose={handleGridScopeChoose}
       />
 
       {/* AI Chat Bubble */}

@@ -1,5 +1,6 @@
 import { google, calendar_v3 } from "googleapis";
 import { and, eq } from "drizzle-orm";
+import { addDays, endOfDay, format, parseISO, subDays } from "date-fns";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
 import { account } from "@/db/schema/auth";
@@ -52,16 +53,28 @@ export function transformGoogleEventToCalendarEvent(
   calendarAccessRole?: string
 ): CalendarEvent {
   const calendar = calendars.find((c) => c.id === event.calendarId);
-  const startDate = event.start?.dateTime
-    ? new Date(event.start.dateTime)
-    : event.start?.date
-      ? new Date(event.start.date)
-      : new Date();
-  const endDate = event.end?.dateTime
-    ? new Date(event.end.dateTime)
-    : event.end?.date
-      ? new Date(event.end.date)
-      : new Date();
+  const allDay = !event.start?.dateTime && !!event.start?.date;
+
+  let startDate: Date;
+  let endDate: Date;
+  if (allDay) {
+    // Google represents all-day dates as plain "YYYY-MM-DD" calendar dates,
+    // not instants - `parseISO` (unlike the native `Date` constructor)
+    // parses a date-only string as local midnight rather than UTC midnight,
+    // which is what keeps a same-day all-day event from rendering as the
+    // previous day west of UTC.
+    startDate = parseISO(event.start!.date!);
+    // Google's all-day `end.date` is exclusive (the day *after* the last
+    // day of the event). Represent it internally as inclusive - the last
+    // instant of the last day - so duration math elsewhere in the app
+    // (which assumes `end > start`) works the same as for timed events.
+    const exclusiveEnd = event.end?.date ? parseISO(event.end.date) : addDays(startDate, 1);
+    endDate = endOfDay(subDays(exclusiveEnd, 1));
+    if (endDate < startDate) endDate = endOfDay(startDate);
+  } else {
+    startDate = event.start?.dateTime ? new Date(event.start.dateTime) : new Date();
+    endDate = event.end?.dateTime ? new Date(event.end.dateTime) : new Date();
+  }
 
   const hasWriteAccess = calendarAccessRole === "owner" || calendarAccessRole === "writer";
   const isOrganizer = event.organizer?.self === true;
@@ -79,6 +92,8 @@ export function transformGoogleEventToCalendarEvent(
     attendees: event.attendees?.map((a) => a.email!) || undefined,
     htmlLink: event.htmlLink || undefined,
     editable,
+    allDay,
+    recurringEventId: event.recurringEventId || undefined,
   };
 }
 
@@ -157,6 +172,26 @@ export async function fetchAllSelectedCalendarEvents(
   return allEvents;
 }
 
+// Builds Google's start/end fields, translating our inclusive `end` back
+// into Google's exclusive all-day `end.date` (see transformGoogleEventToCalendarEvent).
+// `dateTime` always carries its own UTC offset (via `toISOString`), so the
+// instant is correct regardless of `timeZone` - but tagging it with the
+// zone it was actually created in (rather than a blanket "UTC") is what
+// keeps recurring events expanding at the right local time across DST
+// changes, and keeps Google's own UI honest about where it came from.
+function toGoogleDateFields(start: Date, end: Date, allDay?: boolean, timeZone?: string): Pick<calendar_v3.Schema$Event, "start" | "end"> {
+  if (allDay) {
+    return {
+      start: { date: format(start, "yyyy-MM-dd") },
+      end: { date: format(addDays(end, 1), "yyyy-MM-dd") },
+    };
+  }
+  return {
+    start: { dateTime: start.toISOString(), timeZone: timeZone || "UTC" },
+    end: { dateTime: end.toISOString(), timeZone: timeZone || "UTC" },
+  };
+}
+
 export async function createGoogleEvent(
   userId: string,
   calendarId: string,
@@ -167,6 +202,8 @@ export async function createGoogleEvent(
     end: Date;
     location?: string;
     attendees?: string[];
+    allDay?: boolean;
+    timeZone?: string;
   }
 ): Promise<GoogleEvent> {
   const calendar = await getCalendarClient(userId);
@@ -176,8 +213,7 @@ export async function createGoogleEvent(
       summary: event.summary,
       description: event.description,
       location: event.location,
-      start: { dateTime: event.start.toISOString(), timeZone: "UTC" },
-      end: { dateTime: event.end.toISOString(), timeZone: "UTC" },
+      ...toGoogleDateFields(event.start, event.end, event.allDay, event.timeZone),
       attendees: event.attendees?.map((email) => ({ email })),
     },
   });
@@ -196,6 +232,8 @@ export async function updateGoogleEvent(
     end?: Date;
     location?: string;
     attendees?: string[];
+    allDay?: boolean;
+    timeZone?: string;
   }
 ): Promise<GoogleEvent> {
   const calendar = await getCalendarClient(userId);
@@ -204,8 +242,9 @@ export async function updateGoogleEvent(
   if (updates.summary !== undefined) requestBody.summary = updates.summary;
   if (updates.description !== undefined) requestBody.description = updates.description;
   if (updates.location !== undefined) requestBody.location = updates.location;
-  if (updates.start) requestBody.start = { dateTime: updates.start.toISOString(), timeZone: "UTC" };
-  if (updates.end) requestBody.end = { dateTime: updates.end.toISOString(), timeZone: "UTC" };
+  if (updates.start && updates.end) {
+    Object.assign(requestBody, toGoogleDateFields(updates.start, updates.end, updates.allDay, updates.timeZone));
+  }
   if (updates.attendees) requestBody.attendees = updates.attendees.map((email) => ({ email }));
 
   const response = await calendar.events.patch({ calendarId, eventId, requestBody });

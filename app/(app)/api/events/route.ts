@@ -13,14 +13,25 @@ import {
 } from "@/lib/integrations/google/google-calendar";
 import type { Calendar } from "@/types/calendar";
 import { createLogger } from "@/lib/logger";
+import { calendarEventInputSchema, calendarEventUpdateSchema, eventMutationSchema } from "@/lib/schemas/calendar";
+import { parseJsonBody } from "@/lib/api";
 
 const log = createLogger("api/events");
 
 const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const;
 
+const ianaTimeZone = z.string().refine((value) => {
+  try {
+    Intl.DateTimeFormat(undefined, { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}, "Invalid IANA time zone");
+
 function toCalendars(googleCalendars: Awaited<ReturnType<typeof fetchGoogleCalendars>>): Calendar[] {
   return googleCalendars.map((cal, index) => ({
-    id: cal.id!,
+    id: cal.id ?? "primary",
     name: cal.summary || "Untitled Calendar",
     color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
     checked: true,
@@ -40,8 +51,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const querySchema = z.object({
-    start: z.string().optional().refine((val) => val === undefined || !isNaN(Date.parse(val)), "Invalid start date"),
-    end: z.string().optional().refine((val) => val === undefined || !isNaN(Date.parse(val)), "Invalid end date"),
+    start: z.string().optional().refine((val) => val === undefined || !Number.isNaN(Date.parse(val)), "Invalid start date"),
+    end: z.string().optional().refine((val) => val === undefined || !Number.isNaN(Date.parse(val)), "Invalid end date"),
     calendarId: z.string().nullable().optional(),
   });
 
@@ -60,14 +71,14 @@ export async function GET(request: Request) {
     const googleCalendars = await fetchGoogleCalendars(session.user.id);
     const calendars = toCalendars(googleCalendars);
 
-    let googleEvents;
+    let googleEvents: Awaited<ReturnType<typeof fetchAllSelectedCalendarEvents>>;
     if (calendarId) {
       const events = await fetchGoogleEvents(session.user.id, calendarId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
       const calendar = googleCalendars.find((cal) => cal.id === calendarId);
-      googleEvents = events.map((event) => ({ ...event, calendarId, accessRole: calendar?.accessRole }));
+      googleEvents = events.map((event) => ({ ...event, calendarId, accessRole: calendar?.accessRole ?? undefined }));
     } else {
       googleEvents = await fetchAllSelectedCalendarEvents(session.user.id, {
         timeMin: start ? new Date(start) : undefined,
@@ -93,23 +104,15 @@ export async function POST(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const createEventSchema = z.object({
-    calendarId: z.string().min(1, "Calendar ID is required"),
-    summary: z.string().min(1, "Event title is required").trim(),
-    description: z.string().optional(),
-    location: z.string().optional(),
-    start: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid start date"),
-    end: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid end date"),
-    attendees: z.array(z.string().email()).optional().default([]),
-  });
-
-  const validation = createEventSchema.safeParse(await request.json());
-  if (!validation.success) {
-    return Response.json({ error: "Validation failed", details: validation.error.issues }, { status: 400 });
-  }
-  const { calendarId, summary, description, location, start, end, attendees } = validation.data;
+  const parsed = await parseJsonBody(request, calendarEventInputSchema.extend({ timeZone: ianaTimeZone.optional() }));
+  if (parsed.error) return parsed.error;
+  const { calendarId, summary, description, location, start, end, attendees, allDay, timeZone } = parsed.data;
 
   try {
+    const availableCalendars = await fetchGoogleCalendars(session.user.id);
+    if (!availableCalendars.some((calendar) => calendar.id === calendarId)) {
+      return Response.json({ error: "Calendar is unavailable" }, { status: 400 });
+    }
     const createdGoogleEvent = await createGoogleEvent(session.user.id, calendarId, {
       summary,
       description: description?.trim(),
@@ -117,9 +120,11 @@ export async function POST(request: Request) {
       start: new Date(start),
       end: new Date(end),
       attendees,
+      allDay,
+      timeZone,
     });
 
-    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const googleCalendars = availableCalendars;
     const calendars = toCalendars(googleCalendars);
     const calendar = googleCalendars.find((cal) => cal.id === calendarId);
 
@@ -142,25 +147,12 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await request.json();
-  const { eventId, calendarId, ...updates } = body;
-  if (!eventId) return Response.json({ error: "Event ID is required" }, { status: 400 });
-  if (!calendarId) return Response.json({ error: "Calendar ID is required" }, { status: 400 });
-
-  const updateEventSchema = z.object({
-    summary: z.string().optional(),
-    description: z.string().optional(),
-    location: z.string().optional(),
-    start: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid start date").optional(),
-    end: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid end date").optional(),
-    attendees: z.array(z.string().email()).optional(),
-  });
-
-  const validation = updateEventSchema.safeParse(updates);
-  if (!validation.success) {
-    return Response.json({ error: "Validation failed", details: validation.error.issues }, { status: 400 });
-  }
-  const data = validation.data;
+  const parsed = await parseJsonBody(
+    request,
+    eventMutationSchema.merge(calendarEventUpdateSchema.extend({ timeZone: ianaTimeZone.optional() }))
+  );
+  if (parsed.error) return parsed.error;
+  const { eventId, calendarId, ...data } = parsed.data;
 
   try {
     const updatedGoogleEvent = await updateGoogleEvent(session.user.id, calendarId, eventId, {
@@ -170,6 +162,8 @@ export async function PATCH(request: Request) {
       start: data.start ? new Date(data.start) : undefined,
       end: data.end ? new Date(data.end) : undefined,
       attendees: data.attendees,
+      allDay: data.allDay,
+      timeZone: data.timeZone,
     });
 
     const googleCalendars = await fetchGoogleCalendars(session.user.id);

@@ -1,9 +1,13 @@
 "use client"
 
-import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useMemo, useRef, useState, useEffect } from "react"
+import { isSameDay } from "date-fns"
 import type { CalendarEvent } from "@/types/calendar"
 import { EventCard } from "@/components/app/event-card"
+import { AllDayEventBar } from "@/components/app/all-day-event-bar"
+import { useTimeGridCreate } from "@/hooks/use-time-grid-create"
+import { layoutOverlappingEvents } from "@/lib/calendar-layout"
+import { formatHourLabel, formatWeekdayLong } from "@/lib/calendar-format"
 
 interface DayViewProps {
   events: CalendarEvent[]
@@ -11,126 +15,66 @@ interface DayViewProps {
   onCreateEvent: (start: Date, end: Date) => void
   onEditEvent: (event: CalendarEvent) => void
   onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void
+  onDeleteEvent: (event: CalendarEvent) => void
+  /** Bumped per-event to force a visual reset after a cancelled recurring-scope prompt. */
+  eventResetTokens?: Record<string, number>
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const HOUR_HEIGHT = 60
 
-export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUpdateEvent }: DayViewProps) {
-  const gridRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState<{ y: number } | null>(null)
-  const [dragCurrent, setDragCurrent] = useState<{ y: number } | null>(null)
+export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUpdateEvent, onDeleteEvent, eventResetTokens }: DayViewProps) {
+  const gridBodyRef = useRef<HTMLDivElement>(null)
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest("[data-event]")) return
+  const columns = useMemo(() => [selectedDate], [selectedDate])
 
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const y = e.clientY - rect.top
-    setDragStart({ y })
-    setIsDragging(true)
-    setDragCurrent({ y })
-  }
+  const {
+    preview: dragPreview,
+    handleMouseDown: handleCreateMouseDown,
+    cancel: cancelCreateDrag,
+  } = useTimeGridCreate({
+    hourHeight: HOUR_HEIGHT,
+    columns,
+    containerRef: gridBodyRef,
+    onCreate: onCreateEvent,
+  })
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart) return
-    const rect = gridRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const y = e.clientY - rect.top
-    setDragCurrent({ y })
-  }
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart) return
-
-    const rect = gridRef.current?.getBoundingClientRect()
-    if (!rect) return
-
-    const endY = e.clientY - rect.top
-    const startMinutes = Math.round((dragStart.y / HOUR_HEIGHT) * 60)
-    const endMinutes = Math.round((endY / HOUR_HEIGHT) * 60)
-
-    const startHour = Math.floor(Math.min(startMinutes, endMinutes) / 60)
-    const startMin = Math.round((Math.min(startMinutes, endMinutes) % 60) / 15) * 15
-    const endHour = Math.floor(Math.max(startMinutes, endMinutes) / 60)
-    const endMin = Math.round((Math.max(startMinutes, endMinutes) % 60) / 15) * 15
-
-    const startDate = new Date(selectedDate)
-    startDate.setHours(startHour, startMin, 0, 0)
-
-    const endDate = new Date(selectedDate)
-    endDate.setHours(endHour, endMin, 0, 0)
-
-    if (endDate > startDate) {
-      onCreateEvent(startDate, endDate)
+  useEffect(() => {
+    if (!dragPreview) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") cancelCreateDrag()
     }
-
-    setIsDragging(false)
-    setDragStart(null)
-    setDragCurrent(null)
-  }
-
-  const getDragPreview = () => {
-    if (!isDragging || !dragStart || !dragCurrent) return null
-
-    const startY = Math.min(dragStart.y, dragCurrent.y)
-    const endY = Math.max(dragStart.y, dragCurrent.y)
-
-    const snappedStartMinutes = Math.round(((startY / HOUR_HEIGHT) * 60) / 15) * 15
-    const snappedEndMinutes = Math.round(((endY / HOUR_HEIGHT) * 60) / 15) * 15
-    const snappedStartY = (snappedStartMinutes / 60) * HOUR_HEIGHT
-    const snappedHeight = ((snappedEndMinutes - snappedStartMinutes) / 60) * HOUR_HEIGHT
-
-    return {
-      top: snappedStartY,
-      height: Math.max(snappedHeight, HOUR_HEIGHT / 4), // Minimum 15 minutes
-    }
-  }
-
-  const dragPreview = getDragPreview()
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!dragPreview, cancelCreateDrag])
 
   const getCurrentTimePosition = () => {
     const minutes = currentTime.getHours() * 60 + currentTime.getMinutes()
     return (minutes / 60) * HOUR_HEIGHT
   }
 
-  const isToday = () => {
-    const today = new Date()
-    return (
-      selectedDate.getDate() === today.getDate() &&
-      selectedDate.getMonth() === today.getMonth() &&
-      selectedDate.getFullYear() === today.getFullYear()
-    )
-  }
+  const isToday = isSameDay(selectedDate, new Date())
 
-  const dayEvents = events.filter((event) => {
-    const eventDate = new Date(event.start)
-    return (
-      eventDate.getDate() === selectedDate.getDate() &&
-      eventDate.getMonth() === selectedDate.getMonth() &&
-      eventDate.getFullYear() === selectedDate.getFullYear()
-    )
-  })
+  const dayEvents = events.filter((event) => !event.allDay && isSameDay(event.start, selectedDate))
+  const allDayEvents = events.filter((event) => event.allDay && event.start <= selectedDate && event.end >= selectedDate)
+  const dayEventsLayout = layoutOverlappingEvents(dayEvents)
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex border-b border-border bg-background">
         <div className="w-16 border-r border-border" />
         <div className="flex-1 flex flex-col items-center justify-center py-2">
-          <span className="text-xs font-mono text-muted-foreground uppercase">
-            {selectedDate.toLocaleDateString("en-US", { weekday: "long" })}
-          </span>
+          <span className="text-xs font-mono text-muted-foreground uppercase">{formatWeekdayLong(selectedDate)}</span>
           <span
             className={`mt-1 flex h-12 w-12 items-center justify-center border text-3xl ${
-              isToday() ? "bg-foreground text-background border-foreground" : "border-transparent text-foreground"
+              isToday ? "bg-foreground text-background border-foreground" : "border-transparent text-foreground"
             }`}
           >
             {selectedDate.getDate()}
@@ -138,22 +82,32 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
         </div>
       </div>
 
-      <div className="relative flex-1 overflow-auto" ref={gridRef} onMouseMove={handleMouseMove}>
-        <div className="flex">
+      {allDayEvents.length > 0 && (
+        <div className="border-b border-border bg-background">
+          {allDayEvents.map((event) => (
+            <div key={event.id} className="flex" style={{ height: 22 }}>
+              <div className="w-16 border-r border-border" />
+              <div className="flex-1 border-r border-border">
+                <AllDayEventBar event={event} onEdit={onEditEvent} onDelete={onDeleteEvent} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="relative flex-1 overflow-auto">
+        <div className="flex" ref={gridBodyRef}>
           <div className="sticky left-0 z-10 w-16 bg-background">
             {HOURS.map((hour) => (
               <div key={hour} className="flex h-[60px] items-start justify-end border-b border-border pr-2 pt-1">
-                <span className="text-xs text-muted-foreground">
-                  {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-                </span>
+                <span className="text-xs text-muted-foreground">{formatHourLabel(hour)}</span>
               </div>
             ))}
           </div>
 
           <div
-            className={`relative flex-1 border-r border-border ${isToday() ? "bg-accent/40" : ""}`}
-            onMouseDown={handleMouseDown}
-            onMouseUp={handleMouseUp}
+            className={`relative flex-1 border-r border-border ${isToday ? "bg-accent/40" : ""}`}
+            onMouseDown={(e) => handleCreateMouseDown(e, 0)}
           >
             {HOURS.map((hour) => (
               <div
@@ -164,11 +118,13 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
 
             {dayEvents.map((event) => (
               <EventCard
-                key={event.id}
+                key={`${event.id}:${eventResetTokens?.[event.id] ?? 0}`}
                 event={event}
                 hourHeight={HOUR_HEIGHT}
                 onEdit={onEditEvent}
                 onUpdate={onUpdateEvent}
+                onDelete={onDeleteEvent}
+                layout={dayEventsLayout.get(event.id)}
               />
             ))}
 
@@ -184,7 +140,7 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
               </div>
             )}
 
-            {isToday() && (
+            {isToday && (
               <div
                 className="absolute left-0 right-0 z-20 flex items-center"
                 style={{ top: `${getCurrentTimePosition()}px` }}

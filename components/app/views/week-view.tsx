@@ -1,9 +1,14 @@
 "use client"
 
 import type React from "react"
-import { useState, useRef, useEffect } from "react"
+import { useCallback, useMemo, useRef, useState, useEffect } from "react"
+import { addDays, differenceInCalendarDays, isSameDay, startOfWeek } from "date-fns"
 import type { CalendarEvent } from "@/types/calendar"
 import { EventCard } from "@/components/app/event-card"
+import { AllDayEventBar } from "@/components/app/all-day-event-bar"
+import { useTimeGridCreate } from "@/hooks/use-time-grid-create"
+import { layoutOverlappingEvents, packAllDaySpans } from "@/lib/calendar-layout"
+import { formatWeekdayShort, formatHourLabel } from "@/lib/calendar-format"
 
 interface WeekViewProps {
   events: CalendarEvent[]
@@ -11,138 +16,107 @@ interface WeekViewProps {
   onCreateEvent: (start: Date, end: Date) => void
   onEditEvent: (event: CalendarEvent) => void
   onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void
+  onDeleteEvent: (event: CalendarEvent) => void
+  /** Bumped per-event to force a visual reset after a cancelled recurring-scope prompt. */
+  eventResetTokens?: Record<string, number>
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
 const HOUR_HEIGHT = 60
+const ALL_DAY_ROW_HEIGHT = 22
 
-export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onUpdateEvent }: WeekViewProps) {
-  const gridRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragStart, setDragStart] = useState<{ x: number; y: number; dayIndex: number } | null>(null)
-  const [dragCurrent, setDragCurrent] = useState<{ y: number } | null>(null)
+export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onUpdateEvent, onDeleteEvent, eventResetTokens }: WeekViewProps) {
+  const gridBodyRef = useRef<HTMLDivElement>(null)
+  const dayColumnRefs = useRef<(HTMLDivElement | null)[]>([])
   const [currentTime, setCurrentTime] = useState(new Date())
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-    }, 60000)
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
     return () => clearInterval(timer)
   }, [])
 
-  const getWeekDays = () => {
-    const start = new Date(selectedDate)
-    const day = start.getDay()
-    const diff = start.getDate() - day
-    const sunday = new Date(start.setDate(diff))
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(selectedDate)
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i))
+  }, [selectedDate])
 
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(sunday)
-      date.setDate(sunday.getDate() + i)
-      return date
-    })
-  }
+  const timedEvents = useMemo(() => events.filter((event) => !event.allDay), [events])
+  const allDayEvents = useMemo(() => events.filter((event) => event.allDay), [events])
 
-  const weekDays = getWeekDays()
+  const {
+    preview: dragPreview,
+    handleMouseDown: handleCreateMouseDown,
+    cancel: cancelCreateDrag,
+  } = useTimeGridCreate({
+    hourHeight: HOUR_HEIGHT,
+    columns: weekDays,
+    containerRef: gridBodyRef,
+    onCreate: onCreateEvent,
+  })
 
-  const handleMouseDown = (e: React.MouseEvent, dayIndex: number) => {
-    if ((e.target as HTMLElement).closest("[data-event]")) return
-
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-    const y = e.clientY - rect.top
-    setDragStart({ x: e.clientX, y, dayIndex })
-    setIsDragging(true)
-    setDragCurrent({ y })
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart || !gridRef.current) return
-    const gridBody = gridRef.current.children[1] as HTMLElement
-    const rect = gridBody?.getBoundingClientRect()
-    if (!rect) return
-    const y = e.clientY - rect.top
-    setDragCurrent({ y })
-  }
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (!isDragging || !dragStart || !gridRef.current) return
-
-    const gridBody = gridRef.current.children[1] as HTMLElement
-    const rect = gridBody?.getBoundingClientRect()
-    if (!rect) return
-
-    const endY = e.clientY - rect.top
-    const startMinutes = Math.round((dragStart.y / HOUR_HEIGHT) * 60)
-    const endMinutes = Math.round((endY / HOUR_HEIGHT) * 60)
-
-    const startHour = Math.floor(Math.min(startMinutes, endMinutes) / 60)
-    const startMin = Math.round((Math.min(startMinutes, endMinutes) % 60) / 15) * 15
-    const endHour = Math.floor(Math.max(startMinutes, endMinutes) / 60)
-    const endMin = Math.round((Math.max(startMinutes, endMinutes) % 60) / 15) * 15
-
-    const startDate = new Date(weekDays[dragStart.dayIndex])
-    startDate.setHours(startHour, startMin, 0, 0)
-
-    const endDate = new Date(weekDays[dragStart.dayIndex])
-    endDate.setHours(endHour, endMin, 0, 0)
-
-    if (endDate > startDate) {
-      onCreateEvent(startDate, endDate)
+  useEffect(() => {
+    if (!dragPreview) return
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") cancelCreateDrag()
     }
+    document.addEventListener("keydown", handleEscape)
+    return () => document.removeEventListener("keydown", handleEscape)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!dragPreview, cancelCreateDrag])
 
-    setIsDragging(false)
-    setDragStart(null)
-    setDragCurrent(null)
+  // Resolves the calendar date under a given clientX, for cross-day drag.
+  const getDateAtX = useCallback(
+    (clientX: number): Date | null => {
+      for (let i = 0; i < dayColumnRefs.current.length; i++) {
+        const rect = dayColumnRefs.current[i]?.getBoundingClientRect()
+        if (rect && clientX >= rect.left && clientX < rect.right) return weekDays[i]
+      }
+      return null
+    },
+    [weekDays]
+  )
+
+  const allDayRows = useMemo(() => {
+    const weekStart = weekDays[0]
+    const weekEnd = weekDays[6]
+    const spans = allDayEvents
+      .filter((event) => event.end >= weekStart && event.start <= weekEnd)
+      .map((event) => ({
+        item: event,
+        startIdx: Math.max(0, differenceInCalendarDays(event.start, weekStart)),
+        endIdx: Math.min(6, differenceInCalendarDays(event.end, weekStart)),
+      }))
+    return packAllDaySpans(spans)
+  }, [allDayEvents, weekDays])
+
+  const handleAllDayDrop = (e: React.DragEvent, dropDayIndex: number) => {
+    e.preventDefault()
+    const eventId = e.dataTransfer.getData("text/plain")
+    const event = allDayEvents.find((ev) => ev.id === eventId)
+    if (!event) return
+
+    const originalStartIdx = Math.min(6, Math.max(0, differenceInCalendarDays(event.start, weekDays[0])))
+    const deltaDays = dropDayIndex - originalStartIdx
+    if (deltaDays === 0) return
+
+    onUpdateEvent(event.id, { start: addDays(event.start, deltaDays), end: addDays(event.end, deltaDays) })
   }
-
-  const getDragPreview = () => {
-    if (!isDragging || !dragStart || !dragCurrent) return null
-
-    const startY = Math.min(dragStart.y, dragCurrent.y)
-    const endY = Math.max(dragStart.y, dragCurrent.y)
-    const height = endY - startY
-
-    const snappedStartMinutes = Math.round(((startY / HOUR_HEIGHT) * 60) / 15) * 15
-    const snappedEndMinutes = Math.round(((endY / HOUR_HEIGHT) * 60) / 15) * 15
-    const snappedStartY = (snappedStartMinutes / 60) * HOUR_HEIGHT
-    const snappedHeight = ((snappedEndMinutes - snappedStartMinutes) / 60) * HOUR_HEIGHT
-
-    return {
-      top: snappedStartY,
-      height: Math.max(snappedHeight, HOUR_HEIGHT / 4),
-      dayIndex: dragStart.dayIndex,
-    }
-  }
-
-  const dragPreview = getDragPreview()
 
   const getCurrentTimePosition = () => {
     const minutes = currentTime.getHours() * 60 + currentTime.getMinutes()
     return (minutes / 60) * HOUR_HEIGHT
   }
 
-  const isCurrentDay = (date: Date) => {
-    const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
-  }
+  const isCurrentDay = (date: Date) => isSameDay(date, new Date())
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="relative flex-1 overflow-auto" ref={gridRef} onMouseMove={handleMouseMove}>
-        <div className="sticky top-0 z-30 grid grid-cols-[4rem_repeat(7,1fr)] border-b border-border bg-background">
-          <div className="w-16 border-r border-border sticky left-0 z-40 bg-background" />
+      <div className="border-b border-border bg-background">
+        <div className="grid grid-cols-[4rem_repeat(7,1fr)]">
+          <div className="w-16 border-r border-border" />
           {weekDays.map((day, i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center justify-center py-2 border-r border-border"
-            >
-              <span className="text-xs font-mono text-muted-foreground uppercase">
-                {day.toLocaleDateString("en-US", { weekday: "short" })}
-              </span>
+            <div key={i} className="flex flex-col items-center justify-center py-2 border-r border-border">
+              <span className="text-xs font-mono text-muted-foreground uppercase">{formatWeekdayShort(day)}</span>
               <span
                 className={`mt-1 flex h-10 w-10 items-center justify-center border text-2xl ${
                   isCurrentDay(day) ? "bg-foreground text-background border-foreground" : "border-transparent text-foreground"
@@ -153,13 +127,43 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-[4rem_repeat(7,1fr)]">
+
+        {allDayRows.length > 0 && (
+          <div className="border-t border-border">
+            {allDayRows.map((row, rowIndex) => (
+              <div key={rowIndex} className="grid grid-cols-[4rem_repeat(7,1fr)]" style={{ height: ALL_DAY_ROW_HEIGHT }}>
+                <div className="w-16 border-r border-border flex items-center justify-end pr-2">
+                  {rowIndex === 0 && <span className="text-[10px] text-muted-foreground uppercase">All day</span>}
+                </div>
+                {weekDays.map((_, dayIndex) => {
+                  const span = row.find((s) => s.startIdx === dayIndex)
+                  return (
+                    <div
+                      key={dayIndex}
+                      className="relative border-r border-border"
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => handleAllDayDrop(e, dayIndex)}
+                    >
+                      {span && (
+                        <div className="absolute inset-y-0 left-0" style={{ width: `${(span.endIdx - span.startIdx + 1) * 100}%` }}>
+                          <AllDayEventBar event={span.item} onEdit={onEditEvent} onDelete={onDeleteEvent} draggable />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="relative flex-1 overflow-auto">
+        <div className="grid grid-cols-[4rem_repeat(7,1fr)]" ref={gridBodyRef}>
           <div className="sticky left-0 z-10 bg-background border-r border-border">
             {HOURS.map((hour) => (
               <div key={hour} className="flex h-[60px] items-start justify-end border-b border-border pr-2 pt-1">
-                <span className="text-xs text-muted-foreground">
-                  {hour === 0 ? "12 AM" : hour < 12 ? `${hour} AM` : hour === 12 ? "12 PM" : `${hour - 12} PM`}
-                </span>
+                <span className="text-xs text-muted-foreground">{formatHourLabel(hour)}</span>
               </div>
             ))}
           </div>
@@ -167,9 +171,11 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
           {weekDays.map((day, dayIndex) => (
             <div
               key={dayIndex}
+              ref={(el) => {
+                dayColumnRefs.current[dayIndex] = el
+              }}
               className={`relative border-r border-border ${isCurrentDay(day) ? "bg-accent/40" : ""}`}
-              onMouseDown={(e) => handleMouseDown(e, dayIndex)}
-              onMouseUp={handleMouseUp}
+              onMouseDown={(e) => handleCreateMouseDown(e, dayIndex)}
             >
               {HOURS.map((hour) => (
                 <div
@@ -178,26 +184,24 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
                 />
               ))}
 
-              {events
-                .filter((event) => {
-                  const eventDate = new Date(event.start)
-                  return (
-                    eventDate.getDate() === day.getDate() &&
-                    eventDate.getMonth() === day.getMonth() &&
-                    eventDate.getFullYear() === day.getFullYear()
-                  )
-                })
-                .map((event) => (
+              {(() => {
+                const dayEvents = timedEvents.filter((event) => isSameDay(event.start, day))
+                const layout = layoutOverlappingEvents(dayEvents)
+                return dayEvents.map((event) => (
                   <EventCard
-                    key={event.id}
+                    key={`${event.id}:${eventResetTokens?.[event.id] ?? 0}`}
                     event={event}
                     hourHeight={HOUR_HEIGHT}
                     onEdit={onEditEvent}
                     onUpdate={onUpdateEvent}
+                    onDelete={onDeleteEvent}
+                    getDateAtX={getDateAtX}
+                    layout={layout.get(event.id)}
                   />
-                ))}
+                ))
+              })()}
 
-              {dragPreview && dragPreview.dayIndex === dayIndex && (
+              {dragPreview && dragPreview.columnIndex === dayIndex && (
                 <div
                   className="absolute left-1 right-1 z-10 border-2 border-dashed border-foreground bg-foreground/5 pointer-events-none"
                   style={{

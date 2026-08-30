@@ -9,9 +9,12 @@ interface CalendarGridProps {
   events: CalendarEvent[]
   selectedDate: Date
   viewMode: "day" | "week" | "month" | "agenda"
-  onCreateEvent: (start: Date, end: Date) => void
+  onCreateEvent: (start: Date, end: Date, options?: { allDay?: boolean }) => void
   onEditEvent: (event: CalendarEvent) => void
   onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void
+  onDeleteEvent: (event: CalendarEvent) => void
+  /** Bumped per-event to force a visual reset after a cancelled recurring-scope prompt. */
+  eventResetTokens?: Record<string, number>
 }
 
 export function CalendarGrid({
@@ -21,6 +24,8 @@ export function CalendarGrid({
   onCreateEvent,
   onEditEvent,
   onUpdateEvent,
+  onDeleteEvent,
+  eventResetTokens,
 }: CalendarGridProps) {
   const viewProps = {
     events,
@@ -28,6 +33,8 @@ export function CalendarGrid({
     onCreateEvent,
     onEditEvent,
     onUpdateEvent,
+    onDeleteEvent,
+    eventResetTokens,
   }
 
   switch (viewMode) {

@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { authClient } from "@/lib/auth-client"
 import type { CalendarEvent } from "@/types/calendar"
+import { getDeviceTimeZone } from "@/lib/timezone"
+import { calendarEventResponseSchema } from "@/lib/schemas/calendar"
 
 // Integration status types
 interface IntegrationStatus {
@@ -19,26 +21,6 @@ interface GoogleCalendar {
   accessRole?: string
   backgroundColor?: string
 }
-
-interface GoogleEvent {
-  id: string
-  calendarId: string
-  summary?: string
-  description?: string
-  start?: {
-    dateTime?: string
-    date?: string
-  }
-  end?: {
-    dateTime?: string
-    date?: string
-  }
-  location?: string
-  attendees?: Array<{ email: string }>
-  htmlLink?: string
-}
-
-
 
 // Fetch integration status
 export function useGoogleIntegration() {
@@ -99,9 +81,8 @@ export function useGoogleEvents(
       if (!response.ok) {
         throw new Error("Failed to fetch events")
       }
-      const events = await response.json()
-      // Convert string dates back to Date objects
-      return events.map((event: any) => ({
+      const events = calendarEventResponseSchema.array().parse(await response.json())
+      return events.map((event) => ({
         ...event,
         start: new Date(event.start),
         end: new Date(event.end),
@@ -187,6 +168,9 @@ export function useCreateEvent() {
       start: Date
       end: Date
       attendees?: string[]
+      allDay?: boolean
+      /** IANA zone, e.g. "America/New_York". Defaults to the device's own zone. */
+      timeZone?: string
     }) => {
       const response = await fetch("/api/events", {
         method: "POST",
@@ -197,6 +181,7 @@ export function useCreateEvent() {
           ...eventData,
           start: eventData.start.toISOString(),
           end: eventData.end.toISOString(),
+          timeZone: eventData.timeZone ?? getDeviceTimeZone(),
         }),
       })
       if (!response.ok) {
@@ -235,6 +220,8 @@ export function useUpdateEvent() {
         start?: Date
         end?: Date
         attendees?: string[]
+        allDay?: boolean
+        timeZone?: string
       }
     }) => {
       const response = await fetch("/api/events", {
@@ -248,6 +235,7 @@ export function useUpdateEvent() {
           ...updates,
           start: updates.start?.toISOString(),
           end: updates.end?.toISOString(),
+          timeZone: updates.start || updates.end ? (updates.timeZone ?? getDeviceTimeZone()) : undefined,
         }),
       })
       if (!response.ok) {
@@ -283,6 +271,7 @@ export function useUpdateEvent() {
                   ...(updates.start !== undefined && { start: updates.start }),
                   ...(updates.end !== undefined && { end: updates.end }),
                   ...(updates.attendees !== undefined && { attendees: updates.attendees }),
+                  ...(updates.allDay !== undefined && { allDay: updates.allDay }),
                 }
               : event
           )

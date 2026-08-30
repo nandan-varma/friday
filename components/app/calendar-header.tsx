@@ -4,51 +4,26 @@ import { ChevronLeft, ChevronRight, Menu, Search, Settings, Grid3x3 } from "luci
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useRouter } from "next/navigation"
+import { shiftDate, type CalendarViewMode } from "@/lib/calendar-date-utils"
+import { formatMonthYear } from "@/lib/calendar-format"
 
 interface CalendarHeaderProps {
   selectedDate: Date
   onDateChange: (date: Date) => void
-  viewMode: "day" | "week" | "month" | "agenda"
-  onViewModeChange: (mode: "day" | "week" | "month" | "agenda") => void
+  viewMode: CalendarViewMode
+  onViewModeChange: (mode: CalendarViewMode) => void
 }
 
 export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewModeChange }: CalendarHeaderProps) {
 
   const router = useRouter();
 
-  const handlePrevious = () => {
-    const newDate = new Date(selectedDate)
-    if (viewMode === "week") {
-      newDate.setDate(newDate.getDate() - 7)
-    } else if (viewMode === "month") {
-      newDate.setMonth(newDate.getMonth() - 1)
-    } else if (viewMode === "day") {
-      newDate.setDate(newDate.getDate() - 1)
-    }
-    onDateChange(newDate)
-  }
+  const handlePrevious = () => onDateChange(shiftDate(selectedDate, viewMode, -1))
 
-  const handleNext = () => {
-    const newDate = new Date(selectedDate)
-    if (viewMode === "week") {
-      newDate.setDate(newDate.getDate() + 7)
-    } else if (viewMode === "month") {
-      newDate.setMonth(newDate.getMonth() + 1)
-    } else if (viewMode === "day") {
-      newDate.setDate(newDate.getDate() + 1)
-    }
-    onDateChange(newDate)
-  }
+  const handleNext = () => onDateChange(shiftDate(selectedDate, viewMode, 1))
 
   const handleToday = () => {
     onDateChange(new Date())
-  }
-
-  const formatHeaderDate = () => {
-    return selectedDate.toLocaleDateString("en-US", {
-      month: "long",
-      year: "numeric",
-    })
   }
 
   return (
@@ -69,7 +44,7 @@ export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewMod
           </Button>
         </div>
 
-        <h1 className="text-xl text-foreground font-mono">{formatHeaderDate()}</h1>
+        <h1 className="text-xl text-foreground font-mono">{formatMonthYear(selectedDate)}</h1>
       </div>
 
       <div className="flex items-center gap-2">

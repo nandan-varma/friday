@@ -1,10 +1,12 @@
 "use client"
 
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
+import { addDays, addMonths, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import type { Calendar } from "@/types/calendar"
+import { formatMonthYear } from "@/lib/calendar-format"
 
 interface CalendarSidebarProps {
   calendars: Calendar[]
@@ -13,55 +15,15 @@ interface CalendarSidebarProps {
   onDateSelect: (date: Date) => void
 }
 
+const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]
+
 export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onDateSelect }: CalendarSidebarProps) {
-  const currentMonth = selectedDate.getMonth()
-  const currentYear = selectedDate.getFullYear()
+  const gridStart = startOfWeek(startOfMonth(selectedDate))
+  const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
 
-  const getDaysInMonth = (year: number, month: number) => {
-    return new Date(year, month + 1, 0).getDate()
-  }
-
-  const getFirstDayOfMonth = (year: number, month: number) => {
-    return new Date(year, month, 1).getDay()
-  }
-
-  const daysInMonth = getDaysInMonth(currentYear, currentMonth)
-  const firstDay = getFirstDayOfMonth(currentYear, currentMonth)
-  const prevMonthDays = getDaysInMonth(currentYear, currentMonth - 1)
-
-  const days = []
-  for (let i = firstDay - 1; i >= 0; i--) {
-    days.push({
-      day: prevMonthDays - i,
-      isCurrentMonth: false,
-    })
-  }
-  for (let i = 1; i <= daysInMonth; i++) {
-    days.push({
-      day: i,
-      isCurrentMonth: true,
-    })
-  }
-  const remainingDays = 42 - days.length
-  for (let i = 1; i <= remainingDays; i++) {
-    days.push({
-      day: i,
-      isCurrentMonth: false,
-    })
-  }
-
-  const isToday = (day: number) => {
-    const today = new Date()
-    return day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear()
-  }
-
-  const isSelected = (day: number) => {
-    return (
-      day === selectedDate.getDate() &&
-      currentMonth === selectedDate.getMonth() &&
-      currentYear === selectedDate.getFullYear()
-    )
-  }
+  const isToday = (date: Date) => isSameDay(date, new Date())
+  const isSelected = (date: Date) => isSameDay(date, selectedDate)
+  const isCurrentMonth = (date: Date) => isSameMonth(date, selectedDate)
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar p-4">
@@ -72,39 +34,19 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
 
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between px-2">
-          <span className="text-sm font-medium text-sidebar-foreground">
-            {selectedDate.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
-          </span>
+          <span className="text-sm font-medium text-sidebar-foreground">{formatMonthYear(selectedDate)}</span>
           <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => {
-                const newDate = new Date(selectedDate)
-                newDate.setMonth(newDate.getMonth() - 1)
-                onDateSelect(newDate)
-              }}
-            >
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDateSelect(subMonths(selectedDate, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => {
-                const newDate = new Date(selectedDate)
-                newDate.setMonth(newDate.getMonth() + 1)
-                onDateSelect(newDate)
-              }}
-            >
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDateSelect(addMonths(selectedDate, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
-          {["S", "M", "T", "W", "T", "F", "S"].map((day, i) => (
+          {WEEKDAY_LETTERS.map((day, i) => (
             <div key={i} className="py-1">
               {day}
             </div>
@@ -112,26 +54,21 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
         </div>
 
         <div className="grid grid-cols-7 gap-1">
-          {days.map((dayInfo, i) => (
+          {days.map((day, i) => (
             <button
               key={i}
-              onClick={() => {
-                if (dayInfo.isCurrentMonth) {
-                  const newDate = new Date(currentYear, currentMonth, dayInfo.day)
-                  onDateSelect(newDate)
-                }
-              }}
+              onClick={() => onDateSelect(day)}
               className={`relative flex h-8 w-8 items-center justify-center border text-xs transition-colors hover:bg-accent ${
-                !dayInfo.isCurrentMonth
+                !isCurrentMonth(day)
                   ? "border-transparent text-muted-foreground/40"
-                  : isToday(dayInfo.day)
+                  : isToday(day)
                     ? "border-foreground bg-foreground text-background"
-                    : isSelected(dayInfo.day)
+                    : isSelected(day)
                       ? "border-border bg-accent"
                       : "border-transparent text-sidebar-foreground"
               }`}
             >
-              {dayInfo.day}
+              {day.getDate()}
             </button>
           ))}
         </div>
@@ -154,10 +91,7 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
               key={calendar.id}
               className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-sidebar-accent cursor-pointer transition-colors"
             >
-              <Checkbox
-                checked={calendar.checked}
-                onCheckedChange={() => onToggleCalendar(calendar.id)}
-              />
+              <Checkbox checked={calendar.checked} onCheckedChange={() => onToggleCalendar(calendar.id)} />
               <span className="text-sm text-sidebar-foreground">{calendar.name}</span>
             </label>
           ))}

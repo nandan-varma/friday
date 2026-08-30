@@ -6,6 +6,8 @@ import {
   updateSelectedCalendars,
 } from "@/lib/integrations/google/google-calendar";
 import { createLogger } from "@/lib/logger";
+import { parseJsonBody } from "@/lib/api";
+import { calendarSelectionSchema } from "@/lib/schemas/calendar";
 
 const log = createLogger("api/calendars");
 
@@ -39,9 +41,13 @@ export async function PATCH(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { calendarIds } = await request.json();
-  if (!Array.isArray(calendarIds)) {
-    return Response.json({ error: "calendarIds must be an array" }, { status: 400 });
+  const parsed = await parseJsonBody(request, calendarSelectionSchema);
+  if (parsed.error) return parsed.error;
+  const { calendarIds } = parsed.data;
+
+  const availableCalendarIds = new Set((await fetchGoogleCalendars(session.user.id)).flatMap((calendar) => calendar.id ? [calendar.id] : []));
+  if (calendarIds.some((calendarId) => !availableCalendarIds.has(calendarId))) {
+    return Response.json({ error: "One or more calendar IDs are unavailable" }, { status: 400 });
   }
 
   await updateSelectedCalendars(session.user.id, calendarIds);

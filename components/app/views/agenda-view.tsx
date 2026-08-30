@@ -1,6 +1,8 @@
 "use client"
+import { differenceInMinutes } from "date-fns"
 import type { CalendarEvent } from "@/types/calendar"
-import { Calendar, Clock } from "lucide-react"
+import { Calendar, Clock, Repeat } from "lucide-react"
+import { formatEventTime, formatFullDate } from "@/lib/calendar-format"
 
 interface AgendaViewProps {
   events: CalendarEvent[]
@@ -8,60 +10,33 @@ interface AgendaViewProps {
   onCreateEvent: (start: Date, end: Date) => void
   onEditEvent: (event: CalendarEvent) => void
   onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void
+  onDeleteEvent: (event: CalendarEvent) => void
 }
 
-export function AgendaView({ events, selectedDate, onEditEvent }: AgendaViewProps) {
-  const getUpcomingEvents = () => {
-    const now = new Date()
-    return events.filter((event) => event.start >= now).sort((a, b) => a.start.getTime() - b.start.getTime())
-  }
+function formatDuration(start: Date, end: Date): string {
+  const totalMinutes = differenceInMinutes(end, start)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`
+}
 
-  const groupEventsByDate = (events: CalendarEvent[]) => {
-    const grouped: { [key: string]: CalendarEvent[] } = {}
+const COLOR_CLASSES: Record<string, string> = {
+  blue: "border-l-blue-600",
+  amber: "border-l-amber-600",
+  green: "border-l-emerald-700",
+  pink: "border-l-fuchsia-700",
+}
 
-    events.forEach((event) => {
-      const dateKey = event.start.toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-      if (!grouped[dateKey]) {
-        grouped[dateKey] = []
-      }
-      grouped[dateKey].push(event)
-    })
+export function AgendaView({ events, onEditEvent, onDeleteEvent }: AgendaViewProps) {
+  const now = new Date()
+  const upcomingEvents = events.filter((event) => event.start >= now).sort((a, b) => a.start.getTime() - b.start.getTime())
 
-    return grouped
-  }
-
-  const upcomingEvents = getUpcomingEvents()
-  const groupedEvents = groupEventsByDate(upcomingEvents)
-
-  const formatTime = (date: Date) => {
-    const hours = date.getHours()
-    const minutes = date.getMinutes()
-    const ampm = hours >= 12 ? "PM" : "AM"
-    const displayHours = hours % 12 || 12
-    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`
-  }
-
-  const getDuration = (start: Date, end: Date) => {
-    const diff = end.getTime() - start.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m`
-    }
-    return `${minutes}m`
-  }
-
-  const colorClasses = {
-    blue: "border-l-blue-600",
-    amber: "border-l-amber-600",
-    green: "border-l-emerald-700",
-    pink: "border-l-fuchsia-700",
+  const groupedEvents = new Map<string, CalendarEvent[]>()
+  for (const event of upcomingEvents) {
+    const dateKey = formatFullDate(event.start)
+    const group = groupedEvents.get(dateKey)
+    if (group) group.push(event)
+    else groupedEvents.set(dateKey, [event])
   }
 
   if (upcomingEvents.length === 0) {
@@ -79,34 +54,50 @@ export function AgendaView({ events, selectedDate, onEditEvent }: AgendaViewProp
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="mx-auto max-w-3xl space-y-6">
-        {Object.entries(groupedEvents).map(([dateKey, dateEvents]) => (
+        {[...groupedEvents.entries()].map(([dateKey, dateEvents]) => (
           <div key={dateKey}>
             <h2 className="mb-3 text-sm font-semibold text-muted-foreground uppercase tracking-wide">{dateKey}</h2>
             <div className="space-y-3">
               {dateEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`border-l-4 p-4 cursor-pointer transition-colors hover:bg-accent/40 bg-card border border-border ${
-                    colorClasses[event.color as keyof typeof colorClasses]
+                  role="button"
+                  tabIndex={0}
+                  className={`border-l-4 p-4 cursor-pointer transition-colors hover:bg-accent/40 bg-card border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ${
+                    COLOR_CLASSES[event.color] ?? "border-l-muted-foreground"
                   }`}
                   onClick={() => onEditEvent(event)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault()
+                      onEditEvent(event)
+                    } else if ((e.key === "Delete" || e.key === "Backspace") && event.editable !== false) {
+                      e.preventDefault()
+                      onDeleteEvent(event)
+                    }
+                  }}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-foreground">{event.title}</h3>
+                      <h3 className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
+                        {event.recurringEventId && <Repeat className="h-4 w-4 shrink-0 opacity-70" />}
+                        {event.title}
+                      </h3>
                       {event.description && <p className="mt-1 text-sm text-muted-foreground">{event.description}</p>}
 
                       <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1.5">
                           <Clock className="h-4 w-4" />
                           <span>
-                            {formatTime(event.start)} - {formatTime(event.end)}
+                            {event.allDay ? "All day" : `${formatEventTime(event.start)} - ${formatEventTime(event.end)}`}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="h-4 w-4" />
-                          <span>{getDuration(event.start, event.end)}</span>
-                        </div>
+                        {!event.allDay && (
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="h-4 w-4" />
+                            <span>{formatDuration(event.start, event.end)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
