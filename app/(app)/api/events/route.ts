@@ -1,5 +1,6 @@
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
 import {
   fetchGoogleEvents,
   fetchAllSelectedCalendarEvents,
@@ -8,83 +9,72 @@ import {
   updateGoogleEvent,
   deleteGoogleEvent,
   transformGoogleEventToCalendarEvent,
+  isGoogleCalendarConnected,
 } from "@/lib/integrations/google/google-calendar";
-import { getIntegration } from "@/lib/integrations/google/google-oauth";
 import type { Calendar } from "@/types/calendar";
-import { z } from "zod";
 
 const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const;
 
+function toCalendars(googleCalendars: Awaited<ReturnType<typeof fetchGoogleCalendars>>): Calendar[] {
+  return googleCalendars.map((cal, index) => ({
+    id: cal.id!,
+    name: cal.summary || "Untitled Calendar",
+    color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+    checked: true,
+  }));
+}
+
 // GET /api/events - Fetch events from Google Calendar
 export async function GET(request: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  if (!(await isGoogleCalendarConnected(session.user.id))) {
+    return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const querySchema = z.object({
+    start: z.string().optional().refine((val) => val === undefined || !isNaN(Date.parse(val)), "Invalid start date"),
+    end: z.string().optional().refine((val) => val === undefined || !isNaN(Date.parse(val)), "Invalid end date"),
+    calendarId: z.string().nullable().optional(),
+  });
+
+  const queryValidation = querySchema.safeParse({
+    start: searchParams.get("start") ?? undefined,
+    end: searchParams.get("end") ?? undefined,
+    calendarId: searchParams.get("calendarId"),
+  });
+
+  if (!queryValidation.success) {
+    return Response.json({ error: "Validation failed", details: queryValidation.error.issues }, { status: 400 });
+  }
+  const { start, end, calendarId } = queryValidation.data;
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    // Check if Google Calendar is connected
-    const integration = await getIntegration(session.user.id);
-    
-    if (!integration) {
-      return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
-    }
-
-      const { searchParams } = new URL(request.url);
-      const start = searchParams.get("start");
-      const end = searchParams.get("end");
-      const calendarId = searchParams.get("calendarId");
-
-      // Validate query params
-      const querySchema = z.object({
-        start: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid start date'),
-        end: z.string().optional().refine(val => val === undefined || !isNaN(Date.parse(val)), 'Invalid end date'),
-        calendarId: z.string().nullable().optional(),
-      });
-
-      const queryValidation = querySchema.safeParse({ start, end, calendarId });
-
-      if (!queryValidation.success) {
-        return Response.json(
-        { error: 'Validation failed', details: queryValidation.error.issues },
-        { status: 400 }
-        );
-      }
-
-    // Fetch calendars for transformation
     const googleCalendars = await fetchGoogleCalendars(session.user.id);
-    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
-      id: cal.id!,
-      name: cal.summary || "Untitled Calendar",
-      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
-      checked: true, // We'll handle this later if needed
-    }));
+    const calendars = toCalendars(googleCalendars);
 
     let googleEvents;
-
     if (calendarId) {
-      // Fetch from specific calendar
-      googleEvents = await fetchGoogleEvents(session.user.id, calendarId, {
+      const events = await fetchGoogleEvents(session.user.id, calendarId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
-      // Get accessRole for this calendar
-      const calendar = googleCalendars.find(cal => cal.id === calendarId);
-      // Add calendarId and accessRole to each event
-      googleEvents = googleEvents.map(event => ({ ...event, calendarId, accessRole: calendar?.accessRole }));
+      const calendar = googleCalendars.find((cal) => cal.id === calendarId);
+      googleEvents = events.map((event) => ({ ...event, calendarId, accessRole: calendar?.accessRole }));
     } else {
-      // Fetch from all selected calendars
       googleEvents = await fetchAllSelectedCalendarEvents(session.user.id, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
     }
 
-    // Transform to CalendarEvent[]
-    const events = googleEvents.map(event => transformGoogleEventToCalendarEvent(event, calendars, event.accessRole || undefined));
+    const events = googleEvents.map((event) =>
+      transformGoogleEventToCalendarEvent(event, calendars, event.accessRole || undefined)
+    );
 
     return Response.json(events);
   } catch (error) {
@@ -95,64 +85,46 @@ export async function GET(request: Request) {
 
 // POST /api/events - Create event in Google Calendar
 export async function POST(request: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const createEventSchema = z.object({
+    calendarId: z.string().min(1, "Calendar ID is required"),
+    summary: z.string().min(1, "Event title is required").trim(),
+    description: z.string().optional(),
+    location: z.string().optional(),
+    start: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid start date"),
+    end: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid end date"),
+    attendees: z.array(z.string().email()).optional().default([]),
+  });
+
+  const validation = createEventSchema.safeParse(await request.json());
+  if (!validation.success) {
+    return Response.json({ error: "Validation failed", details: validation.error.issues }, { status: 400 });
+  }
+  const { calendarId, summary, description, location, start, end, attendees } = validation.data;
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-
-    // Define Zod schema for validation
-    const createEventSchema = z.object({
-      calendarId: z.string().min(1, 'Calendar ID is required'),
-      summary: z.string().min(1, 'Event title is required').trim(),
-      description: z.string().optional(),
-      location: z.string().optional(),
-      start: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid start date'),
-      end: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid end date'),
-      attendees: z.array(z.object({ email: z.string().email() })).optional().default([]),
-    });
-
-    const validationResult = createEventSchema.safeParse(body);
-    if (!validationResult.success) {
-      return Response.json(
-        { error: 'Validation failed', details: validationResult.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const { calendarId, summary, description, location, start, end, attendees } = validationResult.data;
-
     const createdGoogleEvent = await createGoogleEvent(session.user.id, calendarId, {
       summary,
       description: description?.trim(),
       location: location?.trim(),
       start: new Date(start),
       end: new Date(end),
-      attendees: attendees?.map(a => a.email),
+      attendees,
     });
 
-    // Transform to CalendarEvent
     const googleCalendars = await fetchGoogleCalendars(session.user.id);
-    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
-      id: cal.id!,
-      name: cal.summary || "Untitled Calendar",
-      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
-      checked: true,
-    }));
+    const calendars = toCalendars(googleCalendars);
+    const calendar = googleCalendars.find((cal) => cal.id === calendarId);
 
-    // Get accessRole for the calendar
-    const calendar = googleCalendars.find(cal => cal.id === calendarId);
     const createdEvent = transformGoogleEventToCalendarEvent(
       { ...createdGoogleEvent, calendarId },
       calendars,
       calendar?.accessRole || undefined
     );
-
     return Response.json(createdEvent, { status: 201 });
   } catch (error) {
     console.error("Failed to create event:", error);
@@ -162,77 +134,50 @@ export async function POST(request: Request) {
 
 // PATCH /api/events - Update event in Google Calendar
 export async function PATCH(request: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { eventId, calendarId, ...updates } = body;
+  if (!eventId) return Response.json({ error: "Event ID is required" }, { status: 400 });
+  if (!calendarId) return Response.json({ error: "Calendar ID is required" }, { status: 400 });
+
+  const updateEventSchema = z.object({
+    summary: z.string().optional(),
+    description: z.string().optional(),
+    location: z.string().optional(),
+    start: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid start date").optional(),
+    end: z.string().refine((val) => !isNaN(Date.parse(val)), "Invalid end date").optional(),
+    attendees: z.array(z.string().email()).optional(),
+  });
+
+  const validation = updateEventSchema.safeParse(updates);
+  if (!validation.success) {
+    return Response.json({ error: "Validation failed", details: validation.error.issues }, { status: 400 });
+  }
+  const data = validation.data;
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
+    const updatedGoogleEvent = await updateGoogleEvent(session.user.id, calendarId, eventId, {
+      summary: data.summary?.trim(),
+      description: data.description?.trim(),
+      location: data.location?.trim(),
+      start: data.start ? new Date(data.start) : undefined,
+      end: data.end ? new Date(data.end) : undefined,
+      attendees: data.attendees,
     });
 
-    if (!session?.user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await request.json();
-    const { eventId, calendarId, ...updates } = body;
-
-    if (!eventId) {
-      return Response.json({ error: "Event ID is required" }, { status: 400 });
-    }
-
-    if (!calendarId) {
-      return Response.json({ error: "Calendar ID is required" }, { status: 400 });
-    }
-
-    // Define Zod schema for update validation
-    const updateEventSchema = z.object({
-      summary: z.string().optional(),
-      description: z.string().optional(),
-      location: z.string().optional(),
-      start: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid start date').optional(),
-      end: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid end date').optional(),
-      attendees: z.array(z.object({ email: z.string().email() })).optional(),
-    });
-
-    const validationResult = updateEventSchema.safeParse(updates);
-    if (!validationResult.success) {
-      return Response.json(
-        { error: 'Validation failed', details: validationResult.error.issues },
-        { status: 400 }
-      );
-    }
-
-    // Convert validated date strings to Date objects
-    const updateData: Partial<{ summary?: string; description?: string; location?: string; start?: Date; end?: Date; attendees?: string[] }> = {};
-    if (validationResult.data.summary !== undefined) updateData.summary = validationResult.data.summary?.trim();
-    if (validationResult.data.description !== undefined) updateData.description = validationResult.data.description?.trim();
-    if (validationResult.data.location !== undefined) updateData.location = validationResult.data.location?.trim();
-    if (validationResult.data.start) updateData.start = new Date(validationResult.data.start);
-    if (validationResult.data.end) updateData.end = new Date(validationResult.data.end);
-    if (validationResult.data.attendees) updateData.attendees = validationResult.data.attendees.map(a => a.email);
-
-    const updatedGoogleEvent = await updateGoogleEvent(
-      session.user.id,
-      calendarId,
-      eventId,
-      updateData
-    );
-
-    // Transform to CalendarEvent
     const googleCalendars = await fetchGoogleCalendars(session.user.id);
-    const calendars: Calendar[] = googleCalendars.map((cal, index) => ({
-      id: cal.id!,
-      name: cal.summary || "Untitled Calendar",
-      color: CALENDAR_COLORS[index % CALENDAR_COLORS.length],
-      checked: true,
-    }));
+    const calendars = toCalendars(googleCalendars);
+    const calendar = googleCalendars.find((cal) => cal.id === calendarId);
 
-    // Get accessRole for the calendar
-    const calendar = googleCalendars.find(cal => cal.id === calendarId);
     const updatedEvent = transformGoogleEventToCalendarEvent(
       { ...updatedGoogleEvent, calendarId },
       calendars,
       calendar?.accessRole || undefined
     );
-
     return Response.json(updatedEvent);
   } catch (error) {
     console.error("Failed to update event:", error);
@@ -242,29 +187,19 @@ export async function PATCH(request: Request) {
 
 // DELETE /api/events - Delete event from Google Calendar
 export async function DELETE(request: Request) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const eventId = searchParams.get("id");
+  const calendarId = searchParams.get("calendarId");
+  if (!eventId) return Response.json({ error: "Event ID is required" }, { status: 400 });
+  if (!calendarId) return Response.json({ error: "Calendar ID is required" }, { status: 400 });
+
   try {
-    const session = await auth.api.getSession({
-      headers: await headers(),
-    });
-
-    if (!session?.user) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const eventId = searchParams.get("id");
-    const calendarId = searchParams.get("calendarId");
-
-    if (!eventId) {
-      return Response.json({ error: "Event ID is required" }, { status: 400 });
-    }
-
-    if (!calendarId) {
-      return Response.json({ error: "Calendar ID is required" }, { status: 400 });
-    }
-
     await deleteGoogleEvent(session.user.id, calendarId, eventId);
-
     return Response.json({ success: true });
   } catch (error) {
     console.error("Failed to delete event:", error);

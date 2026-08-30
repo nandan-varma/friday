@@ -19,10 +19,16 @@ interface ChatBubbleProps {
 export function ChatBubble({ className }: ChatBubbleProps) {
   const [input, setInput] = useState("")
   const [open, setOpen] = useState(false)
+  const [chatId] = useState(() => crypto.randomUUID())
 
   const { messages, sendMessage, status } = useChat({
+    id: chatId,
+    resume: true,
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      prepareSendMessagesRequest: ({ id, messages }) => ({
+        body: { id, message: messages[messages.length - 1] },
+      }),
     }),
   })
 

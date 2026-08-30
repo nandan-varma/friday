@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { GitBranch, Calendar } from "lucide-react";
+import { Calendar, CalendarPlus, CalendarClock } from "lucide-react";
 
 interface QuickAction {
 	icon: React.ComponentType<{ className?: string }>;
@@ -15,28 +15,22 @@ interface ChatQuickActionsProps {
 
 const quickActions: QuickAction[] = [
 	{
-		icon: GitBranch,
-		title: "GitHub Activity",
-		description: "View commits, PRs, and issues",
-		prompt: "Show me my GitHub activity today",
-	},
-	{
 		icon: Calendar,
 		title: "Today's Schedule",
-		description: "See your calendar events",
+		description: "See what's on your calendar today",
 		prompt: "What's on my calendar today?",
 	},
 	{
-		icon: GitBranch,
-		title: "Daily Standup",
-		description: "GitHub activity summary",
-		prompt: "Generate my daily standup",
+		icon: CalendarClock,
+		title: "This Week",
+		description: "See upcoming events this week",
+		prompt: "What's on my calendar this week?",
 	},
 	{
-		icon: GitBranch,
-		title: "My Repositories",
-		description: "Browse your GitHub repos",
-		prompt: "List my repositories",
+		icon: CalendarPlus,
+		title: "Schedule a Meeting",
+		description: "Create a new calendar event",
+		prompt: "Help me schedule a meeting",
 	},
 ];
 

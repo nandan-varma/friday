@@ -11,10 +11,16 @@ import { ChatQuickActions } from "@/components/ai/chat-quick-actions"
 
 export default function ChatPage() {
   const [input, setInput] = useState("")
+  const [chatId] = useState(() => crypto.randomUUID())
 
   const { messages, sendMessage, status } = useChat({
+    id: chatId,
+    resume: true,
     transport: new DefaultChatTransport({
       api: "/api/chat",
+      prepareSendMessagesRequest: ({ id, messages }) => ({
+        body: { id, message: messages[messages.length - 1] },
+      }),
     }),
   })
 
@@ -27,37 +33,30 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-        {/* Header */}
-        <header className="border-b bg-card">
-          <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold text-foreground">AI Assistant</h1>
-            <p className="text-sm text-muted-foreground">Chat with your GitHub and Calendar integrations</p>
-          </div>
-        </header>
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <h1 className="text-2xl font-bold text-foreground">AI Assistant</h1>
+          <p className="text-sm text-muted-foreground">Chat with your calendar</p>
+        </div>
+      </header>
 
-        {/* Main Chat Area */}
-        <div className="flex-1 container mx-auto px-4 py-6 flex flex-col max-w-4xl">
-          {/* Quick Actions */}
-          {messages.length === 0 && (
-            <ChatQuickActions onActionClick={setInput} />
-          )}
+      <div className="flex-1 container mx-auto px-4 py-6 flex flex-col max-w-4xl">
+        {messages.length === 0 && <ChatQuickActions onActionClick={setInput} />}
 
-          {/* Messages */}
-          <ScrollArea className="flex-1 pr-4">
-            <ChatMessages messages={messages} status={status} />
-          </ScrollArea>
+        <ScrollArea className="flex-1 pr-4">
+          <ChatMessages messages={messages} status={status} />
+        </ScrollArea>
 
-          {/* Input Area */}
-          <div className="mt-6">
-            <ChatInput
-              value={input}
-              onChange={setInput}
-              onSubmit={handleSubmit}
-              disabled={status !== "ready"}
-              isLoading={status === "streaming"}
-            />
-          </div>
+        <div className="mt-6">
+          <ChatInput
+            value={input}
+            onChange={setInput}
+            onSubmit={handleSubmit}
+            disabled={status !== "ready"}
+            isLoading={status === "streaming"}
+          />
         </div>
       </div>
+    </div>
   )
 }

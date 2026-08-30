@@ -5,6 +5,8 @@ allowBuilds:
   msw: true
   sharp: true
   unrs-resolver: true
+minimumReleaseAgeExclude:
+  - zod@4.5.4
 # drizzle-kit still ships deprecated @esbuild-kit packages that pin esbuild <=0.24.2 (GHSA-67mh-4wv8-2f99).
 # Remove once drizzle-kit drops @esbuild-kit.
 overrides:

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
+import { authClient } from "@/lib/auth-client"
 import type { CalendarEvent } from "@/types/calendar"
 
 // Integration status types
@@ -110,22 +111,17 @@ export function useGoogleEvents(
   })
 }
 
-// Connect Google Calendar
+// Connect Google Calendar - links Calendar scope to the account via Better
+// Auth. Redirects to Google's consent screen; the callback lands back on /app.
 export function useConnectGoogle() {
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/integrations/google", {
-        method: "POST",
+      const { error } = await authClient.linkSocial({
+        provider: "google",
+        scopes: ["https://www.googleapis.com/auth/calendar"],
+        callbackURL: "/app",
       })
-      if (!response.ok) {
-        throw new Error("Failed to initiate OAuth flow")
-      }
-      const data = await response.json()
-      return data.authUrl
-    },
-    onSuccess: (authUrl: string) => {
-      // Open OAuth window
-      window.location.href = authUrl
+      if (error) throw new Error(error.message || "Failed to connect Google Calendar")
     },
   })
 }
@@ -136,13 +132,14 @@ export function useDisconnectGoogle() {
 
   return useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/integrations/google", {
-        method: "DELETE",
-      })
-      if (!response.ok) {
-        throw new Error("Failed to disconnect")
-      }
-      return response.json()
+      const { data: accounts, error: listError } = await authClient.listAccounts()
+      if (listError) throw new Error(listError.message || "Failed to disconnect")
+
+      const googleAccount = accounts?.find((a) => a.providerId === "google")
+      if (!googleAccount) return
+
+      const { error } = await authClient.unlinkAccount({ accountId: googleAccount.id })
+      if (error) throw new Error(error.message || "Failed to disconnect")
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-integration"] })
@@ -334,35 +331,6 @@ export function useDeleteEvent() {
       return response.json()
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["google-events"] })
-    },
-  })
-}
-
-// Trigger sync
-export function useSyncCalendar() {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (options?: { timeMin?: Date; timeMax?: Date }) => {
-      const response = await fetch("/api/sync/google", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          timeMin: options?.timeMin?.toISOString(),
-          timeMax: options?.timeMax?.toISOString(),
-        }),
-      })
-      if (!response.ok) {
-        throw new Error("Failed to sync calendar")
-      }
-      return response.json()
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["google-integration"] })
-      queryClient.invalidateQueries({ queryKey: ["google-calendars"] })
       queryClient.invalidateQueries({ queryKey: ["google-events"] })
     },
   })

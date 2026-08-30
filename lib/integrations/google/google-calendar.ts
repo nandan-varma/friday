@@ -1,12 +1,44 @@
 import { google, calendar_v3 } from "googleapis";
-import { getAuthenticatedClient, getIntegration } from "./google-oauth";
+import { and, eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { googleCalendarIntegration } from "@/db/schema/integrations";
-import { eq } from "drizzle-orm";
+import { account } from "@/db/schema/auth";
+import { calendarPreference } from "@/db/schema/calendar";
 import type { Calendar, CalendarEvent } from "@/types/calendar";
 
 export type GoogleCalendar = calendar_v3.Schema$CalendarListEntry;
 export type GoogleEvent = calendar_v3.Schema$Event;
+
+// Google account linked via Better Auth (`socialProviders.google`). OAuth
+// tokens and refresh live in Better Auth's own `account` table.
+export async function getGoogleAccount(userId: string) {
+  const [row] = await db
+    .select()
+    .from(account)
+    .where(and(eq(account.userId, userId), eq(account.providerId, "google")))
+    .limit(1);
+  return row ?? null;
+}
+
+export async function isGoogleCalendarConnected(userId: string): Promise<boolean> {
+  const googleAccount = await getGoogleAccount(userId);
+  return !!googleAccount?.scope?.includes("https://www.googleapis.com/auth/calendar");
+}
+
+async function getCalendarClient(userId: string) {
+  const googleAccount = await getGoogleAccount(userId);
+  if (!googleAccount) {
+    throw new Error("Google account not connected");
+  }
+
+  const { accessToken } = await auth.api.getAccessToken({
+    body: { accountId: googleAccount.id, userId },
+  });
+
+  const oauth2Client = new google.auth.OAuth2();
+  oauth2Client.setCredentials({ access_token: accessToken });
+  return google.calendar({ version: "v3", auth: oauth2Client });
+}
 
 // Transform GoogleEvent to CalendarEvent
 export function transformGoogleEventToCalendarEvent(
@@ -18,18 +50,14 @@ export function transformGoogleEventToCalendarEvent(
   const startDate = event.start?.dateTime
     ? new Date(event.start.dateTime)
     : event.start?.date
-    ? new Date(event.start.date)
-    : new Date();
+      ? new Date(event.start.date)
+      : new Date();
   const endDate = event.end?.dateTime
     ? new Date(event.end.dateTime)
     : event.end?.date
-    ? new Date(event.end.date)
-    : new Date();
+      ? new Date(event.end.date)
+      : new Date();
 
-  // Determine if event is editable
-  // An event is editable if:
-  // 1. The calendar has 'owner' or 'writer' access
-  // 2. The user is the organizer (organizer.self === true)
   const hasWriteAccess = calendarAccessRole === "owner" || calendarAccessRole === "writer";
   const isOrganizer = event.organizer?.self === true;
   const editable = hasWriteAccess && (isOrganizer || !event.organizer);
@@ -49,37 +77,21 @@ export function transformGoogleEventToCalendarEvent(
   };
 }
 
-// Get Google Calendar API client
-async function getCalendarClient(userId: string) {
-  console.log(`[getCalendarClient] Getting client for userId: ${userId}`);
-  const oauth2Client = await getAuthenticatedClient(userId);
-  return google.calendar({ version: "v3", auth: oauth2Client });
-}
-
-// Fetch user's calendar list from Google
 export async function fetchGoogleCalendars(userId: string): Promise<GoogleCalendar[]> {
   const calendar = await getCalendarClient(userId);
-
   const response = await calendar.calendarList.list({
     showHidden: false,
     showDeleted: false,
   });
-
   return response.data.items || [];
 }
 
-// Fetch events from a specific calendar
 export async function fetchGoogleEvents(
   userId: string,
   calendarId: string,
-  options?: {
-    timeMin?: Date;
-    timeMax?: Date;
-    maxResults?: number;
-  }
+  options?: { timeMin?: Date; timeMax?: Date; maxResults?: number }
 ): Promise<GoogleEvent[]> {
   const calendar = await getCalendarClient(userId);
-
   const response = await calendar.events.list({
     calendarId,
     timeMin: options?.timeMin?.toISOString(),
@@ -88,69 +100,48 @@ export async function fetchGoogleEvents(
     singleEvents: true,
     orderBy: "startTime",
   });
-
   return response.data.items || [];
 }
 
-// Fetch events from all selected calendars
+export async function getSelectedCalendarIds(userId: string): Promise<string[]> {
+  const [pref] = await db
+    .select()
+    .from(calendarPreference)
+    .where(eq(calendarPreference.userId, userId))
+    .limit(1);
+  return pref?.selectedCalendarIds ? JSON.parse(pref.selectedCalendarIds) : ["primary"];
+}
+
 export async function fetchAllSelectedCalendarEvents(
   userId: string,
-  options?: {
-    timeMin?: Date;
-    timeMax?: Date;
-  }
+  options?: { timeMin?: Date; timeMax?: Date }
 ): Promise<Array<GoogleEvent & { calendarId: string; accessRole?: string }>> {
-  console.log(`[fetchAllSelectedCalendarEvents] Checking integration for userId: ${userId}`);
-  const integration = await getIntegration(userId);
-
-  if (!integration) {
-    console.error(`[fetchAllSelectedCalendarEvents] No integration found for userId: ${userId}`);
-    throw new Error("No Google Calendar integration found");
-  }
-  
-  console.log(`[fetchAllSelectedCalendarEvents] Integration found:`, {
-    id: integration.id,
-    googleUserId: integration.googleUserId,
-    hasRefreshToken: !!integration.refreshToken,
-    tokenExpiry: integration.tokenExpiry,
-  });
-
-  // If no calendars selected, fetch from primary calendar
-  const calendarIds = integration.selectedCalendarIds
-    ? JSON.parse(integration.selectedCalendarIds)
-    : ["primary"];
-
-  // Fetch calendar list to get accessRole for each calendar
-  const googleCalendars = await fetchGoogleCalendars(userId);
-  const calendarAccessRoles = new Map(
-    googleCalendars.map((cal) => [cal.id!, cal.accessRole])
-  );
+  const [calendarIds, googleCalendars] = await Promise.all([
+    getSelectedCalendarIds(userId),
+    fetchGoogleCalendars(userId),
+  ]);
+  const calendarAccessRoles = new Map(googleCalendars.map((cal) => [cal.id!, cal.accessRole]));
 
   const allEvents: Array<GoogleEvent & { calendarId: string; accessRole?: string }> = [];
 
-  // Fetch events from each calendar
   for (const calendarId of calendarIds) {
     try {
       const events = await fetchGoogleEvents(userId, calendarId, options);
-      const accessRole = calendarAccessRoles.get(calendarId);
-      // Add calendarId and accessRole to each event for reference
       allEvents.push(
         ...events.map((event) => ({
           ...event,
           calendarId,
-          accessRole: accessRole || undefined,
+          accessRole: calendarAccessRoles.get(calendarId) || undefined,
         }))
       );
     } catch (error) {
       console.error(`Failed to fetch events from calendar ${calendarId}:`, error);
-      // Continue with other calendars even if one fails
     }
   }
 
   return allEvents;
 }
 
-// Create an event in Google Calendar
 export async function createGoogleEvent(
   userId: string,
   calendarId: string,
@@ -164,29 +155,20 @@ export async function createGoogleEvent(
   }
 ): Promise<GoogleEvent> {
   const calendar = await getCalendarClient(userId);
-
   const response = await calendar.events.insert({
     calendarId,
     requestBody: {
       summary: event.summary,
       description: event.description,
       location: event.location,
-      start: {
-        dateTime: event.start.toISOString(),
-        timeZone: "UTC",
-      },
-      end: {
-        dateTime: event.end.toISOString(),
-        timeZone: "UTC",
-      },
+      start: { dateTime: event.start.toISOString(), timeZone: "UTC" },
+      end: { dateTime: event.end.toISOString(), timeZone: "UTC" },
       attendees: event.attendees?.map((email) => ({ email })),
     },
   });
-
   return response.data;
 }
 
-// Update an event in Google Calendar
 export async function updateGoogleEvent(
   userId: string,
   calendarId: string,
@@ -203,89 +185,31 @@ export async function updateGoogleEvent(
   const calendar = await getCalendarClient(userId);
 
   const requestBody: calendar_v3.Schema$Event = {};
-
   if (updates.summary !== undefined) requestBody.summary = updates.summary;
   if (updates.description !== undefined) requestBody.description = updates.description;
   if (updates.location !== undefined) requestBody.location = updates.location;
+  if (updates.start) requestBody.start = { dateTime: updates.start.toISOString(), timeZone: "UTC" };
+  if (updates.end) requestBody.end = { dateTime: updates.end.toISOString(), timeZone: "UTC" };
+  if (updates.attendees) requestBody.attendees = updates.attendees.map((email) => ({ email }));
 
-  if (updates.start) {
-    requestBody.start = {
-      dateTime: updates.start.toISOString(),
-      timeZone: "UTC",
-    };
-  }
-
-  if (updates.end) {
-    requestBody.end = {
-      dateTime: updates.end.toISOString(),
-      timeZone: "UTC",
-    };
-  }
-
-  if (updates.attendees) {
-    requestBody.attendees = updates.attendees.map((email) => ({ email }));
-  }
-
-  const response = await calendar.events.patch({
-    calendarId,
-    eventId,
-    requestBody,
-  });
-
+  const response = await calendar.events.patch({ calendarId, eventId, requestBody });
   return response.data;
 }
 
-// Delete an event from Google Calendar
-export async function deleteGoogleEvent(
-  userId: string,
-  calendarId: string,
-  eventId: string
-): Promise<void> {
+export async function deleteGoogleEvent(userId: string, calendarId: string, eventId: string): Promise<void> {
   const calendar = await getCalendarClient(userId);
-
-  await calendar.events.delete({
-    calendarId,
-    eventId,
-  });
+  await calendar.events.delete({ calendarId, eventId });
 }
 
-// Update selected calendar IDs for sync
-export async function updateSelectedCalendars(
-  userId: string,
-  calendarIds: string[]
-): Promise<void> {
+export async function updateSelectedCalendars(userId: string, calendarIds: string[]): Promise<void> {
   await db
-    .update(googleCalendarIntegration)
-    .set({
+    .insert(calendarPreference)
+    .values({
+      userId,
       selectedCalendarIds: JSON.stringify(calendarIds),
-      updatedAt: new Date(),
     })
-    .where(eq(googleCalendarIntegration.userId, userId));
-}
-
-// Update last sync timestamp
-export async function updateLastSyncAt(userId: string): Promise<void> {
-  await db
-    .update(googleCalendarIntegration)
-    .set({
-      lastSyncAt: new Date(),
-      updatedAt: new Date(),
-    })
-    .where(eq(googleCalendarIntegration.userId, userId));
-}
-
-// Get sync status
-export async function getSyncStatus(userId: string) {
-  const integration = await getIntegration(userId);
-
-  if (!integration) {
-    return null;
-  }
-
-  return {
-    lastSyncAt: integration.lastSyncAt,
-    selectedCalendarIds: integration.selectedCalendarIds
-      ? JSON.parse(integration.selectedCalendarIds)
-      : [],
-  };
+    .onConflictDoUpdate({
+      target: calendarPreference.userId,
+      set: { selectedCalendarIds: JSON.stringify(calendarIds), updatedAt: new Date() },
+    });
 }

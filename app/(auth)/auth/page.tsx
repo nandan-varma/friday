@@ -73,6 +73,14 @@ export default function AuthPage() {
     setStep("choice");
   };
 
+  const handleGoogleSignIn = async () => {
+    await authClient.signIn.social({
+      provider: "google",
+      scopes: ["https://www.googleapis.com/auth/calendar"],
+      callbackURL: "/app",
+    });
+  };
+
   if (step === "passkey-registration" && user) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
@@ -140,6 +148,22 @@ export default function AuthPage() {
         </div>
 
         <Card className="p-6 space-y-3">
+          <Button
+            className="w-full"
+            size="lg"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+          >
+            Continue with Google
+          </Button>
+          <div className="relative py-2">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="bg-card px-2 text-muted-foreground">or</span>
+            </div>
+          </div>
           <Button
             className="w-full"
             size="lg"
