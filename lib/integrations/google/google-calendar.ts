@@ -326,7 +326,7 @@ export async function updateGoogleEvent(
       ),
     );
   }
-  if (updates.attendees)
+  if (updates.attendees !== undefined)
     requestBody.attendees = updates.attendees.map((email) => ({ email }));
 
   const response = await calendar.events.patch({

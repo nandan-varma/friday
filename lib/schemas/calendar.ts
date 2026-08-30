@@ -1,8 +1,7 @@
 import { z } from "zod";
 
-export const isoDateTimeSchema = z
-  .string()
-  .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid ISO date");
+/** An RFC 3339 datetime with an explicit UTC offset. */
+export const isoDateTimeSchema = z.iso.datetime({ offset: true });
 
 const calendarEventFields = z.object({
   calendarId: z.string().min(1),
@@ -56,8 +55,30 @@ export const calendarEventUpdateSchema = calendarEventFields
   });
 
 export const calendarSelectionSchema = z.object({
-  calendarIds: z.array(z.string().min(1)).max(100),
+  calendarIds: z
+    .array(z.string().min(1))
+    .max(100)
+    .refine(
+      (calendarIds) => new Set(calendarIds).size === calendarIds.length,
+      "Calendar IDs must be unique",
+    ),
 });
+
+export const calendarEventsQuerySchema = z
+  .object({
+    start: isoDateTimeSchema.optional(),
+    end: isoDateTimeSchema.optional(),
+    calendarId: z.string().min(1).optional(),
+  })
+  .superRefine(({ start, end }, context) => {
+    if (start && end && new Date(end) <= new Date(start)) {
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
+    }
+  });
 
 export const googleCalendarSchema = z.object({
   id: z.string().min(1),

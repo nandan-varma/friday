@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { z } from "zod";
 import { parseJsonBody } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import {
@@ -16,6 +15,7 @@ import {
 import { createLogger } from "@/lib/logger";
 import {
   calendarEventInputSchema,
+  calendarEventsQuerySchema,
   calendarEventUpdateSchema,
   eventMutationSchema,
 } from "@/lib/schemas/calendar";
@@ -33,6 +33,8 @@ const CALENDAR_COLORS = [
   "indigo",
   "cyan",
 ] as const;
+
+import { z } from "zod";
 
 const ianaTimeZone = z.string().refine((value) => {
   try {
@@ -73,28 +75,10 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const querySchema = z.object({
-    start: z
-      .string()
-      .optional()
-      .refine(
-        (val) => val === undefined || !Number.isNaN(Date.parse(val)),
-        "Invalid start date",
-      ),
-    end: z
-      .string()
-      .optional()
-      .refine(
-        (val) => val === undefined || !Number.isNaN(Date.parse(val)),
-        "Invalid end date",
-      ),
-    calendarId: z.string().nullable().optional(),
-  });
-
-  const queryValidation = querySchema.safeParse({
+  const queryValidation = calendarEventsQuerySchema.safeParse({
     start: searchParams.get("start") ?? undefined,
     end: searchParams.get("end") ?? undefined,
-    calendarId: searchParams.get("calendarId"),
+    calendarId: searchParams.get("calendarId") ?? undefined,
   });
 
   if (!queryValidation.success) {
@@ -113,11 +97,17 @@ export async function GET(request: Request) {
       ReturnType<typeof fetchAllSelectedCalendarEvents>
     >;
     if (calendarId) {
+      const calendar = googleCalendars.find((item) => item.id === calendarId);
+      if (!calendar) {
+        return Response.json(
+          { error: "Calendar is unavailable" },
+          { status: 400 },
+        );
+      }
       const events = await fetchGoogleEvents(session.user.id, calendarId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
-      const calendar = googleCalendars.find((cal) => cal.id === calendarId);
       googleEvents = events.map((event) => ({
         ...event,
         calendarId,

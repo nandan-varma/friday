@@ -73,22 +73,35 @@ export async function PATCH(request: Request) {
   if (parsed.error) return parsed.error;
   const { calendarIds } = parsed.data;
 
-  const availableCalendarIds = new Set(
-    (await fetchGoogleCalendars(session.user.id)).flatMap((calendar) =>
-      calendar.id ? [calendar.id] : [],
-    ),
-  );
-  if (calendarIds.some((calendarId) => !availableCalendarIds.has(calendarId))) {
+  try {
+    const availableCalendarIds = new Set(
+      (await fetchGoogleCalendars(session.user.id)).flatMap((calendar) =>
+        calendar.id ? [calendar.id] : [],
+      ),
+    );
+    if (
+      calendarIds.some((calendarId) => !availableCalendarIds.has(calendarId))
+    ) {
+      return Response.json(
+        { error: "One or more calendar IDs are unavailable" },
+        { status: 400 },
+      );
+    }
+
+    await updateSelectedCalendars(session.user.id, calendarIds);
+    log.info("updated selected calendars", {
+      userId: session.user.id,
+      count: calendarIds.length,
+    });
+    return Response.json({ success: true, selectedCalendarIds: calendarIds });
+  } catch (error) {
+    log.error("failed to update selected calendars", {
+      userId: session.user.id,
+      error,
+    });
     return Response.json(
-      { error: "One or more calendar IDs are unavailable" },
-      { status: 400 },
+      { error: "Failed to update selected calendars" },
+      { status: 500 },
     );
   }
-
-  await updateSelectedCalendars(session.user.id, calendarIds);
-  log.info("updated selected calendars", {
-    userId: session.user.id,
-    count: calendarIds.length,
-  });
-  return Response.json({ success: true, selectedCalendarIds: calendarIds });
 }
