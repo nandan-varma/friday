@@ -72,9 +72,7 @@ export function EventDialog({
       setEndDate(format(event.end, DATE_FORMAT));
       setEndTime(format(event.end, TIME_FORMAT));
       setAllDay(!!event.allDay);
-      // Find calendar name by ID
-      const calendar = calendars.find((cal) => cal.id === event.calendarId);
-      setCalendarId(calendar?.name || event.calendarId);
+      setCalendarId(event.calendarId);
     } else if (initialData) {
       setTitle("");
       setDescription("");
@@ -83,7 +81,7 @@ export function EventDialog({
       setEndDate(format(initialData.end, DATE_FORMAT));
       setEndTime(format(initialData.end, TIME_FORMAT));
       setAllDay(!!initialData.allDay);
-      setCalendarId(calendars[0]?.name || "");
+      setCalendarId(calendars[0]?.id || "");
     }
   }, [event, initialData, calendars]);
 
@@ -103,15 +101,12 @@ export function EventDialog({
           new Date(),
         );
 
-    const selectedCalendar = calendars.find((cal) => cal.name === calendarId);
-    const selectedCalendarId = selectedCalendar?.id || calendarId;
-
     return {
       title,
       description,
       start,
       end,
-      calendarId: selectedCalendarId,
+      calendarId,
       allDay,
     };
   };
@@ -241,7 +236,7 @@ export function EventDialog({
                 </SelectTrigger>
                 <SelectContent>
                   {calendars.map((cal) => (
-                    <SelectItem key={cal.id} value={cal.name}>
+                    <SelectItem key={cal.id} value={cal.id}>
                       {cal.name}
                     </SelectItem>
                   ))}

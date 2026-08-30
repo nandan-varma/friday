@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/lib/auth-client";
-import { calendarEventResponseSchema } from "@/lib/schemas/calendar";
+import {
+  calendarEventResponseSchema,
+  type GoogleCalendarResponse,
+  googleCalendarSchema,
+} from "@/lib/schemas/calendar";
 import { getDeviceTimeZone } from "@/lib/timezone";
 import type { CalendarEvent } from "@/types/calendar";
 
@@ -10,16 +14,6 @@ interface IntegrationStatus {
   googleUserId?: string;
   lastSyncAt?: string;
   selectedCalendarIds?: string[];
-}
-
-// Google Calendar types
-interface GoogleCalendar {
-  id: string;
-  summary: string;
-  description?: string;
-  primary?: boolean;
-  accessRole?: string;
-  backgroundColor?: string;
 }
 
 // Fetch integration status
@@ -40,7 +34,7 @@ export function useGoogleIntegration() {
 export function useGoogleCalendars() {
   const { data: integration } = useGoogleIntegration();
 
-  return useQuery<GoogleCalendar[]>({
+  return useQuery<GoogleCalendarResponse[]>({
     queryKey: ["google-calendars"],
     queryFn: async () => {
       const response = await fetch("/api/calendars");
@@ -53,7 +47,7 @@ export function useGoogleCalendars() {
         }
         throw new Error("Failed to fetch calendars");
       }
-      return response.json();
+      return googleCalendarSchema.array().parse(await response.json());
     },
     enabled: integration?.connected === true,
   });

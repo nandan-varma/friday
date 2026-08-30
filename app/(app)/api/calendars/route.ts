@@ -7,9 +7,31 @@ import {
   updateSelectedCalendars,
 } from "@/lib/integrations/google/google-calendar";
 import { createLogger } from "@/lib/logger";
-import { calendarSelectionSchema } from "@/lib/schemas/calendar";
+import {
+  calendarSelectionSchema,
+  type GoogleCalendarResponse,
+} from "@/lib/schemas/calendar";
 
 const log = createLogger("api/calendars");
+
+function toCalendarResponse(
+  calendars: Awaited<ReturnType<typeof fetchGoogleCalendars>>,
+): GoogleCalendarResponse[] {
+  return calendars.flatMap((calendar) =>
+    calendar.id
+      ? [
+          {
+            id: calendar.id,
+            summary: calendar.summary ?? "Untitled Calendar",
+            description: calendar.description ?? undefined,
+            primary: calendar.primary ?? undefined,
+            accessRole: calendar.accessRole ?? undefined,
+            backgroundColor: calendar.backgroundColor ?? undefined,
+          },
+        ]
+      : [],
+  );
+}
 
 // GET /api/calendars - Fetch user's Google calendars
 export async function GET() {
@@ -29,7 +51,7 @@ export async function GET() {
 
   try {
     const calendars = await fetchGoogleCalendars(session.user.id);
-    return Response.json(calendars);
+    return Response.json(toCalendarResponse(calendars));
   } catch (error) {
     log.error("failed to fetch calendars", { userId: session.user.id, error });
     return Response.json(

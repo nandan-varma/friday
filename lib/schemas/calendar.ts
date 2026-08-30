@@ -59,6 +59,17 @@ export const calendarSelectionSchema = z.object({
   calendarIds: z.array(z.string().min(1)).max(100),
 });
 
+export const googleCalendarSchema = z.object({
+  id: z.string().min(1),
+  summary: z.string(),
+  description: z.string().optional(),
+  primary: z.boolean().optional(),
+  accessRole: z.string().optional(),
+  backgroundColor: z.string().optional(),
+});
+
+export type GoogleCalendarResponse = z.infer<typeof googleCalendarSchema>;
+
 export const eventMutationSchema = z.object({
   eventId: z.string().min(1),
   calendarId: z.string().min(1),
