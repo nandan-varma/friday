@@ -29,8 +29,6 @@ export default function SupportPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, you'd send this to a backend
-    console.log("Form submitted:", formData);
     setFormSubmitted(true);
     setTimeout(() => {
       setFormSubmitted(false);

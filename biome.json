@@ -7,7 +7,8 @@
       "!**/node_modules",
       "!**/build",
       "!**/coverage",
-      "!**/drizzle/meta"
+      "!**/drizzle/meta",
+      "!public"
     ]
   },
   "formatter": {
@@ -46,6 +47,11 @@
       "quoteStyle": "double",
       "semicolons": "always",
       "trailingCommas": "all"
+    }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
     }
   }
 }
