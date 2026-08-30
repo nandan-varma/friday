@@ -7,14 +7,29 @@ export async function getAuthenticatedUserId(): Promise<string | null> {
   return session?.user.id ?? null;
 }
 
-export async function parseJsonBody<T extends z.ZodType>(request: Request, schema: T) {
+export async function parseJsonBody<T extends z.ZodType>(
+  request: Request,
+  schema: T,
+) {
   try {
     const body: unknown = await request.json();
     const result = schema.safeParse(body);
     return result.success
       ? { data: result.data, error: null }
-      : { data: null, error: Response.json({ error: "Validation failed", details: result.error.issues }, { status: 400 }) };
+      : {
+          data: null,
+          error: Response.json(
+            { error: "Validation failed", details: result.error.issues },
+            { status: 400 },
+          ),
+        };
   } catch {
-    return { data: null, error: Response.json({ error: "Request body must be valid JSON" }, { status: 400 }) };
+    return {
+      data: null,
+      error: Response.json(
+        { error: "Request body must be valid JSON" },
+        { status: 400 },
+      ),
+    };
   }
 }

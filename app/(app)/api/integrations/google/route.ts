@@ -1,6 +1,10 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
-import { getGoogleAccount, getSelectedCalendarIds, isGoogleCalendarConnected } from "@/lib/integrations/google/google-calendar";
+import {
+  getGoogleAccount,
+  getSelectedCalendarIds,
+  isGoogleCalendarConnected,
+} from "@/lib/integrations/google/google-calendar";
 import { createLogger } from "@/lib/logger";
 
 const log = createLogger("api/integrations/google");

@@ -1,11 +1,11 @@
 import { tool } from "ai";
 import { z } from "zod";
 import {
-  fetchGoogleCalendars,
-  fetchAllSelectedCalendarEvents,
   createGoogleEvent,
-  updateGoogleEvent,
   deleteGoogleEvent,
+  fetchAllSelectedCalendarEvents,
+  fetchGoogleCalendars,
+  updateGoogleEvent,
 } from "@/lib/integrations/google/google-calendar";
 
 // Every tool receives the authenticated userId via `context`, validated by
@@ -35,16 +35,25 @@ export const calendarTools = {
   }),
 
   listEvents: tool({
-    description: "List calendar events from selected calendars within a time range",
+    description:
+      "List calendar events from selected calendars within a time range",
     inputSchema: z.object({
-      timeMin: z.string().optional().describe("ISO date string for start of time range"),
-      timeMax: z.string().optional().describe("ISO date string for end of time range"),
+      timeMin: z
+        .string()
+        .optional()
+        .describe("ISO date string for start of time range"),
+      timeMax: z
+        .string()
+        .optional()
+        .describe("ISO date string for end of time range"),
     }),
     contextSchema: userContextSchema,
     execute: async ({ timeMin, timeMax }, { context }) => {
       const events = await fetchAllSelectedCalendarEvents(context.userId, {
         timeMin: timeMin ? new Date(timeMin) : new Date(),
-        timeMax: timeMax ? new Date(timeMax) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        timeMax: timeMax
+          ? new Date(timeMax)
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       });
       return {
         events: events.map((e) => ({
@@ -93,16 +102,26 @@ export const calendarTools = {
   createEvent: tool({
     description: "Create a new calendar event",
     inputSchema: z.object({
-      calendarId: z.string().describe('Calendar ID to create event in (use "primary" for default calendar)'),
+      calendarId: z
+        .string()
+        .describe(
+          'Calendar ID to create event in (use "primary" for default calendar)',
+        ),
       title: z.string().describe("Event title/summary"),
       description: z.string().optional().describe("Event description"),
       start: z.string().describe("ISO date string for event start"),
       end: z.string().describe("ISO date string for event end"),
       location: z.string().optional().describe("Event location"),
-      attendees: z.array(z.string()).optional().describe("Array of attendee email addresses"),
+      attendees: z
+        .array(z.string())
+        .optional()
+        .describe("Array of attendee email addresses"),
     }),
     contextSchema: userContextSchema,
-    execute: async ({ calendarId, title, description, start, end, location, attendees }, { context }) => {
+    execute: async (
+      { calendarId, title, description, start, end, location, attendees },
+      { context },
+    ) => {
       const event = await createGoogleEvent(context.userId, calendarId, {
         summary: title,
         description,
@@ -111,7 +130,12 @@ export const calendarTools = {
         location,
         attendees,
       });
-      return { success: true, eventId: event.id, title: event.summary, htmlLink: event.htmlLink };
+      return {
+        success: true,
+        eventId: event.id,
+        title: event.summary,
+        htmlLink: event.htmlLink,
+      };
     },
   }),
 
@@ -122,19 +146,30 @@ export const calendarTools = {
       eventId: z.string().describe("Event ID to update"),
       title: z.string().optional().describe("New event title"),
       description: z.string().optional().describe("New event description"),
-      start: z.string().optional().describe("New start time as ISO date string"),
+      start: z
+        .string()
+        .optional()
+        .describe("New start time as ISO date string"),
       end: z.string().optional().describe("New end time as ISO date string"),
       location: z.string().optional().describe("New event location"),
     }),
     contextSchema: userContextSchema,
-    execute: async ({ calendarId, eventId, title, description, start, end, location }, { context }) => {
-      const event = await updateGoogleEvent(context.userId, calendarId, eventId, {
-        summary: title,
-        description,
-        start: start ? new Date(start) : undefined,
-        end: end ? new Date(end) : undefined,
-        location,
-      });
+    execute: async (
+      { calendarId, eventId, title, description, start, end, location },
+      { context },
+    ) => {
+      const event = await updateGoogleEvent(
+        context.userId,
+        calendarId,
+        eventId,
+        {
+          summary: title,
+          description,
+          start: start ? new Date(start) : undefined,
+          end: end ? new Date(end) : undefined,
+          location,
+        },
+      );
       return { success: true, eventId: event.id, title: event.summary };
     },
   }),

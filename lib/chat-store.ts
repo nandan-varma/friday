@@ -1,5 +1,5 @@
-import { and, eq } from "drizzle-orm";
 import type { UIMessage } from "ai";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { chat } from "@/db/schema/chat";
 import { createLogger } from "@/lib/logger";
@@ -34,5 +34,10 @@ export async function saveChat({
       target: chat.id,
       set: { messages, activeStreamId, updatedAt: new Date() },
     });
-  log.debug("saved chat", { id, userId, messageCount: messages.length, activeStreamId });
+  log.debug("saved chat", {
+    id,
+    userId,
+    messageCount: messages.length,
+    activeStreamId,
+  });
 }

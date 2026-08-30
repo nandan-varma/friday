@@ -3,19 +3,23 @@
 // date-fns - this is the one bit of date math that's specific to us, since
 // "next"/"previous" depends on which view is active.
 
-import { addDays, addMonths, addWeeks } from "date-fns"
+import { addDays, addMonths, addWeeks } from "date-fns";
 
-export type CalendarViewMode = "day" | "week" | "month" | "agenda"
+export type CalendarViewMode = "day" | "week" | "month" | "agenda";
 
-export function shiftDate(date: Date, viewMode: CalendarViewMode, direction: 1 | -1): Date {
+export function shiftDate(
+  date: Date,
+  viewMode: CalendarViewMode,
+  direction: 1 | -1,
+): Date {
   switch (viewMode) {
     case "day":
-      return addDays(date, direction)
+      return addDays(date, direction);
     case "week":
-      return addWeeks(date, direction)
+      return addWeeks(date, direction);
     case "month":
-      return addMonths(date, direction)
+      return addMonths(date, direction);
     case "agenda":
-      return addDays(date, direction * 30)
+      return addDays(date, direction * 30);
   }
 }

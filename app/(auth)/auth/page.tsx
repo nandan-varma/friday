@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { SignUpForm, SignInForm } from "@/components/auth/auth-forms";
+import { useEffect, useState } from "react";
+import { SignInForm, SignUpForm } from "@/components/auth/auth-forms";
 import { PasskeyRegistration } from "@/components/auth/passkey-registration";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,29 +22,26 @@ export default function AuthPage() {
         const response = await authClient.signIn.passkey({
           autoFill: false,
         });
-        
-        
+
         if (response.error) {
           return;
         }
-        
+
         if (response.data) {
           // Wait a moment for session to be established before redirecting
-          await new Promise(resolve => setTimeout(resolve, 500));
+          await new Promise((resolve) => setTimeout(resolve, 500));
           router.push("/app");
         }
       } catch {}
     };
-    
+
     // Small delay to ensure page is fully loaded
     const timer = setTimeout(() => {
       attemptPasskeyAuth();
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [router]);
-
-
 
   const handleSignUpSuccess = () => {
     setShouldRegisterPasskey(true);
@@ -85,8 +82,6 @@ export default function AuthPage() {
       </div>
     );
   }
-
-
 
   if (step === "sign-up") {
     return (

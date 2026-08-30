@@ -1,38 +1,46 @@
-"use client"
+"use client";
 
-import { useMemo, useRef, useState, useEffect } from "react"
-import { isSameDay } from "date-fns"
-import type { CalendarEvent } from "@/types/calendar"
-import { EventCard } from "@/components/app/event-card"
-import { AllDayEventBar } from "@/components/app/all-day-event-bar"
-import { useTimeGridCreate } from "@/hooks/use-time-grid-create"
-import { layoutOverlappingEvents } from "@/lib/calendar-layout"
-import { formatHourLabel, formatWeekdayLong } from "@/lib/calendar-format"
+import { isSameDay } from "date-fns";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AllDayEventBar } from "@/components/app/all-day-event-bar";
+import { EventCard } from "@/components/app/event-card";
+import { useTimeGridCreate } from "@/hooks/use-time-grid-create";
+import { formatHourLabel, formatWeekdayLong } from "@/lib/calendar-format";
+import { layoutOverlappingEvents } from "@/lib/calendar-layout";
+import type { CalendarEvent } from "@/types/calendar";
 
 interface DayViewProps {
-  events: CalendarEvent[]
-  selectedDate: Date
-  onCreateEvent: (start: Date, end: Date) => void
-  onEditEvent: (event: CalendarEvent) => void
-  onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void
-  onDeleteEvent: (event: CalendarEvent) => void
+  events: CalendarEvent[];
+  selectedDate: Date;
+  onCreateEvent: (start: Date, end: Date) => void;
+  onEditEvent: (event: CalendarEvent) => void;
+  onUpdateEvent: (eventId: string, updates: Partial<CalendarEvent>) => void;
+  onDeleteEvent: (event: CalendarEvent) => void;
   /** Bumped per-event to force a visual reset after a cancelled recurring-scope prompt. */
-  eventResetTokens?: Record<string, number>
+  eventResetTokens?: Record<string, number>;
 }
 
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const HOUR_HEIGHT = 60
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const HOUR_HEIGHT = 60;
 
-export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUpdateEvent, onDeleteEvent, eventResetTokens }: DayViewProps) {
-  const gridBodyRef = useRef<HTMLDivElement>(null)
-  const [currentTime, setCurrentTime] = useState(new Date())
+export function DayView({
+  events,
+  selectedDate,
+  onCreateEvent,
+  onEditEvent,
+  onUpdateEvent,
+  onDeleteEvent,
+  eventResetTokens,
+}: DayViewProps) {
+  const gridBodyRef = useRef<HTMLDivElement>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000)
-    return () => clearInterval(timer)
-  }, [])
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
-  const columns = useMemo(() => [selectedDate], [selectedDate])
+  const columns = useMemo(() => [selectedDate], [selectedDate]);
 
   const {
     preview: dragPreview,
@@ -43,38 +51,47 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
     columns,
     containerRef: gridBodyRef,
     onCreate: onCreateEvent,
-  })
+  });
 
   useEffect(() => {
-    if (!dragPreview) return
+    if (!dragPreview) return;
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelCreateDrag()
-    }
-    document.addEventListener("keydown", handleEscape)
-    return () => document.removeEventListener("keydown", handleEscape)
+      if (e.key === "Escape") cancelCreateDrag();
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!dragPreview, cancelCreateDrag])
+  }, [!!dragPreview, cancelCreateDrag]);
 
   const getCurrentTimePosition = () => {
-    const minutes = currentTime.getHours() * 60 + currentTime.getMinutes()
-    return (minutes / 60) * HOUR_HEIGHT
-  }
+    const minutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    return (minutes / 60) * HOUR_HEIGHT;
+  };
 
-  const isToday = isSameDay(selectedDate, new Date())
+  const isToday = isSameDay(selectedDate, new Date());
 
-  const dayEvents = events.filter((event) => !event.allDay && isSameDay(event.start, selectedDate))
-  const allDayEvents = events.filter((event) => event.allDay && event.start <= selectedDate && event.end >= selectedDate)
-  const dayEventsLayout = layoutOverlappingEvents(dayEvents)
+  const dayEvents = events.filter(
+    (event) => !event.allDay && isSameDay(event.start, selectedDate),
+  );
+  const allDayEvents = events.filter(
+    (event) =>
+      event.allDay && event.start <= selectedDate && event.end >= selectedDate,
+  );
+  const dayEventsLayout = layoutOverlappingEvents(dayEvents);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="flex border-b border-border bg-background">
         <div className="w-16 border-r border-border" />
         <div className="flex-1 flex flex-col items-center justify-center py-2">
-          <span className="text-xs font-mono text-muted-foreground uppercase">{formatWeekdayLong(selectedDate)}</span>
+          <span className="text-xs font-mono text-muted-foreground uppercase">
+            {formatWeekdayLong(selectedDate)}
+          </span>
           <span
             className={`mt-1 flex h-12 w-12 items-center justify-center border text-3xl ${
-              isToday ? "bg-foreground text-background border-foreground" : "border-transparent text-foreground"
+              isToday
+                ? "bg-foreground text-background border-foreground"
+                : "border-transparent text-foreground"
             }`}
           >
             {selectedDate.getDate()}
@@ -88,7 +105,11 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
             <div key={event.id} className="flex" style={{ height: 22 }}>
               <div className="w-16 border-r border-border" />
               <div className="flex-1 border-r border-border">
-                <AllDayEventBar event={event} onEdit={onEditEvent} onDelete={onDeleteEvent} />
+                <AllDayEventBar
+                  event={event}
+                  onEdit={onEditEvent}
+                  onDelete={onDeleteEvent}
+                />
               </div>
             </div>
           ))}
@@ -99,8 +120,13 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
         <div className="flex" ref={gridBodyRef}>
           <div className="sticky left-0 z-10 w-16 bg-background">
             {HOURS.map((hour) => (
-              <div key={hour} className="flex h-[60px] items-start justify-end border-b border-border pr-2 pt-1">
-                <span className="text-xs text-muted-foreground">{formatHourLabel(hour)}</span>
+              <div
+                key={hour}
+                className="flex h-[60px] items-start justify-end border-b border-border pr-2 pt-1"
+              >
+                <span className="text-xs text-muted-foreground">
+                  {formatHourLabel(hour)}
+                </span>
               </div>
             ))}
           </div>
@@ -136,7 +162,9 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
                   height: `${dragPreview.height}px`,
                 }}
               >
-                <div className="p-2 text-xs text-foreground font-mono">New Event</div>
+                <div className="p-2 text-xs text-foreground font-mono">
+                  New Event
+                </div>
               </div>
             )}
 
@@ -153,5 +181,5 @@ export function DayView({ events, selectedDate, onCreateEvent, onEditEvent, onUp
         </div>
       </div>
     </div>
-  )
+  );
 }

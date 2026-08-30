@@ -1,29 +1,42 @@
-"use client"
+"use client";
 
-import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
-import { addDays, addMonths, isSameDay, isSameMonth, startOfMonth, startOfWeek, subMonths } from "date-fns"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import type { Calendar } from "@/types/calendar"
-import { formatMonthYear } from "@/lib/calendar-format"
+import {
+  addDays,
+  addMonths,
+  isSameDay,
+  isSameMonth,
+  startOfMonth,
+  startOfWeek,
+  subMonths,
+} from "date-fns";
+import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { formatMonthYear } from "@/lib/calendar-format";
+import type { Calendar } from "@/types/calendar";
 
 interface CalendarSidebarProps {
-  calendars: Calendar[]
-  onToggleCalendar: (calendarId: string) => void
-  selectedDate: Date
-  onDateSelect: (date: Date) => void
+  calendars: Calendar[];
+  onToggleCalendar: (calendarId: string) => void;
+  selectedDate: Date;
+  onDateSelect: (date: Date) => void;
 }
 
-const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"]
+const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
 
-export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onDateSelect }: CalendarSidebarProps) {
-  const gridStart = startOfWeek(startOfMonth(selectedDate))
-  const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i))
+export function CalendarSidebar({
+  calendars,
+  onToggleCalendar,
+  selectedDate,
+  onDateSelect,
+}: CalendarSidebarProps) {
+  const gridStart = startOfWeek(startOfMonth(selectedDate));
+  const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
 
-  const isToday = (date: Date) => isSameDay(date, new Date())
-  const isSelected = (date: Date) => isSameDay(date, selectedDate)
-  const isCurrentMonth = (date: Date) => isSameMonth(date, selectedDate)
+  const isToday = (date: Date) => isSameDay(date, new Date());
+  const isSelected = (date: Date) => isSameDay(date, selectedDate);
+  const isCurrentMonth = (date: Date) => isSameMonth(date, selectedDate);
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar p-4">
@@ -34,12 +47,24 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
 
       <div className="mb-6">
         <div className="mb-3 flex items-center justify-between px-2">
-          <span className="text-sm font-medium text-sidebar-foreground">{formatMonthYear(selectedDate)}</span>
+          <span className="text-sm font-medium text-sidebar-foreground">
+            {formatMonthYear(selectedDate)}
+          </span>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDateSelect(subMonths(selectedDate, 1))}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onDateSelect(subMonths(selectedDate, 1))}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => onDateSelect(addMonths(selectedDate, 1))}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onDateSelect(addMonths(selectedDate, 1))}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -77,13 +102,18 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
       <div className="mb-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search for people" className="h-9 pl-9 bg-sidebar-accent border-sidebar-border" />
+          <Input
+            placeholder="Search for people"
+            className="h-9 pl-9 bg-sidebar-accent border-sidebar-border"
+          />
         </div>
       </div>
 
       <div className="mb-4">
         <div className="mb-2 flex items-center justify-between px-2">
-          <h3 className="text-sm font-medium text-sidebar-foreground">My calendars</h3>
+          <h3 className="text-sm font-medium text-sidebar-foreground">
+            My calendars
+          </h3>
         </div>
         <div className="space-y-1">
           {calendars.map((calendar) => (
@@ -91,12 +121,17 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
               key={calendar.id}
               className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-sidebar-accent cursor-pointer transition-colors"
             >
-              <Checkbox checked={calendar.checked} onCheckedChange={() => onToggleCalendar(calendar.id)} />
-              <span className="text-sm text-sidebar-foreground">{calendar.name}</span>
+              <Checkbox
+                checked={calendar.checked}
+                onCheckedChange={() => onToggleCalendar(calendar.id)}
+              />
+              <span className="text-sm text-sidebar-foreground">
+                {calendar.name}
+              </span>
             </label>
           ))}
         </div>
       </div>
     </aside>
-  )
+  );
 }

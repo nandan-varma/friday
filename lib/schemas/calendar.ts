@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-const dateTime = z.string().refine((value) => !Number.isNaN(Date.parse(value)), "Invalid ISO date");
+const dateTime = z
+  .string()
+  .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid ISO date");
 
 const calendarEventFields = z.object({
   calendarId: z.string().min(1),
@@ -14,12 +16,17 @@ const calendarEventFields = z.object({
   timeZone: z.string().optional(),
 });
 
-export const calendarEventInputSchema = calendarEventFields
-  .superRefine(({ start, end }, context) => {
+export const calendarEventInputSchema = calendarEventFields.superRefine(
+  ({ start, end }, context) => {
     if (new Date(end) <= new Date(start)) {
-      context.addIssue({ code: "custom", path: ["end"], message: "End must be after start" });
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
     }
-  });
+  },
+);
 
 export const calendarEventUpdateSchema = calendarEventFields
   .omit({ calendarId: true, summary: true, attendees: true })
@@ -30,10 +37,18 @@ export const calendarEventUpdateSchema = calendarEventFields
   .partial()
   .superRefine(({ start, end }, context) => {
     if ((start === undefined) !== (end === undefined)) {
-      context.addIssue({ code: "custom", path: ["start"], message: "Start and end must be updated together" });
+      context.addIssue({
+        code: "custom",
+        path: ["start"],
+        message: "Start and end must be updated together",
+      });
     }
     if (start && end && new Date(end) <= new Date(start)) {
-      context.addIssue({ code: "custom", path: ["end"], message: "End must be after start" });
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
     }
   });
 

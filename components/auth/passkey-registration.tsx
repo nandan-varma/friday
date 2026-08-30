@@ -1,15 +1,15 @@
 "use client";
 
+import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Tick02Icon } from "@hugeicons/core-free-icons";
+import { authClient } from "@/lib/auth-client";
 
 interface PasskeyRegistrationProps {
   onSuccess: () => void;
@@ -31,11 +31,12 @@ export function PasskeyRegistration({
     setLoading(true);
 
     try {
-      const { data, error: passkeyError } =
-        await authClient.passkey.addPasskey({
+      const { data, error: passkeyError } = await authClient.passkey.addPasskey(
+        {
           name: passkeyName || undefined,
           authenticatorAttachment: "cross-platform",
-        });
+        },
+      );
 
       if (passkeyError) {
         // If user cancels or doesn't have passkey available, it's not a critical error
@@ -74,7 +75,11 @@ export function PasskeyRegistration({
       <Card className="frame-corners relative w-full max-w-md mx-auto p-6">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border border-border flex items-center justify-center mx-auto">
-            <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-6 text-foreground" />
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2}
+              className="size-6 text-foreground"
+            />
           </div>
           <h3 className="text-lg font-semibold">Passkey Registered</h3>
           <p className="text-sm text-muted-foreground">

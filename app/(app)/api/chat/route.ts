@@ -1,13 +1,13 @@
 import { createAgentUIStreamResponse, generateId, type UIMessage } from "ai";
 import { headers } from "next/headers";
-import { getStreamContext } from "@/lib/resumable-stream-context";
-import { auth } from "@/lib/auth";
+import { z } from "zod";
 import { chatAgent } from "@/agents/chat-agent";
-import { chatRatelimit } from "@/lib/ratelimit";
+import { parseJsonBody } from "@/lib/api";
+import { auth } from "@/lib/auth";
 import { readChat, saveChat } from "@/lib/chat-store";
 import { createLogger } from "@/lib/logger";
-import { z } from "zod";
-import { parseJsonBody } from "@/lib/api";
+import { chatRatelimit } from "@/lib/ratelimit";
+import { getStreamContext } from "@/lib/resumable-stream-context";
 
 export const maxDuration = 30;
 
@@ -41,11 +41,17 @@ export async function POST(req: Request) {
 
   const parsed = await parseJsonBody(req, chatRequestSchema);
   if (parsed.error) return parsed.error;
-  const { id, message } = parsed.data as unknown as { id: string; message: UIMessage };
+  const { id, message } = parsed.data as unknown as {
+    id: string;
+    message: UIMessage;
+  };
   log.info("chat request", { userId, chatId: id, messageId: message?.id });
 
   const existing = await readChat(id, userId);
-  const messages = [...((existing?.messages as UIMessage[] | undefined) ?? []), message];
+  const messages = [
+    ...((existing?.messages as UIMessage[] | undefined) ?? []),
+    message,
+  ];
 
   await saveChat({ id, userId, messages, activeStreamId: null });
 
@@ -56,8 +62,17 @@ export async function POST(req: Request) {
     generateMessageId: generateId,
     abortSignal: req.signal,
     onFinish: async ({ messages: finalMessages }) => {
-      log.info("agent finished", { userId, chatId: id, durationMs: Date.now() - startedAt });
-      await saveChat({ id, userId, messages: finalMessages, activeStreamId: null });
+      log.info("agent finished", {
+        userId,
+        chatId: id,
+        durationMs: Date.now() - startedAt,
+      });
+      await saveChat({
+        id,
+        userId,
+        messages: finalMessages,
+        activeStreamId: null,
+      });
     },
     async consumeSseStream({ stream }) {
       const streamContext = getStreamContext();

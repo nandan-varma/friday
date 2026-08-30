@@ -1,21 +1,28 @@
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
-import { passkey } from "@better-auth/passkey";
-import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { z } from "zod";
 import { db, schema } from "@/db";
 
 const environmentSchema = z.object({
-  AUTH_SECRET: z.string().min(32, "AUTH_SECRET must contain at least 32 characters"),
+  AUTH_SECRET: z
+    .string()
+    .min(32, "AUTH_SECRET must contain at least 32 characters"),
   NEXT_PUBLIC_APP_URL: z.url(),
   GOOGLE_CREDENTIALS: z.string().min(1),
 });
 
 const environment = environmentSchema.parse(process.env);
 const googleCredentialsSchema = z.object({
-  web: z.object({ client_id: z.string().min(1), client_secret: z.string().min(1) }),
+  web: z.object({
+    client_id: z.string().min(1),
+    client_secret: z.string().min(1),
+  }),
 });
-const googleCredentials = googleCredentialsSchema.parse(JSON.parse(environment.GOOGLE_CREDENTIALS)).web;
+const googleCredentials = googleCredentialsSchema.parse(
+  JSON.parse(environment.GOOGLE_CREDENTIALS),
+).web;
 
 export const auth = betterAuth({
   secret: environment.AUTH_SECRET,

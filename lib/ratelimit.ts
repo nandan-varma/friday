@@ -8,7 +8,9 @@ const WINDOW_MS = 60_000;
 const MAX_REQUESTS = 20;
 
 export const chatRatelimit = {
-  async limit(identifier: string): Promise<{ success: boolean; remaining: number }> {
+  async limit(
+    identifier: string,
+  ): Promise<{ success: boolean; remaining: number }> {
     const redis = getRedis();
     if (!redis) {
       return { success: true, remaining: MAX_REQUESTS };

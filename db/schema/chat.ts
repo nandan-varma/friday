@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, jsonb, index } from "drizzle-orm/pg-core";
+import { index, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { user } from "./auth";
 
 // Persisted chat sessions, used for both history and resumable AI SDK streams.

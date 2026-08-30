@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { parseJsonBody } from "@/lib/api";
 import { auth } from "@/lib/auth";
 import {
   fetchGoogleCalendars,
@@ -6,7 +7,6 @@ import {
   updateSelectedCalendars,
 } from "@/lib/integrations/google/google-calendar";
 import { createLogger } from "@/lib/logger";
-import { parseJsonBody } from "@/lib/api";
 import { calendarSelectionSchema } from "@/lib/schemas/calendar";
 
 const log = createLogger("api/calendars");
@@ -21,7 +21,10 @@ export async function GET() {
 
   if (!(await isGoogleCalendarConnected(session.user.id))) {
     log.info("calendar not connected", { userId: session.user.id });
-    return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
+    return Response.json(
+      { error: "Google Calendar not connected" },
+      { status: 400 },
+    );
   }
 
   try {
@@ -29,7 +32,10 @@ export async function GET() {
     return Response.json(calendars);
   } catch (error) {
     log.error("failed to fetch calendars", { userId: session.user.id, error });
-    return Response.json({ error: "Failed to fetch calendars" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to fetch calendars" },
+      { status: 500 },
+    );
   }
 }
 
@@ -45,12 +51,22 @@ export async function PATCH(request: Request) {
   if (parsed.error) return parsed.error;
   const { calendarIds } = parsed.data;
 
-  const availableCalendarIds = new Set((await fetchGoogleCalendars(session.user.id)).flatMap((calendar) => calendar.id ? [calendar.id] : []));
+  const availableCalendarIds = new Set(
+    (await fetchGoogleCalendars(session.user.id)).flatMap((calendar) =>
+      calendar.id ? [calendar.id] : [],
+    ),
+  );
   if (calendarIds.some((calendarId) => !availableCalendarIds.has(calendarId))) {
-    return Response.json({ error: "One or more calendar IDs are unavailable" }, { status: 400 });
+    return Response.json(
+      { error: "One or more calendar IDs are unavailable" },
+      { status: 400 },
+    );
   }
 
   await updateSelectedCalendars(session.user.id, calendarIds);
-  log.info("updated selected calendars", { userId: session.user.id, count: calendarIds.length });
+  log.info("updated selected calendars", {
+    userId: session.user.id,
+    count: calendarIds.length,
+  });
   return Response.json({ success: true, selectedCalendarIds: calendarIds });
 }

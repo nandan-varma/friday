@@ -1,13 +1,13 @@
-'use client'
+"use client";
 
-import { ErrorDisplay } from '@/components/error-display'
+import { ErrorDisplay } from "@/components/error-display";
 
 export default function AppError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
-  return <ErrorDisplay error={error} reset={reset} />
+  return <ErrorDisplay error={error} reset={reset} />;
 }
