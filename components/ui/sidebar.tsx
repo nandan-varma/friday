@@ -82,7 +82,9 @@ function SidebarProvider({
         _setOpen(openState);
       }
 
-      // This sets the cookie to keep the sidebar state.
+      // Cookie Store is not supported in every browser we support; this is a
+      // non-sensitive UI preference with a bounded, same-site cookie.
+      // biome-ignore lint/suspicious/noDocumentCookie: see compatibility note above.
       document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     },
     [setOpenProp, open],

@@ -2,17 +2,18 @@
 
 import {
   addDays,
+  addHours,
   addMonths,
   isSameDay,
   isSameMonth,
+  startOfDay,
   startOfMonth,
   startOfWeek,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { formatMonthYear } from "@/lib/calendar-format";
 import type { Calendar } from "@/types/calendar";
 
@@ -21,6 +22,7 @@ interface CalendarSidebarProps {
   onToggleCalendar: (calendarId: string) => void;
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
+  onCreateEvent: (start: Date, end: Date) => void;
 }
 
 const WEEKDAY_LETTERS = [
@@ -38,6 +40,7 @@ export function CalendarSidebar({
   onToggleCalendar,
   selectedDate,
   onDateSelect,
+  onCreateEvent,
 }: CalendarSidebarProps) {
   const gridStart = startOfWeek(startOfMonth(selectedDate));
   const days = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
@@ -45,10 +48,17 @@ export function CalendarSidebar({
   const isToday = (date: Date) => isSameDay(date, new Date());
   const isSelected = (date: Date) => isSameDay(date, selectedDate);
   const isCurrentMonth = (date: Date) => isSameMonth(date, selectedDate);
+  const handleCreateEvent = () => {
+    const start = addHours(startOfDay(selectedDate), 9);
+    onCreateEvent(start, addHours(start, 1));
+  };
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar p-4">
-      <Button className="mb-6 h-12 w-full justify-start gap-2 pl-4 text-sm font-medium">
+      <Button
+        className="mb-6 h-12 w-full justify-start gap-2 pl-4 text-sm font-medium"
+        onClick={handleCreateEvent}
+      >
         <Plus className="h-5 w-5" />
         Create
       </Button>
@@ -105,16 +115,6 @@ export function CalendarSidebar({
               {day.getDate()}
             </button>
           ))}
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search for people"
-            className="h-9 pl-9 bg-sidebar-accent border-sidebar-border"
-          />
         </div>
       </div>
 

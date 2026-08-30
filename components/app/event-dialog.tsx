@@ -3,6 +3,7 @@
 import { endOfDay, format, parse, startOfDay } from "date-fns";
 import { Repeat, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { z } from "zod";
 import {
   type RecurringEditScope,
   RecurringScopeDialog,
@@ -32,6 +33,33 @@ import type { Calendar, CalendarEvent } from "@/types/calendar";
 const DATE_FORMAT = "yyyy-MM-dd";
 const TIME_FORMAT = "HH:mm";
 
+const eventDraftSchema = z
+  .object({
+    title: z.string().trim().min(1, "A title is required").max(500),
+    description: z.string().trim().max(10_000),
+    location: z.string().trim().max(1_000),
+    calendarId: z.string().min(1, "Choose a calendar"),
+    start: z.date(),
+    end: z.date(),
+    attendees: z
+      .array(z.email("Enter valid email addresses separated by commas"))
+      .max(200, "At most 200 attendees are supported")
+      .refine(
+        (attendees) => new Set(attendees).size === attendees.length,
+        "Attendees must be unique",
+      ),
+    allDay: z.boolean(),
+  })
+  .superRefine(({ start, end }, context) => {
+    if (end <= start) {
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
+    }
+  });
+
 interface EventDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -58,7 +86,10 @@ export function EventDialog({
   const [endDate, setEndDate] = useState("");
   const [endTime, setEndTime] = useState("");
   const [calendarId, setCalendarId] = useState("");
+  const [location, setLocation] = useState("");
+  const [attendeeInput, setAttendeeInput] = useState("");
   const [allDay, setAllDay] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [pendingScopeAction, setPendingScopeAction] = useState<
     "save" | "delete" | null
   >(null);
@@ -67,6 +98,8 @@ export function EventDialog({
     if (event) {
       setTitle(event.title);
       setDescription(event.description || "");
+      setLocation(event.location || "");
+      setAttendeeInput(event.attendees?.join(", ") || "");
       setStartDate(format(event.start, DATE_FORMAT));
       setStartTime(format(event.start, TIME_FORMAT));
       setEndDate(format(event.end, DATE_FORMAT));
@@ -76,6 +109,8 @@ export function EventDialog({
     } else if (initialData) {
       setTitle("");
       setDescription("");
+      setLocation("");
+      setAttendeeInput("");
       setStartDate(format(initialData.start, DATE_FORMAT));
       setStartTime(format(initialData.start, TIME_FORMAT));
       setEndDate(format(initialData.end, DATE_FORMAT));
@@ -83,9 +118,10 @@ export function EventDialog({
       setAllDay(!!initialData.allDay);
       setCalendarId(calendars[0]?.id || "");
     }
+    setFormError(null);
   }, [event, initialData, calendars]);
 
-  const buildEventData = (): Partial<CalendarEvent> => {
+  const buildEventData = (): Partial<CalendarEvent> | null => {
     const start = allDay
       ? startOfDay(parse(startDate, DATE_FORMAT, new Date()))
       : parse(
@@ -101,22 +137,40 @@ export function EventDialog({
           new Date(),
         );
 
-    return {
+    const result = eventDraftSchema.safeParse({
       title,
       description,
+      location,
       start,
       end,
       calendarId,
+      attendees: attendeeInput
+        .split(",")
+        .map((email) => email.trim())
+        .filter(Boolean),
       allDay,
+    });
+    if (!result.success) {
+      setFormError(result.error.issues[0]?.message ?? "Invalid event details");
+      return null;
+    }
+
+    setFormError(null);
+    return {
+      ...result.data,
+      description: result.data.description || undefined,
+      location: result.data.location || undefined,
     };
   };
 
   const handleSave = () => {
+    const eventData = buildEventData();
+    if (!eventData) return;
     if (event?.recurringEventId) {
       setPendingScopeAction("save");
       return;
     }
-    onSave(buildEventData());
+    onSave(eventData);
   };
 
   const handleDeleteClick = () => {
@@ -131,7 +185,8 @@ export function EventDialog({
   const resolveScope = (scope: RecurringEditScope) => {
     if (!event) return;
     if (pendingScopeAction === "save") {
-      onSave(buildEventData(), scope);
+      const eventData = buildEventData();
+      if (eventData) onSave(eventData, scope);
     } else if (pendingScopeAction === "delete") {
       onDelete(event.id, scope);
     }
@@ -162,6 +217,8 @@ export function EventDialog({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Event title"
+                aria-invalid={formError !== null}
+                aria-describedby={formError ? "event-form-error" : undefined}
               />
             </div>
 
@@ -254,6 +311,39 @@ export function EventDialog({
                 rows={3}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <Input
+                id="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+                placeholder="Add location"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="attendees">Attendees</Label>
+              <Input
+                id="attendees"
+                value={attendeeInput}
+                onChange={(e) => setAttendeeInput(e.target.value)}
+                placeholder="name@example.com, colleague@example.com"
+              />
+              <p className="text-xs text-muted-foreground">
+                Separate email addresses with commas.
+              </p>
+            </div>
+
+            {formError && (
+              <p
+                id="event-form-error"
+                className="text-sm text-destructive"
+                role="alert"
+              >
+                {formError}
+              </p>
+            )}
           </div>
 
           <DialogFooter className="flex justify-between">
