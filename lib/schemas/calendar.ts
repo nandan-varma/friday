@@ -50,6 +50,9 @@ export const calendarEventUpdateSchema = calendarEventFields
         message: "End must be after start",
       });
     }
+  })
+  .refine((updates) => Object.keys(updates).length > 0, {
+    message: "At least one event field must be updated",
   });
 
 export const calendarSelectionSchema = z.object({

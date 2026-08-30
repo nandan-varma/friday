@@ -1,6 +1,7 @@
 import { addDays, endOfDay, format, parseISO, subDays } from "date-fns";
 import { and, eq } from "drizzle-orm";
 import { type calendar_v3, google } from "googleapis";
+import { z } from "zod";
 import { db } from "@/db";
 import { account } from "@/db/schema/auth";
 import { calendarPreference } from "@/db/schema/calendar";
@@ -12,6 +13,8 @@ const log = createLogger("google-calendar");
 
 export type GoogleCalendar = calendar_v3.Schema$CalendarListEntry;
 export type GoogleEvent = calendar_v3.Schema$Event;
+
+const selectedCalendarIdsSchema = z.array(z.string().min(1)).max(100);
 
 // Google account linked via Better Auth (`socialProviders.google`). OAuth
 // tokens and refresh live in Better Auth's own `account` table.
@@ -56,6 +59,9 @@ export function transformGoogleEventToCalendarEvent(
   calendars: Calendar[],
   calendarAccessRole?: string,
 ): CalendarEvent {
+  if (!event.id) {
+    throw new Error("Google Calendar returned an event without an ID");
+  }
   const calendar = calendars.find((c) => c.id === event.calendarId);
   const allDay = !event.start?.dateTime && !!event.start?.date;
 
@@ -67,7 +73,13 @@ export function transformGoogleEventToCalendarEvent(
     // parses a date-only string as local midnight rather than UTC midnight,
     // which is what keeps a same-day all-day event from rendering as the
     // previous day west of UTC.
-    startDate = parseISO(event.start!.date!);
+    const allDayStart = event.start?.date;
+    if (!allDayStart) {
+      throw new Error(
+        "Google Calendar returned an all-day event without a start date",
+      );
+    }
+    startDate = parseISO(allDayStart);
     // Google's all-day `end.date` is exclusive (the day *after* the last
     // day of the event). Represent it internally as inclusive - the last
     // instant of the last day - so duration math elsewhere in the app
@@ -90,7 +102,7 @@ export function transformGoogleEventToCalendarEvent(
   const editable = hasWriteAccess && (isOrganizer || !event.organizer);
 
   return {
-    id: event.id!,
+    id: event.id,
     title: event.summary || "Untitled Event",
     description: event.description || undefined,
     start: startDate,
@@ -98,7 +110,10 @@ export function transformGoogleEventToCalendarEvent(
     calendarId: event.calendarId,
     color: calendar?.color || "blue",
     location: event.location || undefined,
-    attendees: event.attendees?.map((a) => a.email!) || undefined,
+    attendees:
+      event.attendees?.flatMap((attendee) =>
+        attendee.email ? [attendee.email] : [],
+      ) || undefined,
     htmlLink: event.htmlLink || undefined,
     editable,
     allDay,
@@ -148,9 +163,16 @@ export async function getSelectedCalendarIds(
     .from(calendarPreference)
     .where(eq(calendarPreference.userId, userId))
     .limit(1);
-  return pref?.selectedCalendarIds
-    ? JSON.parse(pref.selectedCalendarIds)
-    : null;
+  if (!pref?.selectedCalendarIds) return null;
+
+  try {
+    return selectedCalendarIdsSchema.parse(
+      JSON.parse(pref.selectedCalendarIds),
+    );
+  } catch (error) {
+    log.warn("ignoring invalid calendar preference", { userId, error });
+    return null;
+  }
 }
 
 export async function fetchAllSelectedCalendarEvents(
@@ -163,9 +185,13 @@ export async function fetchAllSelectedCalendarEvents(
   ]);
   // No explicit preference yet - default to every calendar rather than the
   // literal string "primary", which never matches a real calendar id.
-  const calendarIds = preference ?? googleCalendars.map((cal) => cal.id!);
+  const calendarIds =
+    preference ??
+    googleCalendars.flatMap((calendar) => (calendar.id ? [calendar.id] : []));
   const calendarAccessRoles = new Map(
-    googleCalendars.map((cal) => [cal.id!, cal.accessRole]),
+    googleCalendars.flatMap((calendar) =>
+      calendar.id ? [[calendar.id, calendar.accessRole] as const] : [],
+    ),
   );
 
   const allEvents: Array<
