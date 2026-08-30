@@ -84,7 +84,7 @@ export default function AuthPage() {
 
   if (step === "passkey-registration" && user) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md">
           <PasskeyRegistration
             onSuccess={handlePasskeySuccess}
@@ -99,7 +99,7 @@ export default function AuthPage() {
 
   if (step === "sign-up") {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-4">
           <SignUpForm onSuccess={handleSignUpSuccess} />
           <p className="text-center text-sm text-muted-foreground">
@@ -119,7 +119,7 @@ export default function AuthPage() {
 
   if (step === "sign-in") {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-4">
           <SignInForm onSuccess={handleSignInSuccess} />
           <p className="text-center text-sm text-muted-foreground">
@@ -139,7 +139,7 @@ export default function AuthPage() {
 
   // Choice step
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-gradient-to-br from-background to-muted/20 p-4">
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold">Welcome</h1>
@@ -148,7 +148,7 @@ export default function AuthPage() {
           </p>
         </div>
 
-        <Card className="p-6 space-y-3">
+        <Card className="frame-corners relative p-6 space-y-3">
           <Button
             className="w-full"
             size="lg"

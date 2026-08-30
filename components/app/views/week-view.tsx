@@ -138,16 +138,14 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
           {weekDays.map((day, i) => (
             <div
               key={i}
-              className={`flex flex-col items-center justify-center py-2 border-r border-border ${
-                isCurrentDay(day) ? "bg-blue-600/10" : ""
-              }`}
+              className="flex flex-col items-center justify-center py-2 border-r border-border"
             >
-              <span className="text-xs font-medium text-muted-foreground uppercase">
+              <span className="text-xs font-mono text-muted-foreground uppercase">
                 {day.toLocaleDateString("en-US", { weekday: "short" })}
               </span>
               <span
-                className={`mt-1 flex h-10 w-10 items-center justify-center rounded-full text-2xl ${
-                  isCurrentDay(day) ? "bg-blue-600 text-white" : "text-foreground"
+                className={`mt-1 flex h-10 w-10 items-center justify-center border text-2xl ${
+                  isCurrentDay(day) ? "bg-foreground text-background border-foreground" : "border-transparent text-foreground"
                 }`}
               >
                 {day.getDate()}
@@ -169,7 +167,7 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
           {weekDays.map((day, dayIndex) => (
             <div
               key={dayIndex}
-              className={`relative border-r border-border ${isCurrentDay(day) ? "bg-blue-600/5" : ""}`}
+              className={`relative border-r border-border ${isCurrentDay(day) ? "bg-accent/40" : ""}`}
               onMouseDown={(e) => handleMouseDown(e, dayIndex)}
               onMouseUp={handleMouseUp}
             >
@@ -201,13 +199,13 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
 
               {dragPreview && dragPreview.dayIndex === dayIndex && (
                 <div
-                  className="absolute left-1 right-1 z-10 rounded-md border-2 border-dashed border-blue-500 bg-blue-500/10 pointer-events-none"
+                  className="absolute left-1 right-1 z-10 border-2 border-dashed border-foreground bg-foreground/5 pointer-events-none"
                   style={{
                     top: `${dragPreview.top}px`,
                     height: `${dragPreview.height}px`,
                   }}
                 >
-                  <div className="p-2 text-xs text-blue-600 font-medium">New Event</div>
+                  <div className="p-2 text-xs text-foreground font-mono">New Event</div>
                 </div>
               )}
 
@@ -216,8 +214,8 @@ export function WeekView({ events, selectedDate, onCreateEvent, onEditEvent, onU
                   className="absolute left-0 right-0 z-20 flex items-center"
                   style={{ top: `${getCurrentTimePosition()}px` }}
                 >
-                  <div className="h-3 w-3 rounded-full bg-red-600" />
-                  <div className="h-0.5 flex-1 bg-red-600" />
+                  <div className="h-2 w-2 bg-foreground" />
+                  <div className="h-px flex-1 bg-foreground" />
                 </div>
               )}
             </div>

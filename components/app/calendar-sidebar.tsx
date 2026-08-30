@@ -65,7 +65,7 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
 
   return (
     <aside className="w-64 border-r border-border bg-sidebar p-4">
-      <Button className="mb-6 h-12 w-full justify-start gap-2 rounded-full pl-4 text-sm font-medium shadow-sm">
+      <Button className="mb-6 h-12 w-full justify-start gap-2 pl-4 text-sm font-medium">
         <Plus className="h-5 w-5" />
         Create
       </Button>
@@ -121,14 +121,14 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
                   onDateSelect(newDate)
                 }
               }}
-              className={`relative flex h-8 w-8 items-center justify-center rounded-full text-xs transition-colors hover:bg-accent ${
+              className={`relative flex h-8 w-8 items-center justify-center border text-xs transition-colors hover:bg-accent ${
                 !dayInfo.isCurrentMonth
-                  ? "text-muted-foreground/40"
+                  ? "border-transparent text-muted-foreground/40"
                   : isToday(dayInfo.day)
-                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    ? "border-foreground bg-foreground text-background"
                     : isSelected(dayInfo.day)
-                      ? "bg-accent"
-                      : "text-sidebar-foreground"
+                      ? "border-border bg-accent"
+                      : "border-transparent text-sidebar-foreground"
               }`}
             >
               {dayInfo.day}
@@ -157,7 +157,6 @@ export function CalendarSidebar({ calendars, onToggleCalendar, selectedDate, onD
               <Checkbox
                 checked={calendar.checked}
                 onCheckedChange={() => onToggleCalendar(calendar.id)}
-                className={`data-[state=checked]:bg-${calendar.color}-600 data-[state=checked]:border-${calendar.color}-600`}
               />
               <span className="text-sm text-sidebar-foreground">{calendar.name}</span>
             </label>

@@ -33,9 +33,9 @@ export default function SettingsPage() {
         <p className="text-muted-foreground mb-8">Manage your account settings and preferences here.</p>
 
         <div className="space-y-6">
-          <div className="bg-card border rounded-lg p-6">
+          <div className="frame-corners relative border border-border bg-card p-6">
             <h2 className="text-xl font-semibold mb-4">Integrations</h2>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-border pt-4">
               <div className="flex-1">
                 <h3 className="font-medium">Google Calendar</h3>
                 <p className="text-sm text-muted-foreground">
@@ -44,34 +44,34 @@ export default function SettingsPage() {
                 {isLoading ? (
                   <div className="flex items-center gap-2 mt-2">
                     <Spinner className="size-3" />
-                    <span className="text-xs text-muted-foreground">Checking status...</span>
+                    <span className="text-xs font-mono text-muted-foreground">CHECKING_STATUS</span>
                   </div>
                 ) : googleStatus?.connected ? (
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-green-500" />
-                      <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      <div className="size-2 bg-foreground" />
+                      <span className="text-xs font-mono uppercase tracking-wide text-foreground">
                         Connected
                       </span>
                     </div>
                     {googleStatus.lastSyncAt && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs font-mono text-muted-foreground">
                         Last synced: {new Date(googleStatus.lastSyncAt).toLocaleString()}
                       </p>
                     )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 mt-2">
-                    <div className="size-2 rounded-full bg-muted-foreground/30" />
-                    <span className="text-xs text-muted-foreground">Not connected</span>
+                    <div className="size-2 border border-muted-foreground" />
+                    <span className="text-xs font-mono uppercase tracking-wide text-muted-foreground">Not connected</span>
                   </div>
                 )}
               </div>
               <div>
                 {isLoading ? (
-                  <Button disabled>
+                  <Button disabled variant="secondary">
                     <Spinner className="size-4 mr-2" />
-                    Loading...
+                    Loading
                   </Button>
                 ) : googleStatus?.connected ? (
                   <Button
@@ -82,7 +82,7 @@ export default function SettingsPage() {
                     {disconnectMutation.isPending ? (
                       <>
                         <Spinner className="size-4 mr-2" />
-                        Disconnecting...
+                        Disconnecting
                       </>
                     ) : (
                       'Disconnect'
@@ -93,7 +93,7 @@ export default function SettingsPage() {
                     {connectMutation.isPending ? (
                       <>
                         <Spinner className="size-4 mr-2" />
-                        Connecting...
+                        Connecting
                       </>
                     ) : (
                       'Connect'

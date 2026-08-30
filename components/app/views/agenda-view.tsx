@@ -58,10 +58,10 @@ export function AgendaView({ events, selectedDate, onEditEvent }: AgendaViewProp
   }
 
   const colorClasses = {
-    blue: "bg-blue-600/10 border-blue-600/30 text-blue-600",
-    amber: "bg-amber-500/10 border-amber-500/30 text-amber-600",
-    green: "bg-green-600/10 border-green-600/30 text-green-600",
-    pink: "bg-pink-600/10 border-pink-600/30 text-pink-600",
+    blue: "border-l-blue-600",
+    amber: "border-l-amber-600",
+    green: "border-l-emerald-700",
+    pink: "border-l-fuchsia-700",
   }
 
   if (upcomingEvents.length === 0) {
@@ -86,9 +86,9 @@ export function AgendaView({ events, selectedDate, onEditEvent }: AgendaViewProp
               {dateEvents.map((event) => (
                 <div
                   key={event.id}
-                  className={`rounded-lg border-l-4 p-4 cursor-pointer hover:shadow-md transition-all ${
+                  className={`border-l-4 p-4 cursor-pointer transition-colors hover:bg-accent/40 bg-card border border-border ${
                     colorClasses[event.color as keyof typeof colorClasses]
-                  } bg-card border border-border hover:border-${event.color}-600/50`}
+                  }`}
                   onClick={() => onEditEvent(event)}
                 >
                   <div className="flex items-start justify-between gap-4">

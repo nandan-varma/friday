@@ -52,10 +52,10 @@ export function Header() {
     };
 
     return (
-        <header className="sticky top-0 left-0 right-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-lg">
+        <header className="sticky top-0 left-0 right-0 z-50 border-b border-border bg-background">
             <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
                 <button onClick={handleLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                    <div className="flex h-8 w-8 items-center justify-center border border-border bg-primary text-primary-foreground">
                         <span className="text-lg font-bold">F</span>
                     </div>
                     <span className="text-xl font-bold">Friday</span>
@@ -75,7 +75,7 @@ export function Header() {
                     )}
                     {user ? (
                         <>
-                            <span className="text-sm font-medium text-foreground">
+                            <span className="text-sm font-mono text-muted-foreground">
                                 {user.email}
                             </span>
                             <Button variant="outline" size="sm" onClick={handleSignOut}>
@@ -106,7 +106,7 @@ export function Header() {
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="md:hidden border-t border-border/40 bg-background/95 backdrop-blur-lg">
+                <div className="md:hidden border-t border-border bg-background">
                     <div className="flex flex-col gap-4 px-6 py-4">
                         {!user && (
                             <>
@@ -128,7 +128,7 @@ export function Header() {
                         )}
                         {user ? (
                             <>
-                                <div className="text-sm font-medium text-foreground">
+                                <div className="text-sm font-mono text-muted-foreground">
                                     {user.email}
                                 </div>
                                 <div className="flex flex-col gap-2 pt-4 border-t border-border">

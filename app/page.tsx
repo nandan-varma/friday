@@ -6,9 +6,7 @@ import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Calendar01Icon, Notification02Icon, AiCloudIcon, ArrowRight01Icon, CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
 import { Header } from "@/components/header";
 import { authClient } from "@/lib/auth-client";
 
@@ -46,7 +44,7 @@ export default function Page() {
   const featuresRef = useScrollAnimation();
   const faqRef = useScrollAnimation();
   const ctaRef = useScrollAnimation();
-  
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -61,52 +59,46 @@ export default function Page() {
 
     checkSession();
   }, [router]);
-  
+
   return (
     <div className="min-h-screen bg-background">
-        <Header />
+      <Header />
       {/* Hero Section */}
-      <section className="relative overflow-hidden px-6 pt-16 pb-20 lg:pt-24 lg:pb-32">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_var(--primary)_0%,_transparent_50%)] opacity-20" />
-        
+      <section className="px-6 pt-16 pb-20 lg:pt-24 lg:pb-32">
         <div className="mx-auto max-w-4xl text-center">
-          <Badge variant="secondary" className="mb-6">
-            <HugeiconsIcon icon={Calendar01Icon} className="mr-1" />
+          <div className="mb-6 inline-flex items-center gap-2 border border-border px-3 py-1 font-mono text-xs uppercase tracking-wide text-muted-foreground">
+            <HugeiconsIcon icon={Calendar01Icon} className="size-3.5" />
             Built for busy professionals
-          </Badge>
-          
+          </div>
+
           <h1 className="text-4xl font-bold tracking-tight sm:text-6xl lg:text-7xl mb-6">
             Never miss what matters
           </h1>
-          
+
           <p className="text-lg text-muted-foreground sm:text-xl lg:text-2xl mb-8 max-w-2xl mx-auto">
             Stop juggling multiple calendars and missing important events. Friday uses AI to keep your schedule organized and sends smart reminders so you're always on time.
           </p>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" className="text-base px-8 group" onClick={() => router.push("/auth")}>
               Get started free
               <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
-            {/* <Button variant="outline" size="lg" className="text-base px-8">
-              Watch demo
-            </Button> */}
           </div>
         </div>
-        
+
         {/* Hero Visual */}
         <div className="mx-auto mt-16 max-w-5xl">
-          <div className="rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm p-4 shadow-2xl ring-1 ring-border/10">
-            <div className="aspect-video rounded-lg bg-gradient-to-br from-primary/20 via-background to-accent/20 flex items-center justify-center">
-              <HugeiconsIcon icon={Calendar01Icon} className="w-24 h-24 text-primary/40" />
+          <div className="frame-corners relative border border-border bg-card p-4">
+            <div className="aspect-video border border-border flex items-center justify-center">
+              <HugeiconsIcon icon={Calendar01Icon} className="w-24 h-24 text-muted-foreground" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section id="features" ref={featuresRef.ref} className={`px-6 py-20 lg:py-32 bg-muted/30 transition-all duration-700 ${featuresRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      <section id="features" ref={featuresRef.ref} className={`px-6 py-20 lg:py-32 border-t border-border transition-all duration-700 ${featuresRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="mx-auto max-w-7xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl mb-4">
@@ -116,8 +108,8 @@ export default function Page() {
               Powerful features designed to save you time and keep you on track.
             </p>
           </div>
-          
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+
+          <div className="grid gap-px bg-border md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
               icon={Calendar01Icon}
               title="Smart Scheduling"
@@ -153,7 +145,7 @@ export default function Page() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" ref={faqRef.ref} className={`px-6 py-20 lg:py-32 transition-all duration-700 ${faqRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      <section id="faq" ref={faqRef.ref} className={`px-6 py-20 lg:py-32 border-t border-border transition-all duration-700 ${faqRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="mx-auto max-w-3xl">
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
@@ -163,7 +155,7 @@ export default function Page() {
               Everything you need to know about Friday
             </p>
           </div>
-          
+
           <Accordion>
             <AccordionItem value="free">
               <AccordionTrigger>Is Friday really free?</AccordionTrigger>
@@ -171,35 +163,35 @@ export default function Page() {
                 Yes! Friday is completely free to use with all features included. No hidden costs, no credit card required, and no premium tiers.
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="calendars">
               <AccordionTrigger>Which calendars can I sync?</AccordionTrigger>
               <AccordionContent>
                 Friday supports Google Calendar, Microsoft Outlook, Apple Calendar (iCloud), and any calendar that uses the CalDAV protocol. Sync happens automatically in real-time.
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="privacy">
               <AccordionTrigger>Is my calendar data private?</AccordionTrigger>
               <AccordionContent>
                 Absolutely. Your calendar data is encrypted both in transit and at rest. We never sell or share your data with third parties. You can delete your account and all associated data at any time.
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="mobile">
               <AccordionTrigger>Is there a mobile app?</AccordionTrigger>
               <AccordionContent>
                 Yes! Friday is available on iOS and Android. All your calendars and settings sync seamlessly across all your devices.
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="limits">
               <AccordionTrigger>Are there any usage limits?</AccordionTrigger>
               <AccordionContent>
                 No limits! You get unlimited calendar syncs, unlimited events, unlimited AI suggestions, and full access to all features completely free.
               </AccordionContent>
             </AccordionItem>
-            
+
             <AccordionItem value="team">
               <AccordionTrigger>How does team sharing work?</AccordionTrigger>
               <AccordionContent>
@@ -211,7 +203,7 @@ export default function Page() {
       </section>
 
       {/* Final CTA Section */}
-      <section ref={ctaRef.ref} className={`px-6 py-20 lg:py-32 bg-muted/30 transition-all duration-700 ${ctaRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+      <section ref={ctaRef.ref} className={`px-6 py-20 lg:py-32 border-t border-border transition-all duration-700 ${ctaRef.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
         <div className="mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl mb-6">
             Ready to take control of your time?
@@ -223,7 +215,7 @@ export default function Page() {
             Get started free
             <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 transition-transform group-hover:translate-x-1" />
           </Button>
-          <p className="text-sm text-muted-foreground mt-4">
+          <p className="text-sm text-muted-foreground mt-4 font-mono">
             Completely free · No credit card required
           </p>
         </div>
@@ -234,19 +226,19 @@ export default function Page() {
         <div className="mx-auto max-w-7xl">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <div className="flex h-8 w-8 items-center justify-center border border-border bg-primary text-primary-foreground">
                 <span className="text-lg font-bold">F</span>
               </div>
               <span className="text-xl font-bold">Friday</span>
             </div>
-            
+
             <div className="flex gap-8 text-sm text-muted-foreground">
               <a href="/privacy" className="hover:text-foreground transition-colors">Privacy</a>
               <a href="/terms" className="hover:text-foreground transition-colors">Terms</a>
               <a href="/support" className="hover:text-foreground transition-colors">Support</a>
             </div>
-            
-            <p className="text-sm text-muted-foreground">
+
+            <p className="text-sm text-muted-foreground font-mono">
               © 2026 Friday. All rights reserved.
             </p>
           </div>
@@ -258,14 +250,12 @@ export default function Page() {
 
 function FeatureCard({ icon, title, description }: { icon: any; title: string; description: string }) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
-          <HugeiconsIcon icon={icon} className="text-primary" />
-        </div>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-    </Card>
+    <div className="bg-background p-6">
+      <div className="flex h-10 w-10 items-center justify-center border border-border mb-4">
+        <HugeiconsIcon icon={icon} className="text-foreground" />
+      </div>
+      <h3 className="text-base font-medium mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
   );
 }

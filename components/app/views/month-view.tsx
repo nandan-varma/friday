@@ -66,10 +66,10 @@ export function MonthView({ events, selectedDate, onCreateEvent, onEditEvent }: 
   }
 
   const colorClasses = {
-    blue: "bg-blue-600/90 hover:bg-blue-600",
-    amber: "bg-amber-500/90 hover:bg-amber-500",
-    green: "bg-green-600/90 hover:bg-green-600",
-    pink: "bg-pink-600/90 hover:bg-pink-600",
+    blue: "bg-blue-700",
+    amber: "bg-amber-700",
+    green: "bg-emerald-800",
+    pink: "bg-fuchsia-800",
   }
 
   return (
@@ -91,16 +91,16 @@ export function MonthView({ events, selectedDate, onCreateEvent, onEditEvent }: 
                 key={index}
                 className={`min-h-[100px] border-r border-b border-border p-2 cursor-pointer hover:bg-accent/30 transition-colors ${
                   !isCurrentMonth(day) ? "bg-muted/20" : ""
-                } ${isToday(day) ? "bg-blue-600/5" : ""}`}
+                } ${isToday(day) ? "bg-accent/40" : ""}`}
                 onClick={() => handleDayClick(day)}
               >
                 <div
-                  className={`mb-1 flex h-7 w-7 items-center justify-center rounded-full text-sm ${
+                  className={`mb-1 flex h-7 w-7 items-center justify-center border text-sm ${
                     isToday(day)
-                      ? "bg-blue-600 text-white font-semibold"
+                      ? "bg-foreground text-background border-foreground font-semibold"
                       : isCurrentMonth(day)
-                        ? "text-foreground"
-                        : "text-muted-foreground"
+                        ? "border-transparent text-foreground"
+                        : "border-transparent text-muted-foreground"
                   }`}
                 >
                   {day.getDate()}
@@ -110,7 +110,7 @@ export function MonthView({ events, selectedDate, onCreateEvent, onEditEvent }: 
                   {dayEvents.slice(0, 3).map((event) => (
                     <div
                       key={event.id}
-                      className={`truncate rounded px-1.5 py-0.5 text-xs text-white ${
+                      className={`truncate px-1.5 py-0.5 text-xs font-mono text-white ${
                         colorClasses[event.color as keyof typeof colorClasses]
                       }`}
                       onClick={(e) => {

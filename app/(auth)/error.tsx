@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { ErrorDisplay } from '@/components/error-display'
 
 export default function Error({
   error,
@@ -13,14 +14,5 @@ export default function Error({
     console.error(error)
   }, [error])
 
-  return (
-    <div>
-      <h2>Something went wrong!</h2>
-      <button
-        onClick={() => reset()}
-      >
-        Try again
-      </button>
-    </div>
-  )
+  return <ErrorDisplay error={error} reset={reset} message="Something interrupted authentication. Retry, or go back and start again." />
 }

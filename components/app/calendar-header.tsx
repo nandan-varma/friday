@@ -54,7 +54,7 @@ export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewMod
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-background px-6">
       <div className="flex items-center gap-4">
-        <Button variant="outline" className="h-9 rounded-full px-4 bg-transparent" onClick={handleToday}>
+        <Button variant="outline" className="h-9 px-4" onClick={handleToday}>
           Today
         </Button>
 
@@ -69,7 +69,7 @@ export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewMod
           </Button>
         </div>
 
-        <h1 className="text-xl text-foreground">{formatHeaderDate()}</h1>
+        <h1 className="text-xl text-foreground font-mono">{formatHeaderDate()}</h1>
       </div>
 
       <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export function CalendarHeader({ selectedDate, onDateChange, viewMode, onViewMod
           <span className="sr-only">Settings</span>
         </Button>
         <Select value={viewMode} onValueChange={(v) => onViewModeChange(v as any)}>
-          <SelectTrigger className="h-9 w-[110px] rounded-full">
+          <SelectTrigger className="h-9 w-[110px]">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

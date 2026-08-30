@@ -34,10 +34,10 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
                   return (
                     <div key={index} className="mt-2">
                       <Badge variant="secondary" className="mb-2">
-                        🔧 {toolName}
+                        TOOL: {toolName}
                       </Badge>
                       {(part as any).state === "input-available" && (
-                        <pre className="text-xs bg-muted p-2 rounded mt-1 overflow-x-auto">
+                        <pre className="text-xs font-mono bg-muted border border-border p-2 mt-1 overflow-x-auto">
                           {JSON.stringify((part as any).input, null, 2)}
                         </pre>
                       )}

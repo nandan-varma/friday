@@ -48,12 +48,12 @@ export function ChatBubble({ className }: ChatBubbleProps) {
       <SheetTrigger
         className={cn(
           buttonVariants({ size: "icon" }),
-          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
+          "fixed bottom-6 right-6 h-14 w-14 border border-border"
         )}
       >
         <MessageCircle className="h-6 w-6" />
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:w-[540px] flex flex-col p-0">
+      <SheetContent side="right" className="w-full sm:w-[540px] flex flex-col p-0 frame-corners">
         <SheetHeader className="px-6 py-4 border-b">
           <SheetTitle>AI Assistant</SheetTitle>
         </SheetHeader>

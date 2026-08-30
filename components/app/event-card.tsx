@@ -113,10 +113,10 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
 
 
   const colorClasses = {
-    blue: "bg-blue-600/90 hover:bg-blue-600 border-blue-700",
-    amber: "bg-amber-500/90 hover:bg-amber-500 border-amber-600",
-    green: "bg-green-600/90 hover:bg-green-600 border-green-700",
-    pink: "bg-pink-600/90 hover:bg-pink-600 border-pink-700",
+    blue: "bg-blue-700 border-blue-900",
+    amber: "bg-amber-700 border-amber-900",
+    green: "bg-emerald-800 border-emerald-950",
+    pink: "bg-fuchsia-800 border-fuchsia-950",
   }
 
   // Fallback for transparent or missing color
@@ -126,15 +126,15 @@ export function EventCard({ event, hourHeight, onEdit, onUpdate }: EventCardProp
     <div
       ref={cardRef}
       data-event
-      className={`group absolute left-1 right-1 overflow-hidden rounded-md border-l-4 px-2 py-1 text-sm shadow-md transition-all ${event.editable === false ? 'cursor-default opacity-75' : 'cursor-pointer'} ${
-        colorClasses[event.color as keyof typeof colorClasses] || (needsFallbackBg ? "bg-gray-200 text-foreground border-gray-300" : "text-white")
-      } ${isDragging || isResizing ? "opacity-90 scale-[1.02] shadow-lg z-50" : event.editable !== false ? "hover:scale-[1.01] hover:shadow-lg z-10" : "z-10"}`}
+      className={`group absolute left-1 right-1 overflow-hidden border-l-4 px-2 py-1 text-sm transition-colors ${event.editable === false ? 'cursor-default opacity-75' : 'cursor-pointer'} ${
+        colorClasses[event.color as keyof typeof colorClasses] || (needsFallbackBg ? "bg-muted text-foreground border-border" : "text-white")
+      } ${isDragging || isResizing ? "opacity-80 z-50" : "z-10"}`}
       style={{
         top: `${position.top}px`,
         height: `${position.height}px`,
-        backgroundColor: needsFallbackBg ? "#e5e7eb" : undefined,
-        color: needsFallbackBg ? "#111827" : undefined,
-        borderColor: needsFallbackBg ? "#d1d5db" : undefined,
+        backgroundColor: needsFallbackBg ? "var(--muted)" : undefined,
+        color: needsFallbackBg ? "var(--foreground)" : undefined,
+        borderColor: needsFallbackBg ? "var(--border)" : undefined,
       }}
       onClick={(e) => {
         if (!hasDraggedRef.current) {

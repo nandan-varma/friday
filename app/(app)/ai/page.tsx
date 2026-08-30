@@ -40,7 +40,7 @@ export default function ChatPage() {
         </div>
       </header>
 
-      <div className="flex-1 container mx-auto px-4 py-6 flex flex-col max-w-4xl">
+      <div className="frame-corners relative flex-1 container mx-auto px-4 py-6 flex flex-col max-w-4xl">
         {messages.length === 0 && <ChatQuickActions onActionClick={setInput} />}
 
         <ScrollArea className="flex-1 pr-4">

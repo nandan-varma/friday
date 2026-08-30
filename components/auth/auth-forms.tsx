@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Alert } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AuthFormsProps {
   onSuccess: (user: any) => void;
@@ -73,12 +73,16 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto p-6">
+    <Card className="frame-corners relative w-full max-w-md mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Create Account</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <Alert className="bg-destructive/10 text-destructive">{error}</Alert>}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="name">Full Name</Label>
           <Input
             id="name"
@@ -91,7 +95,7 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
           />
         </div>
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
@@ -104,7 +108,7 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
           />
         </div>
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
@@ -115,12 +119,12 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
             disabled={loading}
             required
           />
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="text-xs font-mono text-muted-foreground">
             Minimum 8 characters
           </p>
         </div>
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
           <Input
             id="confirmPassword"
@@ -186,15 +190,17 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
     }
   };
 
-
-
   return (
-    <Card className="w-full max-w-md mx-auto p-6">
+    <Card className="frame-corners relative w-full max-w-md mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6">Sign In</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {error && <Alert className="bg-destructive/10 text-destructive">{error}</Alert>}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input
             id="email"
@@ -208,7 +214,7 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
           />
         </div>
 
-        <div>
+        <div className="space-y-1.5">
           <Label htmlFor="password">Password</Label>
           <Input
             id="password"
