@@ -1,5 +1,4 @@
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserId } from "@/lib/api";
 import {
   getSelectedCalendarIds,
   isGoogleCalendarConnected,
@@ -12,19 +11,19 @@ const log = createLogger("api/integrations/google");
 // Connecting/disconnecting happens directly through Better Auth's client
 // (authClient.linkSocial / authClient.unlinkAccount), no custom OAuth flow needed.
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     log.warn("unauthorized request");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const connected = await isGoogleCalendarConnected(session.user.id);
-  log.debug("connection status", { userId: session.user.id, connected });
+  const connected = await isGoogleCalendarConnected(userId);
+  log.debug("connection status", { userId, connected });
   if (!connected) {
     return Response.json({ connected: false });
   }
 
-  const selectedCalendarIds = await getSelectedCalendarIds(session.user.id);
+  const selectedCalendarIds = await getSelectedCalendarIds(userId);
 
   return Response.json({
     connected: true,

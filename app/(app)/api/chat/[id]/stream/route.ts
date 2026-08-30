@@ -1,6 +1,5 @@
 import { UI_MESSAGE_STREAM_HEADERS } from "ai";
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserId } from "@/lib/api";
 import { readChat } from "@/lib/chat-store";
 import { createLogger } from "@/lib/logger";
 import { getStreamContext } from "@/lib/resumable-stream-context";
@@ -11,8 +10,8 @@ export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     log.warn("unauthorized resume attempt");
     return new Response("Unauthorized", { status: 401 });
   }
@@ -23,12 +22,12 @@ export async function GET(
   }
 
   const { id } = await params;
-  const chatRow = await readChat(id, session.user.id);
+  const chatRow = await readChat(id, userId);
 
   if (!chatRow?.activeStreamId) {
     log.debug("no active stream to resume", {
       chatId: id,
-      userId: session.user.id,
+      userId,
     });
     return new Response(null, { status: 204 });
   }
@@ -36,7 +35,7 @@ export async function GET(
   log.info("resuming stream", {
     chatId: id,
     streamId: chatRow.activeStreamId,
-    userId: session.user.id,
+    userId,
   });
   return new Response(
     await streamContext.resumeExistingStream(chatRow.activeStreamId),

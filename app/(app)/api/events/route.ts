@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { parseJsonBody } from "@/lib/api";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserId, parseJsonBody } from "@/lib/api";
 import {
   createGoogleEvent,
   deleteGoogleEvent,
@@ -62,12 +60,12 @@ async function userCanAccessCalendar(userId: string, calendarId: string) {
 
 // GET /api/events - Fetch events from Google Calendar
 export async function GET(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!(await isGoogleCalendarConnected(session.user.id))) {
+  if (!(await isGoogleCalendarConnected(userId))) {
     return Response.json(
       { error: "Google Calendar not connected" },
       { status: 400 },
@@ -90,7 +88,7 @@ export async function GET(request: Request) {
   const { start, end, calendarId } = queryValidation.data;
 
   try {
-    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const googleCalendars = await fetchGoogleCalendars(userId);
     const calendars = toCalendars(googleCalendars);
 
     let googleEvents: Awaited<
@@ -104,7 +102,7 @@ export async function GET(request: Request) {
           { status: 400 },
         );
       }
-      const events = await fetchGoogleEvents(session.user.id, calendarId, {
+      const events = await fetchGoogleEvents(userId, calendarId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
@@ -114,7 +112,7 @@ export async function GET(request: Request) {
         accessRole: calendar?.accessRole ?? undefined,
       }));
     } else {
-      googleEvents = await fetchAllSelectedCalendarEvents(session.user.id, {
+      googleEvents = await fetchAllSelectedCalendarEvents(userId, {
         timeMin: start ? new Date(start) : undefined,
         timeMax: end ? new Date(end) : undefined,
       });
@@ -137,8 +135,8 @@ export async function GET(request: Request) {
 
 // POST /api/events - Create event in Google Calendar
 export async function POST(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -160,27 +158,23 @@ export async function POST(request: Request) {
   } = parsed.data;
 
   try {
-    const availableCalendars = await fetchGoogleCalendars(session.user.id);
+    const availableCalendars = await fetchGoogleCalendars(userId);
     if (!availableCalendars.some((calendar) => calendar.id === calendarId)) {
       return Response.json(
         { error: "Calendar is unavailable" },
         { status: 400 },
       );
     }
-    const createdGoogleEvent = await createGoogleEvent(
-      session.user.id,
-      calendarId,
-      {
-        summary,
-        description: description?.trim(),
-        location: location?.trim(),
-        start: new Date(start),
-        end: new Date(end),
-        attendees,
-        allDay,
-        timeZone,
-      },
-    );
+    const createdGoogleEvent = await createGoogleEvent(userId, calendarId, {
+      summary,
+      description: description?.trim(),
+      location: location?.trim(),
+      start: new Date(start),
+      end: new Date(end),
+      attendees,
+      allDay,
+      timeZone,
+    });
 
     const googleCalendars = availableCalendars;
     const calendars = toCalendars(googleCalendars);
@@ -200,8 +194,8 @@ export async function POST(request: Request) {
 
 // PATCH /api/events - Update event in Google Calendar
 export async function PATCH(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -215,14 +209,14 @@ export async function PATCH(request: Request) {
   const { eventId, calendarId, ...data } = parsed.data;
 
   try {
-    if (!(await userCanAccessCalendar(session.user.id, calendarId))) {
+    if (!(await userCanAccessCalendar(userId, calendarId))) {
       return Response.json(
         { error: "Calendar is unavailable" },
         { status: 400 },
       );
     }
     const updatedGoogleEvent = await updateGoogleEvent(
-      session.user.id,
+      userId,
       calendarId,
       eventId,
       {
@@ -237,7 +231,7 @@ export async function PATCH(request: Request) {
       },
     );
 
-    const googleCalendars = await fetchGoogleCalendars(session.user.id);
+    const googleCalendars = await fetchGoogleCalendars(userId);
     const calendars = toCalendars(googleCalendars);
     const calendar = googleCalendars.find((cal) => cal.id === calendarId);
 
@@ -255,8 +249,8 @@ export async function PATCH(request: Request) {
 
 // DELETE /api/events - Delete event from Google Calendar
 export async function DELETE(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -269,13 +263,13 @@ export async function DELETE(request: Request) {
     return Response.json({ error: "Calendar ID is required" }, { status: 400 });
 
   try {
-    if (!(await userCanAccessCalendar(session.user.id, calendarId))) {
+    if (!(await userCanAccessCalendar(userId, calendarId))) {
       return Response.json(
         { error: "Calendar is unavailable" },
         { status: 400 },
       );
     }
-    await deleteGoogleEvent(session.user.id, calendarId, eventId);
+    await deleteGoogleEvent(userId, calendarId, eventId);
     return Response.json({ success: true });
   } catch (error) {
     log.error("failed to delete event", { error });

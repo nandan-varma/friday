@@ -3,11 +3,9 @@ import {
   generateId,
   safeValidateUIMessages,
 } from "ai";
-import { headers } from "next/headers";
 import { z } from "zod";
 import { chatAgent } from "@/agents/chat-agent";
-import { parseJsonBody } from "@/lib/api";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserId, parseJsonBody } from "@/lib/api";
 import { readChat, saveChat } from "@/lib/chat-store";
 import { createLogger } from "@/lib/logger";
 import { chatRatelimit } from "@/lib/ratelimit";
@@ -23,12 +21,11 @@ const chatRequestSchema = z.object({
 
 export async function POST(req: Request) {
   const startedAt = Date.now();
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user?.id) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     log.warn("unauthorized request");
     return new Response("Unauthorized", { status: 401 });
   }
-  const userId = session.user.id;
 
   // Rate limiting is a safety net, not core functionality - if Redis is
   // unreachable, let the request through rather than 500ing chat entirely.

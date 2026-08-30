@@ -8,7 +8,7 @@ interface TimeGridDrag {
   currentY: number;
 }
 
-export interface TimeGridPreview {
+interface TimeGridPreview {
   columnIndex: number;
   top: number;
   height: number;

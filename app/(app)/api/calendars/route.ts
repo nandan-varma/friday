@@ -1,6 +1,4 @@
-import { headers } from "next/headers";
-import { parseJsonBody } from "@/lib/api";
-import { auth } from "@/lib/auth";
+import { getAuthenticatedUserId, parseJsonBody } from "@/lib/api";
 import {
   fetchGoogleCalendars,
   isGoogleCalendarConnected,
@@ -35,14 +33,14 @@ function toCalendarResponse(
 
 // GET /api/calendars - Fetch user's Google calendars
 export async function GET() {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     log.warn("unauthorized request");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!(await isGoogleCalendarConnected(session.user.id))) {
-    log.info("calendar not connected", { userId: session.user.id });
+  if (!(await isGoogleCalendarConnected(userId))) {
+    log.info("calendar not connected", { userId });
     return Response.json(
       { error: "Google Calendar not connected" },
       { status: 400 },
@@ -50,10 +48,10 @@ export async function GET() {
   }
 
   try {
-    const calendars = await fetchGoogleCalendars(session.user.id);
+    const calendars = await fetchGoogleCalendars(userId);
     return Response.json(toCalendarResponse(calendars));
   } catch (error) {
-    log.error("failed to fetch calendars", { userId: session.user.id, error });
+    log.error("failed to fetch calendars", { userId, error });
     return Response.json(
       { error: "Failed to fetch calendars" },
       { status: 500 },
@@ -63,8 +61,8 @@ export async function GET() {
 
 // PATCH /api/calendars - Update selected calendar IDs for sync
 export async function PATCH(request: Request) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  if (!session?.user) {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) {
     log.warn("unauthorized request");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -75,7 +73,7 @@ export async function PATCH(request: Request) {
 
   try {
     const availableCalendarIds = new Set(
-      (await fetchGoogleCalendars(session.user.id)).flatMap((calendar) =>
+      (await fetchGoogleCalendars(userId)).flatMap((calendar) =>
         calendar.id ? [calendar.id] : [],
       ),
     );
@@ -88,15 +86,15 @@ export async function PATCH(request: Request) {
       );
     }
 
-    await updateSelectedCalendars(session.user.id, calendarIds);
+    await updateSelectedCalendars(userId, calendarIds);
     log.info("updated selected calendars", {
-      userId: session.user.id,
+      userId,
       count: calendarIds.length,
     });
     return Response.json({ success: true, selectedCalendarIds: calendarIds });
   } catch (error) {
     log.error("failed to update selected calendars", {
-      userId: session.user.id,
+      userId,
       error,
     });
     return Response.json(

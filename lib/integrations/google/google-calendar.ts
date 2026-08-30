@@ -18,7 +18,7 @@ const selectedCalendarIdsSchema = z.array(z.string().min(1)).max(100);
 
 // Google account linked via Better Auth (`socialProviders.google`). OAuth
 // tokens and refresh live in Better Auth's own `account` table.
-export async function getGoogleAccount(userId: string) {
+async function getGoogleAccount(userId: string) {
   const [row] = await db
     .select()
     .from(account)
