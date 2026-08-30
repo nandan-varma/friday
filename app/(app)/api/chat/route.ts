@@ -1,4 +1,8 @@
-import { createAgentUIStreamResponse, generateId, type UIMessage } from "ai";
+import {
+  createAgentUIStreamResponse,
+  generateId,
+  safeValidateUIMessages,
+} from "ai";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { chatAgent } from "@/agents/chat-agent";
@@ -14,7 +18,7 @@ export const maxDuration = 30;
 const log = createLogger("api/chat");
 const chatRequestSchema = z.object({
   id: z.string().uuid(),
-  message: z.object({ id: z.string().min(1) }).passthrough(),
+  message: z.unknown(),
 });
 
 export async function POST(req: Request) {
@@ -41,17 +45,38 @@ export async function POST(req: Request) {
 
   const parsed = await parseJsonBody(req, chatRequestSchema);
   if (parsed.error) return parsed.error;
-  const { id, message } = parsed.data as unknown as {
-    id: string;
-    message: UIMessage;
-  };
-  log.info("chat request", { userId, chatId: id, messageId: message?.id });
+  const { id, message } = parsed.data;
+  const validatedIncomingMessage = await safeValidateUIMessages({
+    messages: [message],
+  });
+  if (!validatedIncomingMessage.success) {
+    return Response.json({ error: "Invalid chat message" }, { status: 400 });
+  }
+  const [incomingMessage] = validatedIncomingMessage.data;
+  if (!incomingMessage) {
+    return Response.json(
+      { error: "Chat message is required" },
+      { status: 400 },
+    );
+  }
+  log.info("chat request", {
+    userId,
+    chatId: id,
+    messageId: incomingMessage.id,
+  });
 
   const existing = await readChat(id, userId);
-  const messages = [
-    ...((existing?.messages as UIMessage[] | undefined) ?? []),
-    message,
-  ];
+  const validatedExistingMessages = await safeValidateUIMessages({
+    messages: existing?.messages ?? [],
+  });
+  if (!validatedExistingMessages.success) {
+    log.warn("invalid persisted chat history", { userId, chatId: id });
+    return Response.json(
+      { error: "Chat history could not be read" },
+      { status: 409 },
+    );
+  }
+  const messages = [...validatedExistingMessages.data, incomingMessage];
 
   await saveChat({ id, userId, messages, activeStreamId: null });
 
