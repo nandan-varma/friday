@@ -5,13 +5,95 @@ import {
   deleteGoogleEvent,
   fetchAllSelectedCalendarEvents,
   fetchGoogleCalendars,
+  getGoogleCalendar,
   updateGoogleEvent,
 } from "@/lib/integrations/google/google-calendar";
+import { isoDateTimeSchema } from "@/lib/schemas/calendar";
 
 // Every tool receives the authenticated userId via `context`, validated by
 // this schema, and populated server-side through `toolsContext` in the agent
 // call - never something the model can see or override.
 const userContextSchema = z.object({ userId: z.string() });
+
+const calendarIdSchema = z.string().min(1).max(1_000);
+const emailSchema = z.string().email();
+const timeRangeSchema = z
+  .object({
+    timeMin: isoDateTimeSchema.optional(),
+    timeMax: isoDateTimeSchema.optional(),
+  })
+  .superRefine(({ timeMin, timeMax }, context) => {
+    if (timeMin && timeMax && new Date(timeMax) <= new Date(timeMin)) {
+      context.addIssue({
+        code: "custom",
+        path: ["timeMax"],
+        message: "timeMax must be after timeMin",
+      });
+    }
+  });
+
+const createEventInputSchema = z
+  .object({
+    calendarId: calendarIdSchema.describe("Calendar ID to create the event in"),
+    title: z.string().trim().min(1).max(500).describe("Event title"),
+    description: z.string().trim().max(10_000).optional(),
+    start: isoDateTimeSchema.describe("ISO date string for event start"),
+    end: isoDateTimeSchema.describe("ISO date string for event end"),
+    location: z.string().trim().max(1_000).optional(),
+    attendees: z.array(emailSchema).max(200).optional(),
+  })
+  .superRefine(({ start, end }, context) => {
+    if (new Date(end) <= new Date(start)) {
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
+    }
+  });
+
+const updateEventInputSchema = z
+  .object({
+    calendarId: calendarIdSchema,
+    eventId: z.string().min(1).max(1_000),
+    title: z.string().trim().min(1).max(500).optional(),
+    description: z.string().trim().max(10_000).optional(),
+    start: isoDateTimeSchema.optional(),
+    end: isoDateTimeSchema.optional(),
+    location: z.string().trim().max(1_000).optional(),
+  })
+  .superRefine(({ title, description, start, end, location }, context) => {
+    if (
+      [title, description, start, end, location].every(
+        (value) => value === undefined,
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        message: "At least one field must be updated",
+      });
+    }
+    if ((start === undefined) !== (end === undefined)) {
+      context.addIssue({
+        code: "custom",
+        path: ["start"],
+        message: "Start and end must be updated together",
+      });
+    }
+    if (start && end && new Date(end) <= new Date(start)) {
+      context.addIssue({
+        code: "custom",
+        path: ["end"],
+        message: "End must be after start",
+      });
+    }
+  });
+
+async function requireCalendarAccess(userId: string, calendarId: string) {
+  if (!(await getGoogleCalendar(userId, calendarId))) {
+    throw new Error("Calendar is unavailable");
+  }
+}
 
 export const calendarTools = {
   listCalendars: tool({
@@ -37,16 +119,7 @@ export const calendarTools = {
   listEvents: tool({
     description:
       "List calendar events from selected calendars within a time range",
-    inputSchema: z.object({
-      timeMin: z
-        .string()
-        .optional()
-        .describe("ISO date string for start of time range"),
-      timeMax: z
-        .string()
-        .optional()
-        .describe("ISO date string for end of time range"),
-    }),
+    inputSchema: timeRangeSchema,
     contextSchema: userContextSchema,
     execute: async ({ timeMin, timeMax }, { context }) => {
       const events = await fetchAllSelectedCalendarEvents(context.userId, {
@@ -101,27 +174,13 @@ export const calendarTools = {
 
   createEvent: tool({
     description: "Create a new calendar event",
-    inputSchema: z.object({
-      calendarId: z
-        .string()
-        .describe(
-          'Calendar ID to create event in (use "primary" for default calendar)',
-        ),
-      title: z.string().describe("Event title/summary"),
-      description: z.string().optional().describe("Event description"),
-      start: z.string().describe("ISO date string for event start"),
-      end: z.string().describe("ISO date string for event end"),
-      location: z.string().optional().describe("Event location"),
-      attendees: z
-        .array(z.string())
-        .optional()
-        .describe("Array of attendee email addresses"),
-    }),
+    inputSchema: createEventInputSchema,
     contextSchema: userContextSchema,
     execute: async (
       { calendarId, title, description, start, end, location, attendees },
       { context },
     ) => {
+      await requireCalendarAccess(context.userId, calendarId);
       const event = await createGoogleEvent(context.userId, calendarId, {
         summary: title,
         description,
@@ -141,23 +200,13 @@ export const calendarTools = {
 
   updateEvent: tool({
     description: "Update an existing calendar event",
-    inputSchema: z.object({
-      calendarId: z.string().describe("Calendar ID containing the event"),
-      eventId: z.string().describe("Event ID to update"),
-      title: z.string().optional().describe("New event title"),
-      description: z.string().optional().describe("New event description"),
-      start: z
-        .string()
-        .optional()
-        .describe("New start time as ISO date string"),
-      end: z.string().optional().describe("New end time as ISO date string"),
-      location: z.string().optional().describe("New event location"),
-    }),
+    inputSchema: updateEventInputSchema,
     contextSchema: userContextSchema,
     execute: async (
       { calendarId, eventId, title, description, start, end, location },
       { context },
     ) => {
+      await requireCalendarAccess(context.userId, calendarId);
       const event = await updateGoogleEvent(
         context.userId,
         calendarId,
@@ -177,11 +226,12 @@ export const calendarTools = {
   deleteEvent: tool({
     description: "Delete a calendar event",
     inputSchema: z.object({
-      calendarId: z.string().describe("Calendar ID containing the event"),
-      eventId: z.string().describe("Event ID to delete"),
+      calendarId: calendarIdSchema.describe("Calendar ID containing the event"),
+      eventId: z.string().min(1).max(1_000).describe("Event ID to delete"),
     }),
     contextSchema: userContextSchema,
     execute: async ({ calendarId, eventId }, { context }) => {
+      await requireCalendarAccess(context.userId, calendarId);
       await deleteGoogleEvent(context.userId, calendarId, eventId);
       return { success: true, message: "Event deleted successfully" };
     },

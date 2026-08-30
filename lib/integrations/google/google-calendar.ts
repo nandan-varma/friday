@@ -134,6 +134,15 @@ export async function fetchGoogleCalendars(
   return items;
 }
 
+/** Returns a calendar only when it belongs to the authenticated user's Google account. */
+export async function getGoogleCalendar(
+  userId: string,
+  calendarId: string,
+): Promise<GoogleCalendar | null> {
+  const calendars = await fetchGoogleCalendars(userId);
+  return calendars.find((calendar) => calendar.id === calendarId) ?? null;
+}
+
 export async function fetchGoogleEvents(
   userId: string,
   calendarId: string,

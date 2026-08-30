@@ -8,6 +8,7 @@ import {
   fetchAllSelectedCalendarEvents,
   fetchGoogleCalendars,
   fetchGoogleEvents,
+  getGoogleCalendar,
   isGoogleCalendarConnected,
   transformGoogleEventToCalendarEvent,
   updateGoogleEvent,
@@ -54,8 +55,7 @@ function toCalendars(
 }
 
 async function userCanAccessCalendar(userId: string, calendarId: string) {
-  const calendars = await fetchGoogleCalendars(userId);
-  return calendars.some((calendar) => calendar.id === calendarId);
+  return (await getGoogleCalendar(userId, calendarId)) !== null;
 }
 
 // GET /api/events - Fetch events from Google Calendar

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const dateTime = z
+export const isoDateTimeSchema = z
   .string()
   .refine((value) => !Number.isNaN(Date.parse(value)), "Invalid ISO date");
 
@@ -9,8 +9,8 @@ const calendarEventFields = z.object({
   summary: z.string().trim().min(1).max(500),
   description: z.string().trim().max(10_000).optional(),
   location: z.string().trim().max(1_000).optional(),
-  start: dateTime,
-  end: dateTime,
+  start: isoDateTimeSchema,
+  end: isoDateTimeSchema,
   attendees: z.array(z.string().email()).max(200).default([]),
   allDay: z.boolean().optional(),
   timeZone: z.string().optional(),
@@ -79,8 +79,8 @@ export const calendarEventResponseSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().optional(),
-  start: dateTime,
-  end: dateTime,
+  start: isoDateTimeSchema,
+  end: isoDateTimeSchema,
   calendarId: z.string(),
   color: z.string(),
   location: z.string().optional(),
