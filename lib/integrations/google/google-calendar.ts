@@ -1,4 +1,4 @@
-import { google, calendar_v3 } from "googleapis";
+import { google, type calendar_v3 } from "googleapis";
 import { and, eq } from "drizzle-orm";
 import { addDays, endOfDay, format, parseISO, subDays } from "date-fns";
 import { auth } from "@/lib/auth";
