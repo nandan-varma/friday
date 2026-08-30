@@ -41,11 +41,11 @@ export function ChatQuickActions({ onActionClick }: ChatQuickActionsProps) {
         <CardTitle className="text-lg">Quick Actions</CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {quickActions.map((action, index) => {
+        {quickActions.map((action) => {
           const Icon = action.icon;
           return (
             <Button
-              key={index}
+              key={action.title}
               variant="outline"
               className="justify-start h-auto py-4 px-4 bg-transparent"
               onClick={() => onActionClick(action.prompt)}

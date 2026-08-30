@@ -90,7 +90,8 @@ export function layoutOverlappingEvents(
 
     const columnCount = columns.length;
     for (const event of clusterEvents) {
-      const eventColumn = columnIndex.get(event.id)!;
+      const eventColumn = columnIndex.get(event.id);
+      if (eventColumn === undefined) continue;
 
       let span = 1;
       for (let c = eventColumn + 1; c < columnCount; c++) {

@@ -55,6 +55,7 @@ export function ChatBubble({ className }: ChatBubbleProps) {
         className={cn(
           buttonVariants({ size: "icon" }),
           "fixed bottom-6 right-6 h-14 w-14 border border-border",
+          className,
         )}
       >
         <MessageCircle className="h-6 w-6" />

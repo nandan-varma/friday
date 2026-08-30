@@ -61,7 +61,7 @@ export function DayView({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!dragPreview, cancelCreateDrag]);
+  }, [cancelCreateDrag, dragPreview]);
 
   const getCurrentTimePosition = () => {
     const minutes = currentTime.getHours() * 60 + currentTime.getMinutes();

@@ -174,9 +174,8 @@ export default function CalendarPage() {
         .map(([id]) => id);
 
       updateSelectedCalendars.mutate(selectedIds, {
-        onError: (error) => {
+        onError: (_error) => {
           toast.error("Failed to update calendar selection");
-          console.error(error);
         },
       });
 
@@ -255,9 +254,8 @@ export default function CalendarPage() {
             toast.success("Event updated successfully");
             setEventDialogOpen(false);
           },
-          onError: (error) => {
+          onError: (_error) => {
             toast.error("Failed to update event");
-            console.error(error);
           },
         },
       );
@@ -279,9 +277,8 @@ export default function CalendarPage() {
             toast.success("Event created successfully");
             setEventDialogOpen(false);
           },
-          onError: (error) => {
+          onError: (_error) => {
             toast.error("Failed to create event");
-            console.error(error);
           },
         },
       );
@@ -314,9 +311,8 @@ export default function CalendarPage() {
             },
           });
         },
-        onError: (error) => {
+        onError: (_error) => {
           toast.error("Failed to delete event");
-          console.error(error);
         },
       },
     );
@@ -372,9 +368,8 @@ export default function CalendarPage() {
             });
           }
         },
-        onError: (error) => {
+        onError: (_error) => {
           toast.error("Failed to update event");
-          console.error(error);
         },
       },
     );

@@ -7,7 +7,7 @@ import {
   CheckmarkCircle02Icon,
   Notification02Icon,
 } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Header } from "@/components/header";
@@ -62,8 +62,8 @@ export default function Page() {
         if (session.data?.user) {
           router.push("/app");
         }
-      } catch (error) {
-        console.error("Failed to get session:", error);
+      } catch {
+        // Anonymous visitors remain on the public landing page.
       }
     };
 
@@ -138,33 +138,33 @@ export default function Page() {
           <div className="grid gap-px bg-border md:grid-cols-2 lg:grid-cols-3">
             <FeatureCard
               icon={Calendar01Icon}
-              title="Smart Scheduling"
-              description="AI-powered suggestions find the perfect time for your events based on your habits and availability."
+              title="Google Calendar Sync"
+              description="Connect your Google Calendar and manage the calendars you choose from one focused view."
             />
             <FeatureCard
               icon={Notification02Icon}
-              title="Intelligent Reminders"
-              description="Get notified at the right time, not too early or too late. Context-aware notifications that adapt to your schedule."
+              title="Clear Calendar Views"
+              description="Switch between day, week, month, and agenda views to see your schedule at the right level of detail."
             />
             <FeatureCard
               icon={AiCloudIcon}
-              title="Calendar Sync"
-              description="Seamlessly sync with Google Calendar, Outlook, and Apple Calendar. One unified view of everything."
+              title="AI Calendar Assistant"
+              description="Ask the built-in assistant about your schedule or use it to help create and update Google Calendar events."
             />
             <FeatureCard
               icon={CheckmarkCircle02Icon}
               title="Quick Event Creation"
-              description="Create events in seconds with natural language input. Just type what you want and Friday handles the rest."
+              description="Create events directly from the calendar and edit the details you need, including attendees and location."
             />
             <FeatureCard
               icon={Calendar01Icon}
-              title="Team Coordination"
-              description="Share calendars and find meeting times that work for everyone. No more endless email chains."
+              title="Recurring Events"
+              description="Edit or move a single occurrence or an entire recurring Google Calendar series with a clear choice."
             />
             <FeatureCard
               icon={AiCloudIcon}
-              title="Privacy First"
-              description="Your calendar data is encrypted and private. We never share or sell your information."
+              title="Calendar Control"
+              description="Choose which connected Google calendars appear in Friday, and change that selection whenever you need."
             />
           </div>
         </div>
@@ -190,53 +190,49 @@ export default function Page() {
             <AccordionItem value="free">
               <AccordionTrigger>Is Friday really free?</AccordionTrigger>
               <AccordionContent>
-                Yes! Friday is completely free to use with all features
-                included. No hidden costs, no credit card required, and no
-                premium tiers.
+                Friday is currently available without a paid plan. We will
+                communicate any future pricing changes before they take effect.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="calendars">
               <AccordionTrigger>Which calendars can I sync?</AccordionTrigger>
               <AccordionContent>
-                Friday supports Google Calendar, Microsoft Outlook, Apple
-                Calendar (iCloud), and any calendar that uses the CalDAV
-                protocol. Sync happens automatically in real-time.
+                Friday currently supports Google Calendar. Outlook, iCloud, and
+                CalDAV integrations are not available yet.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="privacy">
               <AccordionTrigger>Is my calendar data private?</AccordionTrigger>
               <AccordionContent>
-                Absolutely. Your calendar data is encrypted both in transit and
-                at rest. We never sell or share your data with third parties.
-                You can delete your account and all associated data at any time.
+                Friday only requests the Google Calendar access needed to
+                provide calendar features. Review the Privacy Policy for the
+                current details on data handling and account management.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="mobile">
               <AccordionTrigger>Is there a mobile app?</AccordionTrigger>
               <AccordionContent>
-                Yes! Friday is available on iOS and Android. All your calendars
-                and settings sync seamlessly across all your devices.
+                Friday is a responsive web app. Native iOS and Android apps are
+                not available yet.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="limits">
               <AccordionTrigger>Are there any usage limits?</AccordionTrigger>
               <AccordionContent>
-                No limits! You get unlimited calendar syncs, unlimited events,
-                unlimited AI suggestions, and full access to all features
-                completely free.
+                Current limits may depend on the connected services and the AI
+                provider. Friday will show any applicable limits in-product.
               </AccordionContent>
             </AccordionItem>
 
             <AccordionItem value="team">
               <AccordionTrigger>How does team sharing work?</AccordionTrigger>
               <AccordionContent>
-                You can share specific calendars with team members, set
-                permissions, and coordinate schedules. Team members can see
-                availability without seeing private event details.
+                Team sharing is not available yet. Calendar permissions remain
+                managed in Google Calendar.
               </AccordionContent>
             </AccordionItem>
           </Accordion>
@@ -253,8 +249,7 @@ export default function Page() {
             Ready to take control of your time?
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of professionals who've already upgraded their
-            calendar experience.
+            Connect your Google Calendar and keep your schedule in one place.
           </p>
           <Button
             size="lg"
@@ -320,7 +315,7 @@ function FeatureCard({
   title,
   description,
 }: {
-  icon: any;
+  icon: IconSvgElement;
   title: string;
   description: string;
 }) {

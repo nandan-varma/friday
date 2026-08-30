@@ -13,7 +13,7 @@ import {
 } from "date-fns";
 import { Repeat } from "lucide-react";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { formatEventTime, formatWeekdayShort } from "@/lib/calendar-format";
 import type { CalendarEvent } from "@/types/calendar";
 
@@ -70,7 +70,7 @@ export function MonthView({
     );
   };
 
-  const finishSelection = () => {
+  const finishSelection = useCallback(() => {
     setRangeSelection((selection) => {
       if (!selection) return null;
       const rangeStart =
@@ -94,14 +94,13 @@ export function MonthView({
       }
       return null;
     });
-  };
+  }, [onCreateEvent]);
 
   useEffect(() => {
     if (!rangeSelection) return;
     document.addEventListener("mouseup", finishSelection);
     return () => document.removeEventListener("mouseup", finishSelection);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!rangeSelection]);
+  }, [rangeSelection, finishSelection]);
 
   const isInSelection = (date: Date) => {
     if (!rangeSelection) return false;
@@ -135,9 +134,9 @@ export function MonthView({
       className={`flex flex-1 flex-col overflow-hidden ${rangeSelection ? "select-none" : ""}`}
     >
       <div className="grid grid-cols-7 border-b border-border bg-background">
-        {WEEKDAY_HEADERS.map((day, i) => (
+        {WEEKDAY_HEADERS.map((day) => (
           <div
-            key={i}
+            key={day.toISOString()}
             className="border-r border-border py-3 text-center text-xs font-medium text-muted-foreground"
           >
             {formatWeekdayShort(day)}
@@ -147,11 +146,11 @@ export function MonthView({
 
       <div className="flex-1 overflow-auto">
         <div className="grid grid-cols-7 grid-rows-6 h-full">
-          {days.map((day, index) => {
+          {days.map((day) => {
             const dayEvents = getEventsForDay(day);
             return (
               <div
-                key={index}
+                key={day.toISOString()}
                 className={`min-h-[100px] border-r border-b border-border p-2 cursor-pointer hover:bg-accent/30 transition-colors ${
                   !isCurrentMonth(day) ? "bg-muted/20" : ""
                 } ${isToday(day) ? "bg-accent/40" : ""} ${isInSelection(day) ? "bg-accent/60 ring-1 ring-inset ring-foreground/30" : ""}`}

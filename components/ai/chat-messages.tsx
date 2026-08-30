@@ -1,12 +1,17 @@
-import type { UIMessage } from "@ai-sdk/react";
+import type { UIMessage } from "ai";
 import { Loader2 } from "lucide-react";
-import type React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 
 interface ChatMessagesProps {
   messages: UIMessage[];
   status?: string;
+}
+
+interface ToolPart {
+  type: `tool-${string}`;
+  state?: string;
+  input?: unknown;
 }
 
 export function ChatMessages({ messages, status }: ChatMessagesProps) {
@@ -25,11 +30,11 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
             }`}
           >
             <CardContent className="p-4">
-              {message.parts.map((part: any, index: number) => {
+              {message.parts.map((part) => {
                 if (part.type === "text") {
                   return (
                     <div
-                      key={index}
+                      key={`${message.id}-${part.type}-${part.text}`}
                       className="whitespace-pre-wrap text-pretty"
                     >
                       {part.text}
@@ -39,14 +44,15 @@ export function ChatMessages({ messages, status }: ChatMessagesProps) {
                 // Handle tool calls
                 if (part.type.startsWith("tool-")) {
                   const toolName = part.type.replace("tool-", "");
+                  const toolPart = part as unknown as ToolPart;
                   return (
-                    <div key={index} className="mt-2">
+                    <div key={`${message.id}-${part.type}`} className="mt-2">
                       <Badge variant="secondary" className="mb-2">
                         TOOL: {toolName}
                       </Badge>
-                      {(part as any).state === "input-available" && (
+                      {toolPart.state === "input-available" && (
                         <pre className="text-xs font-mono bg-muted border border-border p-2 mt-1 overflow-x-auto">
-                          {JSON.stringify((part as any).input, null, 2)}
+                          {JSON.stringify(toolPart.input, null, 2)}
                         </pre>
                       )}
                     </div>

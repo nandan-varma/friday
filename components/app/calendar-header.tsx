@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Grid3x3,
-  Menu,
   Search,
   Settings,
 } from "lucide-react";
@@ -25,6 +24,12 @@ interface CalendarHeaderProps {
   onDateChange: (date: Date) => void;
   viewMode: CalendarViewMode;
   onViewModeChange: (mode: CalendarViewMode) => void;
+}
+
+const calendarViewModes = ["day", "week", "month", "agenda"] as const;
+
+function isCalendarViewMode(value: string): value is CalendarViewMode {
+  return calendarViewModes.some((mode) => mode === value);
 }
 
 export function CalendarHeader({
@@ -95,7 +100,9 @@ export function CalendarHeader({
         </Button>
         <Select
           value={viewMode}
-          onValueChange={(v) => onViewModeChange(v as any)}
+          onValueChange={(value) => {
+            if (value && isCalendarViewMode(value)) onViewModeChange(value);
+          }}
         >
           <SelectTrigger className="h-9 w-[110px]">
             <SelectValue />

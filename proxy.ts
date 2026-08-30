@@ -12,7 +12,7 @@ export const public_routes = ["/auth", "/privacy", "/terms", "/support"];
 
 function isPublicRoute(pathname: string): boolean {
   return public_routes.some(
-    (route) => pathname === route || pathname.startsWith(route + "/"),
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
   );
 }
 

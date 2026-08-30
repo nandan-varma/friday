@@ -84,7 +84,7 @@ export function WeekView({
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [!!dragPreview, cancelCreateDrag]);
+  }, [cancelCreateDrag, dragPreview]);
 
   // Resolves the calendar date under a given clientX, for cross-day drag.
   const getDateAtX = useCallback(
@@ -143,9 +143,9 @@ export function WeekView({
       <div className="border-b border-border bg-background">
         <div className="grid grid-cols-[4rem_repeat(7,1fr)]">
           <div className="w-16 border-r border-border" />
-          {weekDays.map((day, i) => (
+          {weekDays.map((day) => (
             <div
-              key={i}
+              key={day.toISOString()}
               className="flex flex-col items-center justify-center py-2 border-r border-border"
             >
               <span className="text-xs font-mono text-muted-foreground uppercase">
@@ -168,7 +168,7 @@ export function WeekView({
           <div className="border-t border-border">
             {allDayRows.map((row, rowIndex) => (
               <div
-                key={rowIndex}
+                key={row.map((span) => span.item.id).join("-")}
                 className="grid grid-cols-[4rem_repeat(7,1fr)]"
                 style={{ height: ALL_DAY_ROW_HEIGHT }}
               >
@@ -179,11 +179,11 @@ export function WeekView({
                     </span>
                   )}
                 </div>
-                {weekDays.map((_, dayIndex) => {
+                {weekDays.map((day, dayIndex) => {
                   const span = row.find((s) => s.startIdx === dayIndex);
                   return (
                     <div
-                      key={dayIndex}
+                      key={day.toISOString()}
                       className="relative border-r border-border"
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => handleAllDayDrop(e, dayIndex)}
@@ -229,7 +229,7 @@ export function WeekView({
 
           {weekDays.map((day, dayIndex) => (
             <div
-              key={dayIndex}
+              key={day.toISOString()}
               ref={(el) => {
                 dayColumnRefs.current[dayIndex] = el;
               }}

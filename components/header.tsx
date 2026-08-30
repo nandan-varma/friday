@@ -1,45 +1,25 @@
 "use client";
 
-import {
-  ArrowRight01Icon,
-  Cancel01Icon,
-  Menu01Icon,
-} from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Menu01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { redirect, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: session } = authClient.useSession();
   const router = useRouter();
-
-  useEffect(() => {
-    const getSession = async () => {
-      try {
-        const session = await authClient.getSession();
-        setUser(session.data?.user || null);
-      } catch (error) {
-        console.error("Failed to get session:", error);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-  }, []);
+  const user = session?.user;
 
   const handleSignOut = async () => {
     try {
       await authClient.signOut();
-      setUser(null);
       router.push("/auth");
-    } catch (error) {
-      console.error("Failed to sign out:", error);
+    } catch {
+      // The session remains intact, so the user can safely try again.
     }
   };
 
@@ -59,6 +39,7 @@ export function Header() {
     <header className="sticky top-0 left-0 right-0 z-50 border-b border-border bg-background">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
         <button
+          type="button"
           onClick={handleLogoClick}
           className="flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
@@ -72,18 +53,18 @@ export function Header() {
         <div className="hidden md:flex items-center gap-8">
           {!user && (
             <>
-              <a
+              <Link
                 href="/#features"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 Features
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/#faq"
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 FAQ
-              </a>
+              </Link>
             </>
           )}
           {user ? (
@@ -113,6 +94,7 @@ export function Header() {
 
         {/* Mobile Menu Button */}
         <button
+          type="button"
           className="md:hidden"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
@@ -127,20 +109,20 @@ export function Header() {
           <div className="flex flex-col gap-4 px-6 py-4">
             {!user && (
               <>
-                <a
+                <Link
                   href="/#features"
                   className="text-sm font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Features
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/#faq"
                   className="text-sm font-medium"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   FAQ
-                </a>
+                </Link>
               </>
             )}
             {user ? (
@@ -163,25 +145,23 @@ export function Header() {
                 </div>
               </>
             ) : (
-              <>
-                <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={handleAuthNavigation}
-                  >
-                    Sign in
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={handleAuthNavigation}
-                  >
-                    Get started free
-                  </Button>
-                </div>
-              </>
+              <div className="flex flex-col gap-2 pt-4 border-t border-border">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  onClick={handleAuthNavigation}
+                >
+                  Sign in
+                </Button>
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={handleAuthNavigation}
+                >
+                  Get started free
+                </Button>
+              </div>
             )}
           </div>
         </div>

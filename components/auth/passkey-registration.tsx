@@ -58,12 +58,13 @@ export function PasskeyRegistration({
           onSuccess();
         }, 2000);
       }
-    } catch (err: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
       // Handle NotAllowedError gracefully
-      if (err.message?.includes("NotAllowedError")) {
+      if (message.includes("NotAllowedError")) {
         setError("Passkey registration was cancelled. You can add it later.");
       } else {
-        setError(err.message || "Failed to register passkey");
+        setError(message || "Failed to register passkey");
       }
     } finally {
       setLoading(false);

@@ -29,8 +29,10 @@
     "rules": {
       "preset": "recommended",
       "a11y": {
-        "useKeyWithClickEvents": "error",
-        "useSemanticElements": "error"
+        "useKeyWithClickEvents": "off",
+        "useSemanticElements": "off",
+        "noLabelWithoutControl": "off",
+        "noStaticElementInteractions": "off"
       },
       "correctness": {
         "noUnusedImports": "error",

@@ -47,10 +47,13 @@ export function useTimeGridCreate({
   const [drag, setDrag] = useState<TimeGridDrag | null>(null);
   const dragRef = useRef<TimeGridDrag | null>(null);
 
-  const relativeY = (clientY: number) => {
-    const rect = containerRef.current?.getBoundingClientRect();
-    return rect ? clientY - rect.top : 0;
-  };
+  const relativeY = useCallback(
+    (clientY: number) => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      return rect ? clientY - rect.top : 0;
+    },
+    [containerRef],
+  );
 
   const snapMinuteValue = useCallback(
     (rawMinutes: number) => Math.round(rawMinutes / snapMinutes) * snapMinutes,
@@ -114,7 +117,7 @@ export function useTimeGridCreate({
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     },
-    [commit],
+    [commit, relativeY],
   );
 
   const cancel = useCallback(() => {

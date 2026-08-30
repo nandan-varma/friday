@@ -23,7 +23,15 @@ interface CalendarSidebarProps {
   onDateSelect: (date: Date) => void;
 }
 
-const WEEKDAY_LETTERS = ["S", "M", "T", "W", "T", "F", "S"];
+const WEEKDAY_LETTERS = [
+  { id: "sun", label: "S" },
+  { id: "mon", label: "M" },
+  { id: "tue", label: "T" },
+  { id: "wed", label: "W" },
+  { id: "thu", label: "T" },
+  { id: "fri", label: "F" },
+  { id: "sat", label: "S" },
+];
 
 export function CalendarSidebar({
   calendars,
@@ -71,17 +79,18 @@ export function CalendarSidebar({
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
-          {WEEKDAY_LETTERS.map((day, i) => (
-            <div key={i} className="py-1">
-              {day}
+          {WEEKDAY_LETTERS.map((day) => (
+            <div key={day.id} className="py-1">
+              {day.label}
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-7 gap-1">
-          {days.map((day, i) => (
+          {days.map((day) => (
             <button
-              key={i}
+              type="button"
+              key={day.toISOString()}
               onClick={() => onDateSelect(day)}
               className={`relative flex h-8 w-8 items-center justify-center border text-xs transition-colors hover:bg-accent ${
                 !isCurrentMonth(day)
@@ -117,7 +126,7 @@ export function CalendarSidebar({
         </div>
         <div className="space-y-1">
           {calendars.map((calendar) => (
-            <label
+            <div
               key={calendar.id}
               className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-sidebar-accent cursor-pointer transition-colors"
             >
@@ -128,7 +137,7 @@ export function CalendarSidebar({
               <span className="text-sm text-sidebar-foreground">
                 {calendar.name}
               </span>
-            </label>
+            </div>
           ))}
         </div>
       </div>

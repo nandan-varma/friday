@@ -5,12 +5,11 @@ import { cn } from "@/lib/utils";
 function Spinner({
   className,
   strokeWidth,
-  ...props
-}: React.ComponentProps<"svg">) {
+}: Pick<React.ComponentProps<"svg">, "className" | "strokeWidth">) {
   return (
     <HugeiconsIcon
       icon={Loading03Icon}
-      strokeWidth={2}
+      strokeWidth={typeof strokeWidth === "number" ? strokeWidth : 2}
       role="status"
       aria-label="Loading"
       className={cn("size-4 animate-spin", className)}
