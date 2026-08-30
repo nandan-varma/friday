@@ -2,6 +2,9 @@ import { and, eq } from "drizzle-orm";
 import type { UIMessage } from "ai";
 import { db } from "@/db";
 import { chat } from "@/db/schema/chat";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("chat-store");
 
 export async function readChat(id: string, userId: string) {
   const [row] = await db
@@ -9,6 +12,7 @@ export async function readChat(id: string, userId: string) {
     .from(chat)
     .where(and(eq(chat.id, id), eq(chat.userId, userId)))
     .limit(1);
+  log.debug("read chat", { id, userId, found: !!row });
   return row ?? null;
 }
 
@@ -30,4 +34,5 @@ export async function saveChat({
       target: chat.id,
       set: { messages, activeStreamId, updatedAt: new Date() },
     });
+  log.debug("saved chat", { id, userId, messageCount: messages.length, activeStreamId });
 }

@@ -5,15 +5,20 @@ import {
   isGoogleCalendarConnected,
   updateSelectedCalendars,
 } from "@/lib/integrations/google/google-calendar";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api/calendars");
 
 // GET /api/calendars - Fetch user's Google calendars
 export async function GET() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
+    log.warn("unauthorized request");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   if (!(await isGoogleCalendarConnected(session.user.id))) {
+    log.info("calendar not connected", { userId: session.user.id });
     return Response.json({ error: "Google Calendar not connected" }, { status: 400 });
   }
 
@@ -21,7 +26,7 @@ export async function GET() {
     const calendars = await fetchGoogleCalendars(session.user.id);
     return Response.json(calendars);
   } catch (error) {
-    console.error("Failed to fetch calendars:", error);
+    log.error("failed to fetch calendars", { userId: session.user.id, error });
     return Response.json({ error: "Failed to fetch calendars" }, { status: 500 });
   }
 }
@@ -30,6 +35,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) {
+    log.warn("unauthorized request");
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -39,5 +45,6 @@ export async function PATCH(request: Request) {
   }
 
   await updateSelectedCalendars(session.user.id, calendarIds);
+  log.info("updated selected calendars", { userId: session.user.id, count: calendarIds.length });
   return Response.json({ success: true, selectedCalendarIds: calendarIds });
 }

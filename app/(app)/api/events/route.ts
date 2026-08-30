@@ -12,6 +12,9 @@ import {
   isGoogleCalendarConnected,
 } from "@/lib/integrations/google/google-calendar";
 import type { Calendar } from "@/types/calendar";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("api/events");
 
 const CALENDAR_COLORS = ["blue", "amber", "green", "pink", "purple", "red", "indigo", "cyan"] as const;
 
@@ -78,7 +81,7 @@ export async function GET(request: Request) {
 
     return Response.json(events);
   } catch (error) {
-    console.error("Failed to fetch events:", error);
+    log.error("failed to fetch events", { error });
     return Response.json({ error: "Failed to fetch events" }, { status: 500 });
   }
 }
@@ -127,7 +130,7 @@ export async function POST(request: Request) {
     );
     return Response.json(createdEvent, { status: 201 });
   } catch (error) {
-    console.error("Failed to create event:", error);
+    log.error("failed to create event", { error });
     return Response.json({ error: "Failed to create event" }, { status: 500 });
   }
 }
@@ -180,7 +183,7 @@ export async function PATCH(request: Request) {
     );
     return Response.json(updatedEvent);
   } catch (error) {
-    console.error("Failed to update event:", error);
+    log.error("failed to update event", { error });
     return Response.json({ error: "Failed to update event" }, { status: 500 });
   }
 }
@@ -202,7 +205,7 @@ export async function DELETE(request: Request) {
     await deleteGoogleEvent(session.user.id, calendarId, eventId);
     return Response.json({ success: true });
   } catch (error) {
-    console.error("Failed to delete event:", error);
+    log.error("failed to delete event", { error });
     return Response.json({ error: "Failed to delete event" }, { status: 500 });
   }
 }

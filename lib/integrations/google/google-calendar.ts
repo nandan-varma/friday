@@ -5,6 +5,9 @@ import { db } from "@/db";
 import { account } from "@/db/schema/auth";
 import { calendarPreference } from "@/db/schema/calendar";
 import type { Calendar, CalendarEvent } from "@/types/calendar";
+import { createLogger } from "@/lib/logger";
+
+const log = createLogger("google-calendar");
 
 export type GoogleCalendar = calendar_v3.Schema$CalendarListEntry;
 export type GoogleEvent = calendar_v3.Schema$Event;
@@ -28,12 +31,14 @@ export async function isGoogleCalendarConnected(userId: string): Promise<boolean
 async function getCalendarClient(userId: string) {
   const googleAccount = await getGoogleAccount(userId);
   if (!googleAccount) {
+    log.warn("no linked google account", { userId });
     throw new Error("Google account not connected");
   }
 
   const { accessToken } = await auth.api.getAccessToken({
     body: { accountId: googleAccount.id, userId },
   });
+  log.debug("access token acquired", { userId, accountId: googleAccount.id });
 
   const oauth2Client = new google.auth.OAuth2();
   oauth2Client.setCredentials({ access_token: accessToken });
@@ -83,7 +88,9 @@ export async function fetchGoogleCalendars(userId: string): Promise<GoogleCalend
     showHidden: false,
     showDeleted: false,
   });
-  return response.data.items || [];
+  const items = response.data.items || [];
+  log.debug("fetched calendars", { userId, count: items.length });
+  return items;
 }
 
 export async function fetchGoogleEvents(
@@ -100,7 +107,9 @@ export async function fetchGoogleEvents(
     singleEvents: true,
     orderBy: "startTime",
   });
-  return response.data.items || [];
+  const items = response.data.items || [];
+  log.debug("fetched events", { userId, calendarId, count: items.length });
+  return items;
 }
 
 export async function getSelectedCalendarIds(userId: string): Promise<string[]> {
@@ -135,10 +144,11 @@ export async function fetchAllSelectedCalendarEvents(
         }))
       );
     } catch (error) {
-      console.error(`Failed to fetch events from calendar ${calendarId}:`, error);
+      log.error("failed to fetch events for calendar", { userId, calendarId, error });
     }
   }
 
+  log.info("fetched all selected calendar events", { userId, calendars: calendarIds.length, events: allEvents.length });
   return allEvents;
 }
 
@@ -166,6 +176,7 @@ export async function createGoogleEvent(
       attendees: event.attendees?.map((email) => ({ email })),
     },
   });
+  log.info("created event", { userId, calendarId, eventId: response.data.id });
   return response.data;
 }
 
@@ -193,12 +204,14 @@ export async function updateGoogleEvent(
   if (updates.attendees) requestBody.attendees = updates.attendees.map((email) => ({ email }));
 
   const response = await calendar.events.patch({ calendarId, eventId, requestBody });
+  log.info("updated event", { userId, calendarId, eventId });
   return response.data;
 }
 
 export async function deleteGoogleEvent(userId: string, calendarId: string, eventId: string): Promise<void> {
   const calendar = await getCalendarClient(userId);
   await calendar.events.delete({ calendarId, eventId });
+  log.info("deleted event", { userId, calendarId, eventId });
 }
 
 export async function updateSelectedCalendars(userId: string, calendarIds: string[]): Promise<void> {
@@ -212,4 +225,5 @@ export async function updateSelectedCalendars(userId: string, calendarIds: strin
       target: calendarPreference.userId,
       set: { selectedCalendarIds: JSON.stringify(calendarIds), updatedAt: new Date() },
     });
+  log.debug("updated selected calendars", { userId, count: calendarIds.length });
 }
