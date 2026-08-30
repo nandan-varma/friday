@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,23 @@ import { authClient } from "@/lib/auth-client";
 interface AuthFormsProps {
   onSuccess: () => void;
 }
+
+const signUpSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(100),
+    email: z.email("Enter a valid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine(({ password, confirmPassword }) => password === confirmPassword, {
+    path: ["confirmPassword"],
+    message: "Passwords do not match",
+  });
+
+const signInSchema = z.object({
+  email: z.email("Enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
+});
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
@@ -27,38 +45,23 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const parsed = signUpSchema.safeParse({
+      name,
+      email: email.trim(),
+      password,
+      confirmPassword,
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid sign-up details");
+      return;
+    }
     setLoading(true);
-
-    // Validation
-    if (!name.trim()) {
-      setError("Name is required");
-      setLoading(false);
-      return;
-    }
-
-    if (!email.includes("@")) {
-      setError("Valid email is required");
-      setLoading(false);
-      return;
-    }
-
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters");
-      setLoading(false);
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      setLoading(false);
-      return;
-    }
 
     try {
       const { data, error: signUpError } = await authClient.signUp.email({
-        name,
-        email,
-        password,
+        name: parsed.data.name,
+        email: parsed.data.email,
+        password: parsed.data.password,
       });
 
       if (signUpError) {
@@ -81,7 +84,7 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
       <h2 className="text-2xl font-bold mb-6">Create Account</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" role="alert">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
@@ -158,25 +161,17 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    const parsed = signInSchema.safeParse({ email: email.trim(), password });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message ?? "Invalid sign-in details");
+      return;
+    }
     setLoading(true);
-
-    // Validation
-    if (!email.includes("@")) {
-      setError("Valid email is required");
-      setLoading(false);
-      return;
-    }
-
-    if (!password) {
-      setError("Password is required");
-      setLoading(false);
-      return;
-    }
 
     try {
       const { data, error: signInError } = await authClient.signIn.email({
-        email,
-        password,
+        email: parsed.data.email,
+        password: parsed.data.password,
       });
 
       if (signInError) {
@@ -199,7 +194,7 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
       <h2 className="text-2xl font-bold mb-6">Sign In</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" role="alert">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}

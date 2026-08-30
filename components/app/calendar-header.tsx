@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ChevronLeft,
-  ChevronRight,
-  Grid3x3,
-  Search,
-  Settings,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,10 +77,6 @@ export function CalendarHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="h-10 w-10">
-          <Search className="h-5 w-5" />
-          <span className="sr-only">Search</span>
-        </Button>
         <Button
           variant="ghost"
           size="icon"
@@ -114,10 +104,6 @@ export function CalendarHeader({
             <SelectItem value="agenda">Agenda</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant="ghost" size="icon" className="h-10 w-10">
-          <Grid3x3 className="h-5 w-5" />
-          <span className="sr-only">Grid</span>
-        </Button>
       </div>
     </header>
   );

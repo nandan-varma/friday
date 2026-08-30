@@ -1,17 +1,27 @@
 "use client";
 
-import { CheckmarkCircle02Icon, Mail02Icon } from "@hugeicons/core-free-icons";
+import { Mail02Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import Link from "next/link";
 import { useState } from "react";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
+const supportRequestSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100),
+  email: z.email("Enter a valid email address"),
+  subject: z.string().trim().min(1, "Subject is required").max(200),
+  message: z.string().trim().min(1, "Message is required").max(10_000),
+});
+
+const SUPPORT_EMAIL = "contact@nandan.fyi";
+
 export default function SupportPage() {
-  const [formSubmitted, setFormSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -31,11 +41,23 @@ export default function SupportPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFormSubmitted(true);
-    setTimeout(() => {
-      setFormSubmitted(false);
-      setFormData({ name: "", email: "", subject: "", message: "" });
-    }, 3000);
+    setFormError(null);
+    const parsed = supportRequestSchema.safeParse({
+      ...formData,
+      email: formData.email.trim(),
+    });
+    if (!parsed.success) {
+      setFormError(
+        parsed.error.issues[0]?.message ?? "Please check your message",
+      );
+      return;
+    }
+
+    const { name, email, subject, message } = parsed.data;
+    const body = `Name: ${name}\nEmail: ${email}\n\n${message}`;
+    window.location.assign(
+      `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`,
+    );
   };
 
   return (
@@ -87,7 +109,7 @@ export default function SupportPage() {
                   to you as soon as possible.
                 </p>
                 <a
-                  href="mailto:contact@nandan.fyi"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="text-primary hover:underline font-semibold"
                 >
                   contact@nandan.fyi
@@ -132,77 +154,71 @@ export default function SupportPage() {
               <CardTitle>Send us a message</CardTitle>
             </CardHeader>
             <CardContent>
-              {formSubmitted ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <HugeiconsIcon
-                    icon={CheckmarkCircle02Icon}
-                    className="w-16 h-16 text-primary mb-4"
-                  />
-                  <h3 className="text-xl font-semibold mb-2">
-                    Message sent successfully!
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    &quot;Terms of Service&quot;
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <p className="text-sm text-muted-foreground">
+                  Sending opens your default email app with this message
+                  prefilled.
+                </p>
+                {formError && (
+                  <p className="text-sm text-destructive" role="alert">
+                    {formError}
                   </p>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Name</Label>
-                      <Input
-                        id="name"
-                        name="name"
-                        placeholder="Your name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        name="email"
-                        type="email"
-                        placeholder="your@email.com"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                      />
-                    </div>
-                  </div>
-
+                )}
+                <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="subject">Subject</Label>
+                    <Label htmlFor="name">Name</Label>
                     <Input
-                      id="subject"
-                      name="subject"
-                      placeholder="What is this about?"
-                      value={formData.subject}
+                      id="name"
+                      name="name"
+                      placeholder="Your name"
+                      value={formData.name}
                       onChange={handleChange}
                       required
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="message">Message</Label>
-                    <Textarea
-                      id="message"
-                      name="message"
-                      placeholder="Tell us more about your question or issue..."
-                      rows={6}
-                      value={formData.message}
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      placeholder="your@email.com"
+                      value={formData.email}
                       onChange={handleChange}
                       required
                     />
                   </div>
+                </div>
 
-                  <Button type="submit" size="lg">
-                    Send Message
-                  </Button>
-                </form>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="subject">Subject</Label>
+                  <Input
+                    id="subject"
+                    name="subject"
+                    placeholder="What is this about?"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="message">Message</Label>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    placeholder="Tell us more about your question or issue..."
+                    rows={6}
+                    value={formData.message}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <Button type="submit" size="lg">
+                  Send Message
+                </Button>
+              </form>
             </CardContent>
           </Card>
 
