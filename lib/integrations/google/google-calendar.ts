@@ -112,23 +112,28 @@ export async function fetchGoogleEvents(
   return items;
 }
 
-export async function getSelectedCalendarIds(userId: string): Promise<string[]> {
+// Returns null when the user hasn't made an explicit selection yet (as
+// opposed to an empty array, which means "user unchecked everything").
+export async function getSelectedCalendarIds(userId: string): Promise<string[] | null> {
   const [pref] = await db
     .select()
     .from(calendarPreference)
     .where(eq(calendarPreference.userId, userId))
     .limit(1);
-  return pref?.selectedCalendarIds ? JSON.parse(pref.selectedCalendarIds) : ["primary"];
+  return pref?.selectedCalendarIds ? JSON.parse(pref.selectedCalendarIds) : null;
 }
 
 export async function fetchAllSelectedCalendarEvents(
   userId: string,
   options?: { timeMin?: Date; timeMax?: Date }
 ): Promise<Array<GoogleEvent & { calendarId: string; accessRole?: string }>> {
-  const [calendarIds, googleCalendars] = await Promise.all([
+  const [preference, googleCalendars] = await Promise.all([
     getSelectedCalendarIds(userId),
     fetchGoogleCalendars(userId),
   ]);
+  // No explicit preference yet - default to every calendar rather than the
+  // literal string "primary", which never matches a real calendar id.
+  const calendarIds = preference ?? googleCalendars.map((cal) => cal.id!);
   const calendarAccessRoles = new Map(googleCalendars.map((cal) => [cal.id!, cal.accessRole]));
 
   const allEvents: Array<GoogleEvent & { calendarId: string; accessRole?: string }> = [];

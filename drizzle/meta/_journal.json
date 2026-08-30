@@ -8,6 +8,13 @@
       "when": 1788061201182,
       "tag": "0000_quiet_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788062259127,
+      "tag": "0001_icy_mikhail_rasputin",
+      "breakpoints": true
     }
   ]
 }

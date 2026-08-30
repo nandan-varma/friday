@@ -1,6 +1,6 @@
 import { createAgentUIStreamResponse, generateId, type UIMessage } from "ai";
 import { headers } from "next/headers";
-import { streamContext } from "@/lib/resumable-stream-context";
+import { getStreamContext } from "@/lib/resumable-stream-context";
 import { auth } from "@/lib/auth";
 import { chatAgent } from "@/agents/chat-agent";
 import { chatRatelimit } from "@/lib/ratelimit";
@@ -20,12 +20,18 @@ export async function POST(req: Request) {
   }
   const userId = session.user.id;
 
-  const { success, remaining } = await chatRatelimit.limit(userId);
-  if (!success) {
-    log.warn("rate limited", { userId });
-    return new Response("Too many requests", { status: 429 });
+  // Rate limiting is a safety net, not core functionality - if Redis is
+  // unreachable, let the request through rather than 500ing chat entirely.
+  try {
+    const { success, remaining } = await chatRatelimit.limit(userId);
+    if (!success) {
+      log.warn("rate limited", { userId });
+      return new Response("Too many requests", { status: 429 });
+    }
+    log.debug("rate limit ok", { userId, remaining });
+  } catch (error) {
+    log.error("rate limit check failed, allowing request", { userId, error });
   }
-  log.debug("rate limit ok", { userId, remaining });
 
   const { id, message }: { id: string; message: UIMessage } = await req.json();
   log.info("chat request", { userId, chatId: id, messageId: message?.id });
@@ -46,6 +52,8 @@ export async function POST(req: Request) {
       await saveChat({ id, userId, messages: finalMessages, activeStreamId: null });
     },
     async consumeSseStream({ stream }) {
+      const streamContext = getStreamContext();
+      if (!streamContext) return;
       const streamId = generateId();
       log.debug("creating resumable stream", { userId, chatId: id, streamId });
       await streamContext.createNewResumableStream(streamId, () => stream);

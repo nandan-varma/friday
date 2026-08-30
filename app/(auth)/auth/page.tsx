@@ -74,9 +74,10 @@ export default function AuthPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    // Calendar scope is already requested by default for every Google flow
+    // (see socialProviders.google.scope in lib/auth.ts) - no need to repeat it.
     await authClient.signIn.social({
       provider: "google",
-      scopes: ["https://www.googleapis.com/auth/calendar"],
       callbackURL: "/app",
     });
   };

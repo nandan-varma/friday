@@ -1,6 +1,6 @@
 import { UI_MESSAGE_STREAM_HEADERS } from "ai";
 import { headers } from "next/headers";
-import { streamContext } from "@/lib/resumable-stream-context";
+import { getStreamContext } from "@/lib/resumable-stream-context";
 import { auth } from "@/lib/auth";
 import { readChat } from "@/lib/chat-store";
 import { createLogger } from "@/lib/logger";
@@ -12,6 +12,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   if (!session?.user?.id) {
     log.warn("unauthorized resume attempt");
     return new Response("Unauthorized", { status: 401 });
+  }
+
+  const streamContext = getStreamContext();
+  if (!streamContext) {
+    return new Response(null, { status: 204 });
   }
 
   const { id } = await params;
