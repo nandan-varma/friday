@@ -9,7 +9,11 @@ import { Card } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface AuthFormsProps {
-  onSuccess: (user: any) => void;
+  onSuccess: () => void;
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback;
 }
 
 export function SignUpForm({ onSuccess }: AuthFormsProps) {
@@ -63,10 +67,10 @@ export function SignUpForm({ onSuccess }: AuthFormsProps) {
       }
 
       if (data) {
-        onSuccess(data.user);
+        onSuccess();
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred during sign up");
+    } catch (error) {
+      setError(getErrorMessage(error, "An error occurred during sign up"));
     } finally {
       setLoading(false);
     }
@@ -181,10 +185,10 @@ export function SignInForm({ onSuccess }: AuthFormsProps) {
       }
 
       if (data) {
-        onSuccess(data.user);
+        onSuccess();
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred during sign in");
+    } catch (error) {
+      setError(getErrorMessage(error, "An error occurred during sign in"));
     } finally {
       setLoading(false);
     }

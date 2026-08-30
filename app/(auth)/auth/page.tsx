@@ -12,7 +12,7 @@ type AuthStep = "choice" | "sign-up" | "sign-in" | "passkey-registration";
 
 export default function AuthPage() {
   const [step, setStep] = useState<AuthStep>("choice");
-  const [user, setUser] = useState<any>(null);
+  const [shouldRegisterPasskey, setShouldRegisterPasskey] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,8 +33,7 @@ export default function AuthPage() {
           await new Promise(resolve => setTimeout(resolve, 500));
           router.push("/app");
         }
-      } catch (err: any) {
-      }
+      } catch {}
     };
     
     // Small delay to ensure page is fully loaded
@@ -47,15 +46,12 @@ export default function AuthPage() {
 
 
 
-  const handleSignUpSuccess = (userData: any) => {
-    setUser(userData);
+  const handleSignUpSuccess = () => {
+    setShouldRegisterPasskey(true);
     setStep("passkey-registration");
   };
 
-  const handleSignInSuccess = (userData: any) => {
-    setUser(userData);
-    setStep("passkey-registration");
-  };
+  const handleSignInSuccess = handleSignUpSuccess;
 
   const handlePasskeySuccess = () => {
     // After successful passkey registration, redirect to dashboard
@@ -68,11 +64,6 @@ export default function AuthPage() {
     window.location.href = "/";
   };
 
-  const handleBack = () => {
-    setUser(null);
-    setStep("choice");
-  };
-
   const handleGoogleSignIn = async () => {
     // Calendar scope is already requested by default for every Google flow
     // (see socialProviders.google.scope in lib/auth.ts) - no need to repeat it.
@@ -82,7 +73,7 @@ export default function AuthPage() {
     });
   };
 
-  if (step === "passkey-registration" && user) {
+  if (step === "passkey-registration" && shouldRegisterPasskey) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-md">
