@@ -70,6 +70,12 @@ export const googleCalendarSchema = z.object({
 
 export type GoogleCalendarResponse = z.infer<typeof googleCalendarSchema>;
 
+export const googleIntegrationSchema = z.object({
+  connected: z.boolean(),
+  lastSyncAt: z.string().optional(),
+  selectedCalendarIds: z.array(z.string()).nullable().optional(),
+});
+
 export const eventMutationSchema = z.object({
   eventId: z.string().min(1),
   calendarId: z.string().min(1),

@@ -1,19 +1,28 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { parseApiResponse } from "@/lib/api-client";
 import { authClient } from "@/lib/auth-client";
 import {
   calendarEventResponseSchema,
   type GoogleCalendarResponse,
   googleCalendarSchema,
+  googleIntegrationSchema,
 } from "@/lib/schemas/calendar";
 import { getDeviceTimeZone } from "@/lib/timezone";
 import type { CalendarEvent } from "@/types/calendar";
 
 // Integration status types
-interface IntegrationStatus {
-  connected: boolean;
-  googleUserId?: string;
-  lastSyncAt?: string;
-  selectedCalendarIds?: string[];
+type IntegrationStatus = z.infer<typeof googleIntegrationSchema>;
+
+const mutationSuccessSchema = z.object({ success: z.literal(true) });
+
+function toCalendarEvent(event: unknown): CalendarEvent {
+  const parsed = calendarEventResponseSchema.parse(event);
+  return {
+    ...parsed,
+    start: new Date(parsed.start),
+    end: new Date(parsed.end),
+  };
 }
 
 // Fetch integration status
@@ -22,10 +31,11 @@ export function useGoogleIntegration() {
     queryKey: ["google-integration"],
     queryFn: async () => {
       const response = await fetch("/api/integrations/google");
-      if (!response.ok) {
-        throw new Error("Failed to fetch integration status");
-      }
-      return response.json();
+      return parseApiResponse(
+        response,
+        googleIntegrationSchema,
+        "Failed to fetch integration status",
+      );
     },
   });
 }
@@ -38,16 +48,11 @@ export function useGoogleCalendars() {
     queryKey: ["google-calendars"],
     queryFn: async () => {
       const response = await fetch("/api/calendars");
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error("Unauthorized");
-        }
-        if (response.status === 400) {
-          throw new Error("Google Calendar not connected");
-        }
-        throw new Error("Failed to fetch calendars");
-      }
-      return googleCalendarSchema.array().parse(await response.json());
+      return parseApiResponse(
+        response,
+        googleCalendarSchema.array(),
+        "Failed to fetch calendars",
+      );
     },
     enabled: integration?.connected === true,
   });
@@ -75,17 +80,12 @@ export function useGoogleEvents(options?: {
       if (options?.calendarId) params.append("calendarId", options.calendarId);
 
       const response = await fetch(`/api/events?${params}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch events");
-      }
-      const events = calendarEventResponseSchema
-        .array()
-        .parse(await response.json());
-      return events.map((event) => ({
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-      }));
+      const events = await parseApiResponse(
+        response,
+        calendarEventResponseSchema.array(),
+        "Failed to fetch events",
+      );
+      return events.map(toCalendarEvent);
     },
     enabled: integration?.connected === true,
   });
@@ -147,10 +147,13 @@ export function useUpdateSelectedCalendars() {
         },
         body: JSON.stringify({ calendarIds }),
       });
-      if (!response.ok) {
-        throw new Error("Failed to update selected calendars");
-      }
-      return response.json();
+      return parseApiResponse(
+        response,
+        mutationSuccessSchema.extend({
+          selectedCalendarIds: z.array(z.string()),
+        }),
+        "Failed to update selected calendars",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-integration"] });
@@ -188,16 +191,13 @@ export function useCreateEvent() {
           timeZone: eventData.timeZone ?? getDeviceTimeZone(),
         }),
       });
-      if (!response.ok) {
-        throw new Error("Failed to create event");
-      }
-      const event = await response.json();
-      // Convert string dates back to Date objects
-      return {
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-      };
+      return toCalendarEvent(
+        await parseApiResponse(
+          response,
+          calendarEventResponseSchema,
+          "Failed to create event",
+        ),
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-events"] });
@@ -245,16 +245,13 @@ export function useUpdateEvent() {
               : undefined,
         }),
       });
-      if (!response.ok) {
-        throw new Error("Failed to update event");
-      }
-      const event = await response.json();
-      // Convert string dates back to Date objects
-      return {
-        ...event,
-        start: new Date(event.start),
-        end: new Date(event.end),
-      };
+      return toCalendarEvent(
+        await parseApiResponse(
+          response,
+          calendarEventResponseSchema,
+          "Failed to update event",
+        ),
+      );
     },
     onMutate: async ({ eventId, updates }) => {
       // Cancel outgoing refetches
@@ -333,10 +330,11 @@ export function useDeleteEvent() {
           method: "DELETE",
         },
       );
-      if (!response.ok) {
-        throw new Error("Failed to delete event");
-      }
-      return response.json();
+      return parseApiResponse(
+        response,
+        mutationSuccessSchema,
+        "Failed to delete event",
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["google-events"] });
