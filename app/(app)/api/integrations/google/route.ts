@@ -1,7 +1,6 @@
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import {
-  getGoogleAccount,
   getSelectedCalendarIds,
   isGoogleCalendarConnected,
 } from "@/lib/integrations/google/google-calendar";
@@ -25,14 +24,10 @@ export async function GET() {
     return Response.json({ connected: false });
   }
 
-  const [googleAccount, selectedCalendarIds] = await Promise.all([
-    getGoogleAccount(session.user.id),
-    getSelectedCalendarIds(session.user.id),
-  ]);
+  const selectedCalendarIds = await getSelectedCalendarIds(session.user.id);
 
   return Response.json({
     connected: true,
-    lastSyncAt: googleAccount?.updatedAt,
     selectedCalendarIds,
   });
 }

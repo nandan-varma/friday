@@ -19,4 +19,4 @@ A calendar app for busy people.
 - **Easy Scheduling**: Quickly create and manage events
 - **Calendar Sync**: Sync with Google Calendar
 - **AI Assistant**: Smart suggestions for event times
-- **Reminders**: Get notified about upcoming events
+- **Calendar Views**: Review your schedule by day, week, month, or agenda

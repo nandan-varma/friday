@@ -231,12 +231,12 @@ export default function SupportPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">
-                    How do I reset my password?
+                    How do I change my password?
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  Click on "Forgot password?" on the login page. Enter your
-                  email address and follow the instructions sent to your inbox.
+                  Password changes are not available in the app yet. Contact
+                  support from the email address on your account for help.
                 </CardContent>
               </Card>
 
@@ -260,9 +260,9 @@ export default function SupportPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  Yes! You can export your calendar data as an ICS file from
-                  your account settings. This allows you to import your events
-                  into other calendar applications.
+                  Friday does not currently offer calendar export. Your events
+                  remain available in Google Calendar, where Google provides
+                  export options.
                 </CardContent>
               </Card>
 
@@ -273,9 +273,8 @@ export default function SupportPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="text-muted-foreground">
-                  You can delete your account and all associated data from your
-                  account settings. This action is permanent. Please contact us
-                  at contact@nandan.fyi if you need assistance.
+                  Account deletion is not yet self-service. Contact support from
+                  the email address on your account to request deletion.
                 </CardContent>
               </Card>
 

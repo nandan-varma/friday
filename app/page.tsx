@@ -87,8 +87,8 @@ export default function Page() {
 
           <p className="text-lg text-muted-foreground sm:text-xl lg:text-2xl mb-8 max-w-2xl mx-auto">
             Stop juggling multiple calendars and missing important events.
-            Friday uses AI to keep your schedule organized and sends smart
-            reminders so you're always on time.
+            Friday brings your Google Calendar into one focused workspace and
+            gives you an AI assistant for managing your schedule.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

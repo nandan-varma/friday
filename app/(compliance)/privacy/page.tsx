@@ -169,9 +169,10 @@ export default function PrivacyPage() {
                 <p>
                   We retain your personal information for as long as your
                   account is active or as needed to provide our services. You
-                  can delete your account and associated data at any time from
-                  your account settings. Once deleted, your data will be
-                  permanently removed from our servers within 30 days.
+                  can request deletion of your account and associated data by
+                  contacting support from the email address on the account. Once
+                  deleted, your data will be permanently removed from our
+                  servers within 30 days.
                 </p>
               </CardContent>
             </Card>

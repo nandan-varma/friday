@@ -58,12 +58,10 @@ export default function SettingsPage() {
                         Connected
                       </span>
                     </div>
-                    {googleStatus.lastSyncAt && (
-                      <p className="text-xs font-mono text-muted-foreground">
-                        Last synced:{" "}
-                        {new Date(googleStatus.lastSyncAt).toLocaleString()}
-                      </p>
-                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Events are read directly from Google Calendar when you
+                      open your calendar.
+                    </p>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2 mt-2">

@@ -93,7 +93,6 @@ export type GoogleCalendarResponse = z.infer<typeof googleCalendarSchema>;
 
 export const googleIntegrationSchema = z.object({
   connected: z.boolean(),
-  lastSyncAt: z.string().optional(),
   selectedCalendarIds: z.array(z.string()).nullable().optional(),
 });
 
