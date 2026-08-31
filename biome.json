@@ -8,6 +8,8 @@
       "!**/build",
       "!**/coverage",
       "!**/drizzle/meta",
+      "!**/test-results",
+      "!**/playwright-report",
       "!public"
     ]
   },

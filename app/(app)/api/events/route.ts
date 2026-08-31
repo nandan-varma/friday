@@ -142,7 +142,7 @@ export async function POST(request: Request) {
 
   const parsed = await parseJsonBody(
     request,
-    calendarEventInputSchema.extend({ timeZone: ianaTimeZone.optional() }),
+    calendarEventInputSchema.safeExtend({ timeZone: ianaTimeZone.optional() }),
   );
   if (parsed.error) return parsed.error;
   const {
@@ -202,11 +202,23 @@ export async function PATCH(request: Request) {
   const parsed = await parseJsonBody(
     request,
     eventMutationSchema.merge(
-      calendarEventUpdateSchema.extend({ timeZone: ianaTimeZone.optional() }),
+      calendarEventUpdateSchema.safeExtend({
+        timeZone: ianaTimeZone.optional(),
+      }),
     ),
   );
   if (parsed.error) return parsed.error;
   const { eventId, calendarId, ...data } = parsed.data;
+  // `calendarEventUpdateSchema`'s own "at least one field" refinement can't
+  // survive being `.merge()`d with `eventMutationSchema` - `eventId`/
+  // `calendarId` are always present, so that check would always pass.
+  // Enforced here instead, against just the update fields.
+  if (Object.keys(data).length === 0) {
+    return Response.json(
+      { error: "At least one event field must be updated" },
+      { status: 400 },
+    );
+  }
 
   try {
     if (!(await userCanAccessCalendar(userId, calendarId))) {

@@ -11,7 +11,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome lint .",
-    "test": "tsx --test \"**/*.test.ts\"",
+    "test": "tsx --experimental-test-module-mocks --test \"**/*.test.ts\"",
+    "test:e2e": "playwright test",
+    "test:smoke": "bash scripts/smoke-clean-checkout.sh",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "check": "biome check .",
@@ -52,6 +54,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.11",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",

@@ -2,6 +2,7 @@ import {
   createAgentUIStreamResponse,
   generateId,
   safeValidateUIMessages,
+  type UIMessage,
 } from "ai";
 import { z } from "zod";
 import { chatAgent } from "@/agents/chat-agent";
@@ -63,9 +64,14 @@ export async function POST(req: Request) {
   });
 
   const existing = await readChat(id, userId);
-  const validatedExistingMessages = await safeValidateUIMessages({
-    messages: existing?.messages ?? [],
-  });
+  // `safeValidateUIMessages` rejects an empty `messages` array, but a brand
+  // new chat has no history yet - skip validation rather than treating
+  // "no chat row exists" as corrupted persisted state.
+  const existingMessages = existing?.messages;
+  const validatedExistingMessages =
+    Array.isArray(existingMessages) && existingMessages.length > 0
+      ? await safeValidateUIMessages({ messages: existingMessages })
+      : { success: true as const, data: [] as UIMessage[] };
   if (!validatedExistingMessages.success) {
     log.warn("invalid persisted chat history", { userId, chatId: id });
     return Response.json(
