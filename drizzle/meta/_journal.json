@@ -15,6 +15,13 @@
       "when": 1788062259127,
       "tag": "0001_icy_mikhail_rasputin",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789073735681,
+      "tag": "0002_cute_wraith",
+      "breakpoints": true
     }
   ]
 }
