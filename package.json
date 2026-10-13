@@ -2,7 +2,6 @@
   "name": "friday",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "pnpm@11.20.0",
   "engines": {
     "node": "24.x"
   },
@@ -63,5 +62,12 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.23.13",
     "typescript": "^7.0.2"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "^12",
+      "onFail": "download"
+    }
   }
 }
