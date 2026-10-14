@@ -31,9 +31,8 @@ export async function isGoogleCalendarConnected(
   userId: string,
 ): Promise<boolean> {
   const googleAccount = await getGoogleAccount(userId);
-  return !!googleAccount?.scope
-    ?.split(/[\s,]+/)
-    .includes("https://www.googleapis.com/auth/calendar");
+  const scopes = new Set(googleAccount?.scope?.split(/[\s,]+/));
+  return scopes.has("https://www.googleapis.com/auth/calendar");
 }
 
 async function getCalendarClient(userId: string) {
