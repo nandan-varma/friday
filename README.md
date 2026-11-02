@@ -16,6 +16,7 @@ A calendar app for busy people.
 - [ ] Notifications
 
 ## Features
+
 - **Easy Scheduling**: Quickly create and manage events
 - **Calendar Sync**: Sync with Google Calendar
 - **AI Assistant**: Smart suggestions for event times

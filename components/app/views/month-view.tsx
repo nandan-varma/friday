@@ -73,14 +73,10 @@ export function MonthView({
   const finishSelection = useCallback(() => {
     setRangeSelection((selection) => {
       if (!selection) return null;
-      const rangeStart =
+      const [rangeStart, rangeEnd] =
         selection.start <= selection.current
-          ? selection.start
-          : selection.current;
-      const rangeEnd =
-        selection.start <= selection.current
-          ? selection.current
-          : selection.start;
+          ? [selection.start, selection.current]
+          : [selection.current, selection.start];
 
       if (isSameDay(rangeStart, rangeEnd)) {
         onCreateEvent(
@@ -104,14 +100,10 @@ export function MonthView({
 
   const isInSelection = (date: Date) => {
     if (!rangeSelection) return false;
-    const rangeStart =
+    const [rangeStart, rangeEnd] =
       rangeSelection.start <= rangeSelection.current
-        ? rangeSelection.start
-        : rangeSelection.current;
-    const rangeEnd =
-      rangeSelection.start <= rangeSelection.current
-        ? rangeSelection.current
-        : rangeSelection.start;
+        ? [rangeSelection.start, rangeSelection.current]
+        : [rangeSelection.current, rangeSelection.start];
     return date >= startOfDay(rangeStart) && date <= startOfDay(rangeEnd);
   };
 
